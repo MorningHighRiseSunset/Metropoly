@@ -1,0 +1,440 @@
+const properties = [{
+        name: "GO",
+        type: "special",
+        imageUrls: [],
+        description: "Collect $200 as you pass GO!",
+        special: true
+    },
+    {
+        name: "Las Vegas Raiders",
+        price: 100,
+        rent: 10,
+        owner: null,
+        address: "5300 S Polaris",
+        color: "brown",
+        mortgageValue: 50,
+        housePrice: 50,
+        hotelPrice: 250,
+        rentWithHouse: [50, 150, 450, 625],
+        rentWithHotel: 750,
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+    },
+    {
+        name: "Community Cards",
+        type: "special",
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+        description: "Draw a Community Card!",
+        special: true
+    },
+    {
+        name: "Las Vegas Grand Prix",
+        price: 120,
+        rent: 12,
+        owner: null,
+        address: "4400 Koval Ln Las Vegas",
+        color: "brown",
+        mortgageValue: 60,
+        housePrice: 50,
+        hotelPrice: 250,
+        rentWithHouse: [60, 180, 500, 700],
+        rentWithHotel: 900,
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+    },
+    {
+        name: "Income Tax",
+        type: "tax",
+        price: 200,
+        imageUrl: "https://www.radacutlery.com/wp-content/uploads/2015/09/Uncle-Sam-1.jpg",
+        description: "Pay Income Tax: $200 or 10% of your total worth",
+        special: true
+    },
+    {
+        name: "Las Vegas Monorail",
+        price: 200,
+        rent: 25,
+        owner: null,
+        type: "railroad",
+        address: "Las Vegas Strip",
+        mortgageValue: 100,
+        rentWithRailroads: [25, 50, 100, 200],
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+    },
+    {
+        name: "Speed Vegas Offroading",
+        price: 140,
+        rent: 14,
+        owner: null,
+        address: "14200 S Las Vegas Blvd",
+        color: "lightblue",
+        mortgageValue: 70,
+        housePrice: 100,
+        hotelPrice: 250,
+        rentWithHouse: [70, 200, 550, 750],
+        rentWithHotel: 950,
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+    },
+    {
+        name: "Chance",
+        type: "special",
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+        description: "Draw a Chance card!",
+        special: true
+    },
+    {
+        name: "Las Vegas Golden Knights",
+        price: 160,
+        rent: 16,
+        owner: null,
+        address: "3780 S Las Vegas Blvd",
+        color: "lightblue",
+        mortgageValue: 80,
+        housePrice: 100,
+        hotelPrice: 250,
+        rentWithHouse: [80, 220, 600, 800],
+        rentWithHotel: 1000,
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+    },
+    {
+        name: "JAIL",
+        price: 100, // Example price for the property
+        rent: 10, // Example rent for landing on it
+        owner: null,
+        address: "Jail Square",
+        color: "gray", // Assign a color for the property
+        mortgageValue: 50,
+        description: "Pay rent if owned, or just visit if unowned.",
+        videoUrls: [
+        ]
+    },
+    {
+        name: "Maverick Helicopter Rides",
+        price: 220,
+        rent: 22,
+        owner: null,
+        address: "6075 S Las Vegas Blvd",
+        color: "pink",
+        mortgageValue: 110,
+        housePrice: 150,
+        hotelPrice: 250,
+        rentWithHouse: [110, 330, 800, 975],
+        rentWithHotel: 1150,
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+    },
+    {
+        name: "Brothel",
+        price: 150,
+        rent: 15,
+        owner: null,
+        address: "123 Entertainment Ave",
+        color: "pink",
+        mortgageValue: 75,
+        housePrice: 100,
+        hotelPrice: 250,
+        rentWithHouse: [75, 225, 675, 900],
+        rentWithHotel: 1100
+    },
+    {
+        name: "Electric Company",
+        price: 150,
+        rent: 0,
+        owner: null,
+        type: "utility",
+        mortgageValue: 75,
+        description: "If one utility is owned, rent is 4 times amount shown on dice. If both utilities are owned, rent is 10 times amount shown on dice.",
+        imageUrl: "yellow light bulb image.jpg"
+    },
+    {
+        name: "Bet MGM",
+        price: 280,
+        rent: 28,
+        owner: null,
+        address: "3799 Las Vegas Blvd",
+        color: "pink",
+        mortgageValue: 140,
+        housePrice: 150,
+        hotelPrice: 250,
+        rentWithHouse: [150, 450, 1000, 1200],
+        rentWithHotel: 1400,
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+    },
+    {
+        name: "Bellagio",
+        price: 300,
+        rent: 30,
+        owner: null,
+        address: "3600 S Las Vegas Blvd",
+        color: "orange",
+        mortgageValue: 150,
+        housePrice: 200,
+        hotelPrice: 250,
+        rentWithHouse: [200, 600, 1400, 1700],
+        rentWithHotel: 2000,
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+    },
+    {
+        name: "Community Cards",
+        type: "special",
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+        description: "Draw a Community Card!",
+        special: true
+    },
+    {
+        name: "FREE PARKING",
+        type: "special",
+        imageUrl: "free parking.jpg",
+        description: "Take a break! No fee to park here.",
+        special: true
+    },
+    {
+        name: "Horseback Racing",
+        price: 340,
+        rent: 34,
+        owner: null,
+        address: "",
+        color: "orange",
+        mortgageValue: 170,
+        housePrice: 200,
+        hotelPrice: 250,
+        rentWithHouse: [220, 650, 1500, 1850],
+        rentWithHotel: 2100,
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+    },
+    {
+        name: "Chance",
+        type: "special",
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+        description: "Draw a Chance card!",
+        special: true
+    },
+    {
+        name: "The Mirage",
+        price: 400,
+        rent: 40,
+        owner: null,
+        address: "3400 S Las Vegas Blvd",
+        color: "red",
+        mortgageValue: 200,
+        housePrice: 200,
+        hotelPrice: 250,
+        rentWithHouse: [250, 750, 1600, 1950],
+        rentWithHotel: 2200,
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+    },
+    {
+        name: "Water Works",
+        price: 150,
+        rent: 0,
+        owner: null,
+        type: "utility",
+        mortgageValue: 75,
+        description: "If one utility is owned, rent is 4 times amount shown on dice. If both utilities are owned, rent is 10 times amount shown on dice.",
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+    },
+    {
+        name: "Sphere",
+        price: 480,
+        rent: 48,
+        owner: null,
+        address: "255 Sand Ave",
+        color: "yellow",
+        mortgageValue: 240,
+        housePrice: 200,
+        hotelPrice: 250,
+        rentWithHouse: [280, 850, 2000, 2200],
+        rentWithHotel: 2400,
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+    },
+    {
+        name: "GO TO JAIL",
+        type: "special",
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+        description: "Go directly to Jail. Do not pass GO. Do not collect $200.",
+        special: true
+    },
+    {
+        name: "Caesars Palace",
+        price: 500,
+        rent: 50,
+        owner: null,
+        address: "3570 Las Vegas Blvd",
+        color: "green",
+        mortgageValue: 250,
+        housePrice: 200,
+        hotelPrice: 250,
+        rentWithHouse: [300, 900, 2200, 2400],
+        rentWithHotel: 2600,
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+    },
+    {
+        name: "Santa Fe Hotel and Casino",
+        price: 520,
+        rent: 52,
+        owner: null,
+        address: "4949 N Rancho Dr, Las Vegas",
+        color: "green",
+        mortgageValue: 260,
+        housePrice: 200,
+        hotelPrice: 250,
+        rentWithHouse: [320, 950, 2300, 2500],
+        rentWithHotel: 2700,
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+    },
+    {
+        name: "Chance",
+        type: "special",
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+        description: "Draw a Chance card!",
+        special: true
+    },
+    {
+        name: "Luxury Tax",
+        type: "tax",
+        price: 75,
+        imageUrl: "image.png.png",
+        description: "Pay Luxury Tax of $75",
+        special: true
+    },
+    {
+        name: "House of Blues",
+        price: 540,
+        rent: 54,
+        owner: null,
+        address: "3950 S Las Vegas Blvd",
+        color: "blue",
+        mortgageValue: 270,
+        housePrice: 200,
+        hotelPrice: 250,
+        rentWithHouse: [330, 1000, 2400, 2600],
+        rentWithHotel: 2800,
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+    },
+    {
+        name: "The Cosmopolitan",
+        price: 560,
+        rent: 56,
+        owner: null,
+        address: "3708 Las Vegas Blvd",
+        color: "blue",
+        mortgageValue: 280,
+        housePrice: 200,
+        hotelPrice: 250,
+        rentWithHouse: [350, 1100, 2500, 2700],
+        rentWithHotel: 3000,
+        imageUrl: "unnamed.gif"
+    },
+    {
+        name: "Community Cards",
+        type: "special",
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+        description: "Draw a Community Card!",
+        special: true
+    },
+    {
+        name: "Las Vegas Aces",
+        price: 320,
+        rent: 32,
+        owner: null,
+        address: "Mandalay Bay",
+        color: "orange",
+        mortgageValue: 160,
+        housePrice: 200,
+        hotelPrice: 250,
+        rentWithHouse: [210, 625, 1450, 1750],
+        rentWithHotel: 2050,
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+    },
+    {
+        name: "Resorts World Theatre",
+        price: 360,
+        rent: 36,
+        owner: null,
+        address: "3000 S Las Vegas Blvd",
+        color: "red",
+        mortgageValue: 180,
+        housePrice: 200,
+        hotelPrice: 250,
+        rentWithHouse: [230, 700, 1500, 1850],
+        rentWithHotel: 2100,
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+    },
+    {
+        name: "Wynn Las Vegas",
+        price: 440,
+        rent: 44,
+        owner: null,
+        address: "3131 S Las Vegas Blvd",
+        color: "yellow",
+        mortgageValue: 220,
+        housePrice: 200,
+        hotelPrice: 250,
+        rentWithHouse: [260, 800, 1900, 2100],
+        rentWithHotel: 2300,
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+    },
+    {
+        name: "Shriners Children's Open",
+        price: 460,
+        rent: 46,
+        owner: null,
+        address: "1700 Village Center Circle TPC Summerlin",
+        color: "yellow",
+        mortgageValue: 230,
+        housePrice: 200,
+        hotelPrice: 250,
+        rentWithHouse: [270, 825, 1950, 2150],
+        rentWithHotel: 2350,
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+    }
+];

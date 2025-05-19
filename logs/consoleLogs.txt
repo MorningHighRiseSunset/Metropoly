@@ -1,0 +1,940 @@
+Players initialized: Array(4)
+script.js:3003 Validating game state...
+script.js:3028 Game state validation complete
+script.js:3803 Token football selected for Player 1
+script.js:972 Setting up AI player 2 with token burger
+script.js:1008 AI Players after adding: Array(1)
+script.js:1009 Player setup: Array(4)
+script.js:972 Setting up AI player 3 with token nike
+script.js:1008 AI Players after adding: Array(2)
+script.js:1009 Player setup: Array(4)
+script.js:972 Setting up AI player 4 with token hat
+script.js:1008 AI Players after adding: Array(3)
+script.js:1009 Player setup: Array(4)
+script.js:3109 Finalizing player selection...
+script.js:3158 Set up player 1: Object
+script.js:3158 Set up player 2: Object
+script.js:3158 Set up player 3: Object
+script.js:3158 Set up player 4: Object
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:3200 Starting with human turn
+script.js:3205 Game started with players: Array(4)
+script.js:5231 Dice rolled: 3 and 1 (Total: 4)
+favicon.ico:1 
+            
+            
+           Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:2900 Ending turn for Player 1 (Player 1)
+script.js:2926 Next turn is for Player 2 (Player 2)
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:2959 Starting AI turn for Player 2
+script.js:1160 Executing AI turn for Player 2 (Player 2)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 6 and 1 (total: 7)
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:1187 AI finished moving to position 7
+script.js:1212 AI landed on Chance.
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:1738 AI landed on Chance and drew the card: "Win a high-stakes poker game. Collect $1,000.".
+script.js:2896 Turn is still in progress. Cannot end turn yet.
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4148 AI landed on Chance.
+script.js:1726 A card has already been drawn this turn. Skipping.
+script.js:1196 AI finished handling property: Chance
+script.js:1261 AI Turn Flags: Object
+script.js:1271 AI turn completed for Player 2
+script.js:2900 Ending turn for Player 2 (Player 2)
+script.js:2926 Next turn is for Player 3 (Player 3)
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:2959 Starting AI turn for Player 3
+script.js:1160 Executing AI turn for Player 3 (Player 3)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 2 and 2 (total: 4)
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:1187 AI finished moving to position 4
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:5601 Player 3 (AI) landed on Income Tax.
+script.js:5610 Player 3 (AI) chose to pay $135 (10% of total worth) in Income Tax.
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:1196 AI finished handling property: Income Tax
+script.js:1261 AI Turn Flags: Object
+script.js:2896 Turn is still in progress. Cannot end turn yet.
+script.js:1271 AI turn completed for Player 3
+script.js:2900 Ending turn for Player 3 (Player 3)
+script.js:2926 Next turn is for Player 4 (Player 4)
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:2959 Starting AI turn for Player 4
+script.js:1160 Executing AI turn for Player 4 (Player 4)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 4 and 1 (total: 5)
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:1187 AI finished moving to position 5
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 4, Money: $1500
+script.js:1064 Handling property: Las Vegas Monorail
+script.js:1088 AI decision to buy Las Vegas Monorail: Yes
+script.js:1091 AI decided to buy Las Vegas Monorail
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:1196 AI finished handling property: Las Vegas Monorail
+script.js:1261 AI Turn Flags: Object
+script.js:1271 AI turn completed for Player 4
+script.js:2900 Ending turn for Player 4 (Player 4)
+script.js:2926 Next turn is for Player 1 (Player 1)
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:3003 Validating game state...
+script.js:3028 Game state validation complete
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 1, Money: $1350
+script.js:1058 Property Las Vegas Monorail already handled this turn. Skipping.
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:2962 Starting human turn for Player 1
+script.js:5231 Dice rolled: 6 and 1 (Total: 7)
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:2900 Ending turn for Player 1 (Player 1)
+script.js:2926 Next turn is for Player 2 (Player 2)
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:2959 Starting AI turn for Player 2
+script.js:1160 Executing AI turn for Player 2 (Player 2)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 3 and 3 (total: 6)
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:2896 Turn is still in progress. Cannot end turn yet.
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:1187 AI finished moving to position 13
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 2, Money: $1501
+script.js:1064 Handling property: Bet MGM
+script.js:1088 AI decision to buy Bet MGM: Yes
+script.js:1091 AI decided to buy Bet MGM
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:1196 AI finished handling property: Bet MGM
+script.js:1261 AI Turn Flags: Object
+script.js:1271 AI turn completed for Player 2
+script.js:2900 Ending turn for Player 2 (Player 2)
+script.js:2926 Next turn is for Player 3 (Player 3)
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 3, Money: $1215
+script.js:1058 Property Bet MGM already handled this turn. Skipping.
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:2959 Starting AI turn for Player 3
+script.js:1160 Executing AI turn for Player 3 (Player 3)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 1 and 1 (total: 2)
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:1187 AI finished moving to position 6
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 3, Money: $1215
+script.js:1064 Handling property: Speed Vegas Offroading
+script.js:1088 AI decision to buy Speed Vegas Offroading: Yes
+script.js:1091 AI decided to buy Speed Vegas Offroading
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:1196 AI finished handling property: Speed Vegas Offroading
+script.js:1261 AI Turn Flags: Object
+script.js:1271 AI turn completed for Player 3
+script.js:2900 Ending turn for Player 3 (Player 3)
+script.js:2926 Next turn is for Player 4 (Player 4)
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 4, Money: $1300
+script.js:1058 Property Speed Vegas Offroading already handled this turn. Skipping.
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:2959 Starting AI turn for Player 4
+script.js:1160 Executing AI turn for Player 4 (Player 4)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 2 and 5 (total: 7)
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:1187 AI finished moving to position 12
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 4, Money: $1300
+script.js:1064 Handling property: Electric Company
+script.js:1088 AI decision to buy Electric Company: No
+script.js:1094 AI decided not to buy Electric Company
+script.js:1196 AI finished handling property: Electric Company
+script.js:1261 AI Turn Flags: Object
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 4, Money: $1300
+script.js:1058 Property Electric Company already handled this turn. Skipping.
+script.js:1271 AI turn completed for Player 4
+script.js:2900 Ending turn for Player 4 (Player 4)
+script.js:2926 Next turn is for Player 1 (Player 1)
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:3003 Validating game state...
+script.js:3028 Game state validation complete
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:2962 Starting human turn for Player 1
+script.js:5231 Dice rolled: 2 and 5 (Total: 7)
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+Videos/free_parking_clip3.mp4:1 
+            
+            
+           Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+script.js:2900 Ending turn for Player 1 (Player 1)
+script.js:2926 Next turn is for Player 2 (Player 2)
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:2959 Starting AI turn for Player 2
+script.js:1160 Executing AI turn for Player 2 (Player 2)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 1 and 1 (total: 2)
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:1187 AI finished moving to position 15
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 2, Money: $1221
+script.js:1064 Handling property: Bellagio
+script.js:1088 AI decision to buy Bellagio: Yes
+script.js:1091 AI decided to buy Bellagio
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:1196 AI finished handling property: Bellagio
+script.js:1261 AI Turn Flags: Object
+script.js:1271 AI turn completed for Player 2
+script.js:2900 Ending turn for Player 2 (Player 2)
+script.js:2926 Next turn is for Player 3 (Player 3)
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 3, Money: $1075
+script.js:1058 Property Bellagio already handled this turn. Skipping.
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:2959 Starting AI turn for Player 3
+script.js:1160 Executing AI turn for Player 3 (Player 3)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 5 and 4 (total: 9)
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:1187 AI finished moving to position 15
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 3, Money: $1075
+script.js:1058 Property Bellagio already handled this turn. Skipping.
+script.js:1196 AI finished handling property: Bellagio
+script.js:1261 AI Turn Flags: Object
+script.js:1271 AI turn completed for Player 3
+script.js:2900 Ending turn for Player 3 (Player 3)
+script.js:2926 Next turn is for Player 4 (Player 4)
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 4, Money: $1300
+script.js:1058 Property Bellagio already handled this turn. Skipping.
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:2959 Starting AI turn for Player 4
+script.js:1160 Executing AI turn for Player 4 (Player 4)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 5 and 1 (total: 6)
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:1187 AI finished moving to position 18
+script.js:1251 AI landed on Free Parking
+script.js:4167 AI landed on Free Parking. Taking a break.
+script.js:1196 AI finished handling property: FREE PARKING
+script.js:1261 AI Turn Flags: Object
+script.js:1271 AI turn completed for Player 4
+script.js:2900 Ending turn for Player 4 (Player 4)
+script.js:2926 Next turn is for Player 1 (Player 1)
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:3003 Validating game state...
+script.js:3028 Game state validation complete
+script.js:2896 Turn is still in progress. Cannot end turn yet.
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:2962 Starting human turn for Player 1
+script.js:5231 Dice rolled: 1 and 6 (Total: 7)
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:2900 Ending turn for Player 1 (Player 1)
+script.js:2926 Next turn is for Player 2 (Player 2)
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:2959 Starting AI turn for Player 2
+script.js:1160 Executing AI turn for Player 2 (Player 2)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 2 and 1 (total: 3)
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:2896 Turn is still in progress. Cannot end turn yet.
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:1187 AI finished moving to position 18
+script.js:1251 AI landed on Free Parking
+script.js:4167 AI landed on Free Parking. Taking a break.
+script.js:1196 AI finished handling property: FREE PARKING
+script.js:1261 AI Turn Flags: Object
+script.js:1271 AI turn completed for Player 2
+script.js:2900 Ending turn for Player 2 (Player 2)
+script.js:2926 Next turn is for Player 3 (Player 3)
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:2896 Turn is still in progress. Cannot end turn yet.
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:2959 Starting AI turn for Player 3
+script.js:1160 Executing AI turn for Player 3 (Player 3)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 3 and 1 (total: 4)
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:1187 AI finished moving to position 19
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 3, Money: $1075
+script.js:1064 Handling property: Horseback Racing
+script.js:1088 AI decision to buy Horseback Racing: Yes
+script.js:1091 AI decided to buy Horseback Racing
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:1196 AI finished handling property: Horseback Racing
+script.js:1261 AI Turn Flags: Object
+script.js:1271 AI turn completed for Player 3
+script.js:2900 Ending turn for Player 3 (Player 3)
+script.js:2926 Next turn is for Player 4 (Player 4)
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 4, Money: $1300
+script.js:1058 Property Horseback Racing already handled this turn. Skipping.
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:2959 Starting AI turn for Player 4
+script.js:1160 Executing AI turn for Player 4 (Player 4)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 4 and 2 (total: 6)
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:1187 AI finished moving to position 24
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 4, Money: $1300
+script.js:1064 Handling property: Shriners Children's Open
+script.js:1088 AI decision to buy Shriners Children's Open: Yes
+script.js:1091 AI decided to buy Shriners Children's Open
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:1196 AI finished handling property: Shriners Children's Open
+script.js:1261 AI Turn Flags: Object
+script.js:1271 AI turn completed for Player 4
+script.js:2900 Ending turn for Player 4 (Player 4)
+script.js:2926 Next turn is for Player 1 (Player 1)
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:3003 Validating game state...
+script.js:3028 Game state validation complete
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 1, Money: $720
+script.js:1058 Property Shriners Children's Open already handled this turn. Skipping.
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:2962 Starting human turn for Player 1
+script.js:5231 Dice rolled: 3 and 6 (Total: 9)
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:2900 Ending turn for Player 1 (Player 1)
+script.js:2926 Next turn is for Player 2 (Player 2)
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:2959 Starting AI turn for Player 2
+script.js:1160 Executing AI turn for Player 2 (Player 2)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 6 and 4 (total: 10)
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:2896 Turn is still in progress. Cannot end turn yet.
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:1187 AI finished moving to position 28
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 2, Money: $921
+script.js:1064 Handling property: Caesars Palace
+script.js:1088 AI decision to buy Caesars Palace: No
+script.js:1094 AI decided not to buy Caesars Palace
+script.js:1196 AI finished handling property: Caesars Palace
+script.js:1261 AI Turn Flags: Object
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 2, Money: $921
+script.js:1058 Property Caesars Palace already handled this turn. Skipping.
+script.js:1271 AI turn completed for Player 2
+script.js:2900 Ending turn for Player 2 (Player 2)
+script.js:2926 Next turn is for Player 3 (Player 3)
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:2959 Starting AI turn for Player 3
+script.js:1160 Executing AI turn for Player 3 (Player 3)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 2 and 6 (total: 8)
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:1187 AI finished moving to position 27
+script.js:1240 AI landed on GO TO JAIL
+script.js:2896 Turn is still in progress. Cannot end turn yet.
+script.js:4158 AI landed on GO TO JAIL. Sending to Jail.
+script.js:2896 Turn is still in progress. Cannot end turn yet.
+script.js:1196 AI finished handling property: GO TO JAIL
+script.js:1261 AI Turn Flags: Object
+script.js:1271 AI turn completed for Player 3
+script.js:2900 Ending turn for Player 3 (Player 3)
+script.js:2926 Next turn is for Player 4 (Player 4)
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:2896 Turn is still in progress. Cannot end turn yet.
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:2959 Starting AI turn for Player 4
+script.js:1160 Executing AI turn for Player 4 (Player 4)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 2 and 1 (total: 3)
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:1187 AI finished moving to position 27
+script.js:1240 AI landed on GO TO JAIL
+script.js:2896 Turn is still in progress. Cannot end turn yet.
+script.js:4158 AI landed on GO TO JAIL. Sending to Jail.
+script.js:2896 Turn is still in progress. Cannot end turn yet.
+script.js:1196 AI finished handling property: GO TO JAIL
+script.js:1261 AI Turn Flags: Object
+script.js:1271 AI turn completed for Player 4
+script.js:2900 Ending turn for Player 4 (Player 4)
+script.js:2926 Next turn is for Player 1 (Player 1)
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:3003 Validating game state...
+script.js:3028 Game state validation complete
+script.js:2896 Turn is still in progress. Cannot end turn yet.
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:2962 Starting human turn for Player 1
+script.js:5231 Dice rolled: 6 and 1 (Total: 7)
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:1132 Player 1 paid $25 rent to Player 4
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:2900 Ending turn for Player 1 (Player 1)
+script.js:2926 Next turn is for Player 2 (Player 2)
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:2959 Starting AI turn for Player 2
+script.js:1160 Executing AI turn for Player 2 (Player 2)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 5 and 4 (total: 9)
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:1187 AI finished moving to position 1
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 2, Money: $1121
+script.js:1064 Handling property: Las Vegas Raiders
+script.js:1088 AI decision to buy Las Vegas Raiders: Yes
+script.js:1091 AI decided to buy Las Vegas Raiders
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:1196 AI finished handling property: Las Vegas Raiders
+script.js:1261 AI Turn Flags: Object
+script.js:1271 AI turn completed for Player 2
+script.js:2900 Ending turn for Player 2 (Player 2)
+script.js:2926 Next turn is for Player 3 (Player 3)
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:2952 Player 3 is in jail
+script.js:5290 Player 3 is in Jail. Skipping turn.
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 3, Money: $735
+script.js:1058 Property Las Vegas Raiders already handled this turn. Skipping.
+script.js:2900 Ending turn for Player 3 (Player 3)
+script.js:2926 Next turn is for Player 4 (Player 4)
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:2952 Player 4 is in jail
+script.js:5290 Player 4 is in Jail. Skipping turn.
+script.js:2900 Ending turn for Player 4 (Player 4)
+script.js:2926 Next turn is for Player 1 (Player 1)
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:3003 Validating game state...
+script.js:3028 Game state validation complete
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:2962 Starting human turn for Player 1
+script.js:5231 Dice rolled: 1 and 2 (Total: 3)
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:2900 Ending turn for Player 1 (Player 1)
+script.js:2926 Next turn is for Player 2 (Player 2)
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:2959 Starting AI turn for Player 2
+script.js:1160 Executing AI turn for Player 2 (Player 2)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 1 and 6 (total: 7)
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:2896 Turn is still in progress. Cannot end turn yet.
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:1187 AI finished moving to position 8
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 2, Money: $1021
+script.js:1064 Handling property: Las Vegas Golden Knights
+script.js:1100 Property is owned by Player 1. Rent is $16.
+script.js:1105 AI paid $16 rent to Player 1.
+script.js:1196 AI finished handling property: Las Vegas Golden Knights
+script.js:1261 AI Turn Flags: Object
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 2, Money: $1005
+script.js:1058 Property Las Vegas Golden Knights already handled this turn. Skipping.
+script.js:1271 AI turn completed for Player 2
+script.js:2900 Ending turn for Player 2 (Player 2)
+script.js:2926 Next turn is for Player 3 (Player 3)
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:2952 Player 3 is in jail
+script.js:5290 Player 3 is in Jail. Skipping turn.
+script.js:5295 Player 3 is released from Jail.
+script.js:2900 Ending turn for Player 3 (Player 3)
+script.js:2926 Next turn is for Player 4 (Player 4)
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:2952 Player 4 is in jail
+script.js:5290 Player 4 is in Jail. Skipping turn.
+script.js:5295 Player 4 is released from Jail.
+script.js:2900 Ending turn for Player 4 (Player 4)
+script.js:2926 Next turn is for Player 1 (Player 1)
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:3003 Validating game state...
+script.js:3028 Game state validation complete
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:2962 Starting human turn for Player 1
+script.js:5231 Dice rolled: 6 and 4 (Total: 10)
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+Videos/free_parking_clip3.mp4:1 
+            
+            
+           Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+script.js:2900 Ending turn for Player 1 (Player 1)
+script.js:2926 Next turn is for Player 2 (Player 2)
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:2959 Starting AI turn for Player 2
+script.js:1160 Executing AI turn for Player 2 (Player 2)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 1 and 1 (total: 2)
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:1187 AI finished moving to position 10
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 2, Money: $1005
+script.js:1064 Handling property: Maverick Helicopter Rides
+script.js:1088 AI decision to buy Maverick Helicopter Rides: Yes
+script.js:1091 AI decided to buy Maverick Helicopter Rides
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:1196 AI finished handling property: Maverick Helicopter Rides
+script.js:1261 AI Turn Flags: Object
+script.js:1271 AI turn completed for Player 2
+script.js:2900 Ending turn for Player 2 (Player 2)
+script.js:2926 Next turn is for Player 3 (Player 3)
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 3, Money: $735
+script.js:1058 Property Maverick Helicopter Rides already handled this turn. Skipping.
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:2959 Starting AI turn for Player 3
+script.js:1160 Executing AI turn for Player 3 (Player 3)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 3 and 2 (total: 5)
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:1187 AI finished moving to position 14
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 3, Money: $735
+script.js:1058 Property Las Vegas Monorail already handled this turn. Skipping.
+script.js:1196 AI finished handling property: Las Vegas Monorail
+script.js:1261 AI Turn Flags: Object
+script.js:1271 AI turn completed for Player 3
+script.js:2900 Ending turn for Player 3 (Player 3)
+script.js:2926 Next turn is for Player 4 (Player 4)
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 4, Money: $865
+script.js:1058 Property Las Vegas Monorail already handled this turn. Skipping.
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:2959 Starting AI turn for Player 4
+script.js:1160 Executing AI turn for Player 4 (Player 4)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 4 and 4 (total: 8)
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:1187 AI finished moving to position 17
+script.js:1221 AI landed on Community Cards.
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:1738 AI landed on Community Cards and drew the card: "Collect $200 from a casino bonus.".
+script.js:2896 Turn is still in progress. Cannot end turn yet.
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4148 AI landed on Community Cards.
+script.js:1726 A card has already been drawn this turn. Skipping.
+script.js:1196 AI finished handling property: Community Cards
+script.js:1261 AI Turn Flags: Object
+script.js:1271 AI turn completed for Player 4
+script.js:2900 Ending turn for Player 4 (Player 4)
+script.js:2926 Next turn is for Player 1 (Player 1)
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:3003 Validating game state...
+script.js:3028 Game state validation complete
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:2962 Starting human turn for Player 1
+script.js:5231 Dice rolled: 6 and 5 (Total: 11)
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:2900 Ending turn for Player 1 (Player 1)
+script.js:2926 Next turn is for Player 2 (Player 2)
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:2959 Starting AI turn for Player 2
+script.js:1160 Executing AI turn for Player 2 (Player 2)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 4 and 3 (total: 7)
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:2896 Turn is still in progress. Cannot end turn yet.
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:1187 AI finished moving to position 17
+script.js:1221 AI landed on Community Cards.
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:1738 AI landed on Community Cards and drew the card: "Collect $150 from a casino loyalty program.".
+script.js:2896 Turn is still in progress. Cannot end turn yet.
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4148 AI landed on Community Cards.
+script.js:1726 A card has already been drawn this turn. Skipping.
+script.js:1196 AI finished handling property: Community Cards
+script.js:1261 AI Turn Flags: Object
+script.js:1271 AI turn completed for Player 2
+script.js:2900 Ending turn for Player 2 (Player 2)
+script.js:2926 Next turn is for Player 3 (Player 3)
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:2959 Starting AI turn for Player 3
+script.js:1160 Executing AI turn for Player 3 (Player 3)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 1 and 4 (total: 5)
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:1187 AI finished moving to position 19
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 3, Money: $735
+script.js:1058 Property Horseback Racing already handled this turn. Skipping.
+script.js:1196 AI finished handling property: Horseback Racing
+script.js:1261 AI Turn Flags: Object
+script.js:1271 AI turn completed for Player 3
+script.js:2900 Ending turn for Player 3 (Player 3)
+script.js:2926 Next turn is for Player 4 (Player 4)
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 4, Money: $1065
+script.js:1058 Property Horseback Racing already handled this turn. Skipping.
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:2959 Starting AI turn for Player 4
+script.js:1160 Executing AI turn for Player 4 (Player 4)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 3 and 3 (total: 6)
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:1187 AI finished moving to position 23
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 4, Money: $1065
+script.js:1064 Handling property: Wynn Las Vegas
+script.js:1088 AI decision to buy Wynn Las Vegas: Yes
+script.js:1091 AI decided to buy Wynn Las Vegas
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:1196 AI finished handling property: Wynn Las Vegas
+script.js:1261 AI Turn Flags: Object
+script.js:1271 AI turn completed for Player 4
+script.js:2900 Ending turn for Player 4 (Player 4)
+script.js:2926 Next turn is for Player 1 (Player 1)
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:3003 Validating game state...
+script.js:3028 Game state validation complete
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 1, Money: $191
+script.js:1058 Property Wynn Las Vegas already handled this turn. Skipping.
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:2962 Starting human turn for Player 1
+script.js:5231 Dice rolled: 2 and 1 (Total: 3)
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:2900 Ending turn for Player 1 (Player 1)
+script.js:2926 Next turn is for Player 2 (Player 2)
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:2959 Starting AI turn for Player 2
+script.js:1160 Executing AI turn for Player 2 (Player 2)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 4 and 6 (total: 10)
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:1187 AI finished moving to position 27
+script.js:1240 AI landed on GO TO JAIL
+script.js:2896 Turn is still in progress. Cannot end turn yet.
+script.js:4158 AI landed on GO TO JAIL. Sending to Jail.
+script.js:2896 Turn is still in progress. Cannot end turn yet.
+script.js:1196 AI finished handling property: GO TO JAIL
+script.js:1261 AI Turn Flags: Object
+script.js:1271 AI turn completed for Player 2
+script.js:2900 Ending turn for Player 2 (Player 2)
+script.js:2926 Next turn is for Player 3 (Player 3)
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:2896 Turn is still in progress. Cannot end turn yet.
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:2959 Starting AI turn for Player 3
+script.js:1160 Executing AI turn for Player 3 (Player 3)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 4 and 2 (total: 6)
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:1187 AI finished moving to position 25
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 3, Money: $735
+script.js:1064 Handling property: Sphere
+script.js:1100 Property is owned by Player 1. Rent is $48.
+script.js:1105 AI paid $48 rent to Player 1.
+script.js:1196 AI finished handling property: Sphere
+script.js:1261 AI Turn Flags: Object
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 3, Money: $687
+script.js:1058 Property Sphere already handled this turn. Skipping.
+script.js:1271 AI turn completed for Player 3
+script.js:2900 Ending turn for Player 3 (Player 3)
+script.js:2926 Next turn is for Player 4 (Player 4)
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:2959 Starting AI turn for Player 4
+script.js:1160 Executing AI turn for Player 4 (Player 4)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 2 and 3 (total: 5)
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:1187 AI finished moving to position 28
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 4, Money: $625
+script.js:1058 Property Caesars Palace already handled this turn. Skipping.
+script.js:1196 AI finished handling property: Caesars Palace
+script.js:1261 AI Turn Flags: Object
+script.js:1271 AI turn completed for Player 4
+script.js:2900 Ending turn for Player 4 (Player 4)
+script.js:2926 Next turn is for Player 1 (Player 1)
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:3003 Validating game state...
+script.js:3028 Game state validation complete
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 1, Money: $239
+script.js:1058 Property Caesars Palace already handled this turn. Skipping.
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:2962 Starting human turn for Player 1
+script.js:5231 Dice rolled: 4 and 2 (Total: 6)
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:2900 Ending turn for Player 1 (Player 1)
+script.js:2926 Next turn is for Player 2 (Player 2)
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:2952 Player 2 is in jail
+script.js:5290 Player 2 is in Jail. Skipping turn.
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:2900 Ending turn for Player 2 (Player 2)
+script.js:2926 Next turn is for Player 3 (Player 3)
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:2959 Starting AI turn for Player 3
+script.js:1160 Executing AI turn for Player 3 (Player 3)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 3 and 2 (total: 5)
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:1187 AI finished moving to position 30
+script.js:1212 AI landed on Chance.
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:1738 AI landed on Chance and drew the card: "Pay $150 for a luxury spa treatment.".
+script.js:2896 Turn is still in progress. Cannot end turn yet.
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4148 AI landed on Chance.
+script.js:1726 A card has already been drawn this turn. Skipping.
+script.js:1196 AI finished handling property: Chance
+script.js:1261 AI Turn Flags: Object
+script.js:1271 AI turn completed for Player 3
+script.js:2900 Ending turn for Player 3 (Player 3)
+script.js:2926 Next turn is for Player 4 (Player 4)
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:2959 Starting AI turn for Player 4
+script.js:1160 Executing AI turn for Player 4 (Player 4)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 4 and 2 (total: 6)
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:1187 AI finished moving to position 34
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 4, Money: $625
+script.js:1064 Handling property: The Cosmopolitan
+script.js:1100 Property is owned by Player 1. Rent is $56.
+script.js:1105 AI paid $56 rent to Player 1.
+script.js:1196 AI finished handling property: The Cosmopolitan
+script.js:1261 AI Turn Flags: Object
+script.js:1045 handleAIPropertyDecision called for property: Object
+script.js:1054 Current AI Player: Player 4, Money: $569
+script.js:1058 Property The Cosmopolitan already handled this turn. Skipping.
+script.js:1271 AI turn completed for Player 4
+script.js:2900 Ending turn for Player 4 (Player 4)
+script.js:2926 Next turn is for Player 1 (Player 1)
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:3003 Validating game state...
+script.js:3028 Game state validation complete
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:2962 Starting human turn for Player 1
+script.js:5231 Dice rolled: 5 and 6 (Total: 11)
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:1132 Player 1 paid $28 rent to Player 2
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:2900 Ending turn for Player 1 (Player 1)
+script.js:2926 Next turn is for Player 2 (Player 2)
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:4629 Checking if Player 2 (Player 2) is AI: true
+script.js:2952 Player 2 is in jail
+script.js:5290 Player 2 is in Jail. Skipping turn.
+script.js:5295 Player 2 is released from Jail.
+script.js:2900 Ending turn for Player 2 (Player 2)
+script.js:2926 Next turn is for Player 3 (Player 3)
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:2959 Starting AI turn for Player 3
+script.js:1160 Executing AI turn for Player 3 (Player 3)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 3 and 5 (total: 8)
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:1187 AI finished moving to position 2
+script.js:1221 AI landed on Community Cards.
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:1738 AI landed on Community Cards and drew the card: "Pay $100 for a parking violation.".
+script.js:2896 Turn is still in progress. Cannot end turn yet.
+script.js:4629 Checking if Player 3 (Player 3) is AI: true
+script.js:4148 AI landed on Community Cards.
+script.js:1726 A card has already been drawn this turn. Skipping.
+script.js:1196 AI finished handling property: Community Cards
+script.js:1261 AI Turn Flags: {hasRolledDice: true, hasMovedToken: true, hasHandledProperty: true, hasDrawnCard: true, isTurnInProgress: true}
+script.js:1271 AI turn completed for Player 3
+script.js:2900 Ending turn for Player 3 (Player 3)
+script.js:2926 Next turn is for Player 4 (Player 4)
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:2959 Starting AI turn for Player 4
+script.js:1160 Executing AI turn for Player 4 (Player 4)
+script.js:1176 AI rolling dice...
+script.js:1181 AI rolled 1 and 2 (total: 3)
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:4629 Checking if Player 4 (Player 4) is AI: true
+script.js:1187 AI finished moving to position 1
+script.js:1045 handleAIPropertyDecision called for property: {name: 'Las Vegas Raiders', price: 100, rent: 10, owner: {…}, address: '', …}
+script.js:1054 Current AI Player: Player 4, Money: $769
+script.js:1058 Property Las Vegas Raiders already handled this turn. Skipping.
+script.js:1196 AI finished handling property: Las Vegas Raiders
+script.js:1261 AI Turn Flags: {hasRolledDice: true, hasMovedToken: true, hasHandledProperty: true, hasDrawnCard: false, isTurnInProgress: true}
+script.js:1271 AI turn completed for Player 4
+script.js:2900 Ending turn for Player 4 (Player 4)
+script.js:2926 Next turn is for Player 1 (Player 1)
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:3003 Validating game state...
+script.js:3028 Game state validation complete
+script.js:1045 handleAIPropertyDecision called for property: {name: 'Las Vegas Raiders', price: 100, rent: 10, owner: {…}, address: '', …}
+script.js:1054 Current AI Player: Player 1, Money: $567
+script.js:1058 Property Las Vegas Raiders already handled this turn. Skipping.
+script.js:4629 Checking if Player 1 (Player 1) is AI: false
+script.js:2962 Starting human turn for Player 1

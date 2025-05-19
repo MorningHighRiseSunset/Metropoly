@@ -1,0 +1,11 @@
+Model Information:
+* title:	Helicopter
+* source:	https://sketchfab.com/3d-models/helicopter-5052016c9a3b4f3c82c206974aba3fbf
+* author:	surveytown (https://sketchfab.com/surveytown)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Helicopter" (https://sketchfab.com/3d-models/helicopter-5052016c9a3b4f3c82c206974aba3fbf) by surveytown (https://sketchfab.com/surveytown) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

@@ -1,0 +1,8 @@
+Model Information:
+* title:	Woman Model
+* source:	https://sketchfab.com/3d-models/woman-model-f7ba462196e94f2c9b68a4eea7f0a661
+* author:	Gin Kern Creative Cloud (https://sketchfab.com/GinKern)
+
+Model License:
+* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
+* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works

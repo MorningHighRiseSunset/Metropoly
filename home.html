@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vegas Night</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #play-button {
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 20px 40px;
+            font-size: 24px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            border: 2px solid #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: background-color 0.3s;
+        }
+        #play-button:hover {
+            background-color: rgba(0, 0, 0, 0.9);
+        }
+    </style>
+</head>
+<body>
+    <div id="title">🎰 Vegas Metropoly 🎰</div>
+    <div id="play-button">Play</div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="vegasScene.js"></script>
+</body>
+</html>

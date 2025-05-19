@@ -1,0 +1,11 @@
+Model Information:
+* title:	Speed Boat 05
+* source:	https://sketchfab.com/3d-models/speed-boat-05-4642235bd4b94480a1cd797484fb879a
+* author:	agt14032013 (https://sketchfab.com/agt14032013)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Speed Boat 05" (https://sketchfab.com/3d-models/speed-boat-05-4642235bd4b94480a1cd797484fb879a) by agt14032013 (https://sketchfab.com/agt14032013) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
