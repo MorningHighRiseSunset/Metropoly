@@ -86,7 +86,7 @@ const images = [
     // Brothel
     // Bet MGM
     //"Images/Screenshot 2024-12-12 033702.png", 
-    "Images/unnamed.gif",// Brothel
+    "",// Brothel
     // Bellagio
     "Images/raidersimage.png", // Las Vegas Raiders
     "https://s.abcnews.com/images/Sports/las-vegas-aces-gty-thg-180808_hpMain_16x9_992.jpg", // Las Vegas Aces
