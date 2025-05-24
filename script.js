@@ -3182,12 +3182,11 @@ function createPlayerTokenSelectionUI(playerIndex) {
 
     const instruction = document.createElement("p");
     instruction.textContent =
-        "Pick 2, 3, or 4 tokens to play. Tokens need to be selected (human or computer AI).\n" +
-        "Click to enable PC for computer.\n" +
-        "Single player: select and click on a token for Player One.\n" +
-        "For Players 2, 3, and 4, click Enable PC on a different token.\n" +
-        "When you have chosen 2–4 tokens, click the \"Start Game\" button.\n" +
-        "The game will begin when at least 2 tokens are selected.";
+    "Pick 2, 3, or 4 tokens to play. Tokens can be assigned to a human or AI player.\n" +
+    "Single player: Select a token for Player One, then enable at least one AI token. Click 'Start Game' to begin.\n" +
+    "For multiplayer: Click 'Enable PC' on any token to assign it to a computer.\n" +
+    "Assign human or AI players to tokens for Players 2, 3, and 4 as needed.\n" +
+    "Once 2 to 4 tokens are selected, click 'Start Game' to begin.";
     instruction.style.marginBottom = "15px";
     tokenSelectionUI.appendChild(instruction);
 
