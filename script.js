@@ -6337,7 +6337,7 @@ function handleTurnError(error) {
     // Show feedback to user
     showFeedback("An error occurred. Please try again.");
 }
-
+/*
 // Function to create a UI for testing mode
 function createTestingModeUI() {
     const testingModeContainer = document.createElement('div');
@@ -6400,6 +6400,6 @@ function createTestingModeUI() {
 
 // Call this function to initialize the testing mode UI
 createTestingModeUI();
-
+*/
 
 init();
