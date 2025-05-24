@@ -6337,6 +6337,41 @@ function handleTurnError(error) {
     // Show feedback to user
     showFeedback("An error occurred. Please try again.");
 }
+
+function showSuggestionNotification() {
+    // Prevent multiple notifications stacking
+    if (document.getElementById("suggestion-notification")) return;
+
+    const notif = document.createElement("div");
+    notif.id = "suggestion-notification";
+    notif.textContent = "Email: Maurice13stu@gmail.com for suggestions";
+    notif.style.position = "fixed";
+    notif.style.bottom = "30px";
+    notif.style.right = "30px";
+    notif.style.background = "rgba(40,40,40,0.95)";
+    notif.style.color = "#fff";
+    notif.style.padding = "16px 28px";
+    notif.style.borderRadius = "8px";
+    notif.style.boxShadow = "0 4px 16px rgba(0,0,0,0.25)";
+    notif.style.fontSize = "16px";
+    notif.style.zIndex = "9999";
+    notif.style.opacity = "0";
+    notif.style.transition = "opacity 0.4s";
+
+    document.body.appendChild(notif);
+    setTimeout(() => notif.style.opacity = "1", 50);
+
+    setTimeout(() => {
+        notif.style.opacity = "0";
+        setTimeout(() => notif.remove(), 400);
+    }, 5000); // Show for 5 seconds
+}
+
+// Show every 4 minutes (240000 ms)
+setInterval(showSuggestionNotification, 240000);
+
+// Optionally, show once shortly after page load
+setTimeout(showSuggestionNotification, 10000);
 /*
 // Function to create a UI for testing mode
 function createTestingModeUI() {
