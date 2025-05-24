@@ -367,7 +367,7 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [70, 200, 550, 750],
         rentWithHotel: 950,
-        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+        videoUrls: [ "Videos/Offroading 1.mp4",
 
         ],
     },
@@ -420,7 +420,10 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [110, 330, 800, 975],
         rentWithHotel: 1150,
-        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+        videoUrls: [ 
+            "Videos/MavHeli 1.mp4",
+            "Videos/MavHeli 2.mp4",
+            "Videos/MavHeli 3.mp4",
 
         ],
     },
@@ -673,8 +676,11 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [210, 625, 1450, 1750],
         rentWithHotel: 2050,
-        videoUrls: [ "Videos/Raise The Stakes Docuseries ｜ Chapter 1.mp4",
-
+        videoUrls: [ 
+            "Videos/WNBAHL1.mp4",
+            "Videos/WNBAHL2.mp4",
+            "Videos/WNBAHL3.mp4",
+            "Videos/WNBAHL4.mp4",
         ],
     },
     {
@@ -721,8 +727,10 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [270, 825, 1950, 2150],
         rentWithHotel: 2350,
-        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
-
+        videoUrls: [ 
+            "Videos/Shriners 1.mp4",
+            "Videos/Shriners 3.mp4",
+            "Videos/Shriners 4.mp4",
         ],
     }
 ];
@@ -1020,10 +1028,24 @@ function toggleAI(token, button) {
 
 function updateStartButtonVisibility() {
     const startButton = tokenSelectionUI.querySelector('.action-button');
-    if (humanPlayerCount + aiPlayers.size === 4) {
-        startButton.style.display = "block"; // Show the button only when 4 tokens are selected
+    const arrowUp = startButton.querySelector('.arrow-flash:nth-child(2)');
+    const arrowDown = startButton.querySelector('.arrow-flash:nth-child(3)');
+    const count = humanPlayerCount + aiPlayers.size;
+
+    startButton.style.display = "block"; // Always show the button
+
+    if (count === 4) {
+        startButton.disabled = false;
+        startButton.style.opacity = "1";
+        startButton.classList.add("flash-active");
+        if (arrowUp) arrowUp.style.display = "block";
+        if (arrowDown) arrowDown.style.display = "block";
     } else {
-        startButton.style.display = "none"; // Hide the button otherwise
+        startButton.disabled = true;
+        startButton.style.opacity = "0.7";
+        startButton.classList.remove("flash-active");
+        if (arrowUp) arrowUp.style.display = "none";
+        if (arrowDown) arrowDown.style.display = "none";
     }
 }
 
@@ -3159,7 +3181,13 @@ function createPlayerTokenSelectionUI(playerIndex) {
     tokenSelectionUI.appendChild(title);
 
     const instruction = document.createElement("p");
-    instruction.textContent = "Select up to 4 tokens for the players. You can enable AI for any token by clicking 'Enable PC'. Once all tokens are selected, click 'Start Game' to begin!";
+    instruction.textContent =
+        "Pick 2, 3, or 4 tokens to play. Tokens need to be selected (human or computer AI).\n" +
+        "Click to enable PC for computer.\n" +
+        "Single player: select and click on a token for Player One.\n" +
+        "For Players 2, 3, and 4, click Enable PC on a different token.\n" +
+        "When you have chosen 2–4 tokens, click the \"Start Game\" button.\n" +
+        "The game will begin when at least 2 tokens are selected.";
     instruction.style.marginBottom = "15px";
     tokenSelectionUI.appendChild(instruction);
 
@@ -3178,17 +3206,94 @@ function createPlayerTokenSelectionUI(playerIndex) {
     startButton.textContent = "Start Game";
     startButton.className = "action-button";
     startButton.style.marginTop = "15px";
+    startButton.disabled = true; // Start disabled
+    startButton.style.opacity = "0.7";
     startButton.onclick = finalizePlayerSelection;
-    startButton.style.display = "none";
+
+    // Add flashing effect and arrows
+    startButton.style.position = "relative";
+    startButton.style.transition = "box-shadow 0.3s, background 0.3s";
+    startButton.style.boxShadow = "0 0 0 0 #fff";
+    startButton.style.background = "#444";
+
+    // Create arrow elements
+    const arrowUp = document.createElement("div");
+    arrowUp.innerHTML = "&#8595;";
+    arrowUp.style.position = "absolute";
+    arrowUp.style.top = "-30px";
+    arrowUp.style.left = "50%";
+    arrowUp.style.transform = "translateX(-50%)";
+    arrowUp.style.fontSize = "28px";
+    arrowUp.style.color = "#ff0";
+    arrowUp.style.display = "none";
+    arrowUp.className = "arrow-flash";
+
+    const arrowDown = document.createElement("div");
+    arrowDown.innerHTML = "&#8593;";
+    arrowDown.style.position = "absolute";
+    arrowDown.style.bottom = "-30px";
+    arrowDown.style.left = "50%";
+    arrowDown.style.transform = "translateX(-50%) rotate(180deg)";
+    arrowDown.style.fontSize = "28px";
+    arrowDown.style.color = "#ff0";
+    arrowDown.style.display = "none";
+    arrowDown.className = "arrow-flash";
+
+    startButton.appendChild(arrowUp);
+    startButton.appendChild(arrowDown);
+
+    // Add flashing animation via CSS
+    const style = document.createElement("style");
+    style.textContent = `
+        @keyframes flashButton {
+            0% { box-shadow: 0 0 10px 2px #fff, 0 0 30px 10px #ff0; background: #444; }
+            50% { box-shadow: 0 0 30px 10px #ff0, 0 0 10px 2px #fff; background: #666; }
+            100% { box-shadow: 0 0 10px 2px #fff, 0 0 30px 10px #ff0; background: #444; }
+        }
+        .flash-active {
+            animation: flashButton 1s infinite;
+        }
+        .arrow-flash {
+            animation: arrowFlash 1s infinite;
+        }
+        @keyframes arrowFlash {
+            0% { color: #ff0; opacity: 1; }
+            50% { color: #fff; opacity: 0.6; }
+            100% { color: #ff0; opacity: 1; }
+        }
+    `;
+    document.head.appendChild(style);
 
     tokenSelectionUI.appendChild(tokenGrid);
     tokenSelectionUI.appendChild(startButton);
     document.body.appendChild(tokenSelectionUI);
+
+    // Update button state on load
+    updateStartButtonVisibility();
+
+    // Overwrite updateStartButtonVisibility to handle flashing and arrows
+    window.updateStartButtonVisibility = function () {
+        const count = humanPlayerCount + aiPlayers.size;
+        if (count >= 2 && count <= 4) {
+            startButton.disabled = false;
+            startButton.style.opacity = "1";
+            startButton.classList.add("flash-active");
+            arrowUp.style.display = "block";
+            arrowDown.style.display = "block";
+        } else {
+            startButton.disabled = true;
+            startButton.style.opacity = "0.7";
+            startButton.classList.remove("flash-active");
+            arrowUp.style.display = "none";
+            arrowDown.style.display = "none";
+        }
+    };
 }
 
 function finalizePlayerSelection() {
-    if (humanPlayerCount + aiPlayers.size !== 4) {
-        alert("Please ensure exactly 4 tokens (players or AI) are selected to start the game.");
+    const totalPlayers = humanPlayerCount + aiPlayers.size;
+    if (totalPlayers < 2 || totalPlayers > 4) {
+        showNotification("You must select 2, 3, or 4 tokens (players or AI) before starting the game!");
         return;
     }
 
@@ -3295,6 +3400,8 @@ function finalizePlayerSelection() {
         position: p.currentPosition,
         hasToken: !!p.selectedToken
     })));
+
+    console.log('Finalizing player selection...');
 }
 
 function isJailCorner(startPos, endPos) {
@@ -6232,7 +6339,6 @@ function handleTurnError(error) {
     showFeedback("An error occurred. Please try again.");
 }
 
-/*
 // Function to create a UI for testing mode
 function createTestingModeUI() {
     const testingModeContainer = document.createElement('div');
@@ -6295,6 +6401,6 @@ function createTestingModeUI() {
 
 // Call this function to initialize the testing mode UI
 createTestingModeUI();
-*/
+
 
 init();
