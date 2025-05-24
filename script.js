@@ -1034,7 +1034,7 @@ function updateStartButtonVisibility() {
 
     startButton.style.display = "block"; // Always show the button
 
-    if (count === 4) {
+    if (count >= 2 && count <= 4) {
         startButton.disabled = false;
         startButton.style.opacity = "1";
         startButton.classList.add("flash-active");
