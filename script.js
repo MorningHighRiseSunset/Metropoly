@@ -3187,7 +3187,7 @@ function createPlayerTokenSelectionUI(playerIndex) {
     "For multiplayer: Click 'Enable PC' on any token to assign it to a computer.\n" +
     "Assign human or AI players to tokens for Players 2, 3, and 4 as needed.\n" +
     "Once 2 to 4 tokens are selected, click 'Start Game' to begin.";
-    instruction.style.marginBottom = "15px";
+    instruction.style.marginBottom = "16px";
     tokenSelectionUI.appendChild(instruction);
 
     const tokenGrid = document.createElement("div");
