@@ -112,48 +112,35 @@ document.getElementById('play-button').addEventListener('click', () => {
     }, 500);
 });
 
+// Instructions logic for modal
 function setVegasTokenInstructions() {
     window.vegasTokenInstructions =
-        "Pick 2, 3, or 4 tokens to play. Tokens can be assigned to a human or AI player.\n" +
-        "Single player: Select a token for Player One, then enable at least one AI token. Click 'Start Game' to begin.\n" +
-        "For multiplayer: Click 'Enable PC' on any token to assign it to a computer.\n" +
-        "Assign human or AI players to tokens for Players 2, 3, and 4 as needed.\n" +
+        "Pick 2, 3, or 4 tokens to play. Tokens can be assigned to a human or AI player.\n\n" +
+        "Single player: Select a token for Player One, then enable at least one AI token. Click 'Start Game' to begin.\n\n" +
+        "For multiplayer: Click 'Enable PC' on any token to assign it to a computer.\n\n" +
+        "Assign human or AI players to tokens for Players 2, 3, and 4 as needed.\n\n" +
         "Once 2 to 4 tokens are selected, click 'Start Game' to begin.";
 }
 
-function showVegasTokenInstructions() {
-    // Remove existing instructions if present
-    const existing = document.getElementById('vegas-token-instructions');
-    if (existing) existing.remove();
-
-    // Find the play button
-    const playButton = document.getElementById('play-button');
-    if (!playButton) return;
-
-    // Get play button position
-    const rect = playButton.getBoundingClientRect();
-
-    // Create and style the instructions element
-    const instruction = document.createElement('div');
-    instruction.id = 'vegas-token-instructions';
-    instruction.style.position = 'absolute';
-    instruction.style.left = `${rect.left + rect.width / 2}px`;
-    instruction.style.top = `${rect.top - 140}px`; // 70px above the button
-    instruction.style.transform = 'translateX(-50%)';
-    instruction.style.background = 'rgba(40,40,40,0.95)';
-    instruction.style.color = '#fff';
-    instruction.style.padding = '18px 32px';
-    instruction.style.borderRadius = '10px';
-    instruction.style.boxShadow = '0 4px 16px rgba(0,0,0,0.25)';
-    instruction.style.fontSize = '17px';
-    instruction.style.zIndex = '10001';
-    instruction.style.whiteSpace = 'pre-line';
-    instruction.textContent = window.vegasTokenInstructions || '';
-
-    // Add to body
-    document.body.appendChild(instruction);
+function setupInstructionsModal() {
+    setVegasTokenInstructions();
+    const btn = document.getElementById('instructions-button');
+    const modal = document.getElementById('instructions-modal');
+    const close = document.getElementById('close-instructions');
+    const text = document.getElementById('instructions-text');
+    if (btn && modal && close && text) {
+        btn.onclick = () => {
+            text.textContent = window.vegasTokenInstructions || '';
+            modal.classList.add('show');
+        };
+        close.onclick = () => {
+            modal.classList.remove('show');
+        };
+        modal.onclick = (e) => {
+            if (e.target === modal) modal.classList.remove('show');
+        };
+    }
 }
 
-// Call this after setting the instructions
-setVegasTokenInstructions();
-showVegasTokenInstructions();
+// Call after DOM is loaded
+window.addEventListener('DOMContentLoaded', setupInstructionsModal);
