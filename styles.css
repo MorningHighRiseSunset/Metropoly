@@ -1453,3 +1453,11 @@
     padding: 6px;
   }
 }
+
+#instructions-modal {
+    pointer-events: none;
+}
+#instructions-modal.show {
+    display: flex;
+    pointer-events: auto;
+}
