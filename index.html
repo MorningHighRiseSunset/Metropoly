@@ -2,53 +2,35 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Metropoly</title>
+    <title>Vegas Night</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        body { 
-            margin: 0; 
-            background: #000; 
-            overflow: hidden;
+        body { margin: 0; overflow: hidden; }
+        #play-button {
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 20px 40px;
+            font-size: 24px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            border: 2px solid #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: background-color 0.3s;
+        }
+        #play-button:hover {
+            background-color: rgba(0, 0, 0, 0.9);
         }
     </style>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8MD99D3HCT"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-8MD99D3HCT');
-    </script>
 </head>
-<div id="money-info" class="money-display">
-    <p id="player-money">Player 1 Money: $1500</p>
-</div>  
-<!-- HTML Element for Trade UI -->
-<div id="trade-ui" style="display: none;">
-    <h3>Trade Properties</h3>
-    <select id="from-player-select"></select>
-    <select id="to-player-select"></select>
-    <button id="trade-button">Propose Trade</button>
-    <div id="trade-status"></div>
-</div>
-<div id="edit-mode-ui">
-    <p id="x-status">X-axis movement: Enabled</p>
-    <p id="z-status">Z-axis movement: Enabled</p>
-    <p id="final-position">Position: </p>
-    <button id="copy-position-button">Copy Position</button>
-</div>
-<div id="property-management-board">
-    <h2>My Properties</h2>
-    <div id="property-list"></div>
-</div>
-<div id="other-players-board">
-  <h2>Other Players' Properties</h2>
-  <div id="other-players-list"></div>
-</div>
 <body>
-    <!-- Your main script -->
-    <script type="module" src="script.js"></script>
+    <div id="title">🎰 Vegas Metropoly 🎰</div>
+    <div id="play-button">Play</div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="vegasScene.js"></script>
 </body>
 </html>

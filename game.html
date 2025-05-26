@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metropoly</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body { 
+            margin: 0; 
+            background: #000; 
+            overflow: hidden;
+        }
+    </style>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8MD99D3HCT"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-8MD99D3HCT');
+    </script>
+</head>
+<div id="money-info" class="money-display">
+    <p id="player-money">Player 1 Money: $1500</p>
+</div>  
+<!-- HTML Element for Trade UI -->
+<div id="trade-ui" style="display: none;">
+    <h3>Trade Properties</h3>
+    <select id="from-player-select"></select>
+    <select id="to-player-select"></select>
+    <button id="trade-button">Propose Trade</button>
+    <div id="trade-status"></div>
+</div>
+<div id="edit-mode-ui">
+    <p id="x-status">X-axis movement: Enabled</p>
+    <p id="z-status">Z-axis movement: Enabled</p>
+    <p id="final-position">Position: </p>
+    <button id="copy-position-button">Copy Position</button>
+</div>
+<div id="property-management-board">
+    <h2>My Properties</h2>
+    <div id="property-list"></div>
+</div>
+<div id="other-players-board">
+  <h2>Other Players' Properties</h2>
+  <div id="other-players-list"></div>
+</div>
+<body>
+    <!-- Your main script -->
+    <script type="module" src="script.js"></script>
+</body>
+</html>
