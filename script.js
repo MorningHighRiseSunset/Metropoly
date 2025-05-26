@@ -67,6 +67,50 @@ let hasMovedToken = false; // Tracks if the token has been moved
 let hasHandledProperty = false; // Tracks if the property has been handled
 let isAIProcessing = false;
 let turnCounter = 0;
+let tokenSelectionShown = false;
+
+function isMobile() {
+  return window.innerWidth <= 600;
+}
+
+function showTokenSelectionUI() {
+  const tokenUI = document.querySelector('.token-selection-ui');
+  if (tokenUI) {
+    tokenUI.style.display = 'flex';
+    tokenSelectionShown = true;
+  }
+}
+
+function hideTokenSelectionUI() {
+  const tokenUI = document.querySelector('.token-selection-ui');
+  if (tokenUI) {
+    tokenUI.style.display = 'none';
+    tokenSelectionShown = false;
+  }
+}
+
+let touchStartX = null;
+let touchStartY = null;
+document.addEventListener('touchstart', function(e) {
+  if (!isMobile() || gameStarted) return;
+  if (e.touches.length === 1) {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }
+});
+document.addEventListener('touchend', function(e) {
+  if (!isMobile() || gameStarted || tokenSelectionShown) return;
+  if (touchStartX === null || touchStartY === null) return;
+  const touchEndX = e.changedTouches[0].clientX;
+  const touchEndY = e.changedTouches[0].clientY;
+  const dx = touchEndX - touchStartX;
+  const dy = Math.abs(touchEndY - touchStartY);
+  if (dx < -50 && dy < 50) { // swipe left
+    showTokenSelectionUI();
+  }
+  touchStartX = null;
+  touchStartY = null;
+});
 
 // Initialize audio with proper settings
 let accelerationSound = new Audio('');
@@ -5190,6 +5234,8 @@ function resetGame() {
 }
 
 function startGame() {
+      gameStarted = true;
+    hideTokenSelectionUI();
     window.location.href = 'home.html'; // Redirects back to home screen
 }
 
