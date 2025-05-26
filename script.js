@@ -3180,16 +3180,6 @@ function createPlayerTokenSelectionUI(playerIndex) {
     title.style.fontSize = "18px";
     tokenSelectionUI.appendChild(title);
 
-    const instruction = document.createElement("p");
-    instruction.textContent =
-    "Pick 2, 3, or 4 tokens to play. Tokens can be assigned to a human or AI player.\n" +
-    "Single player: Select a token for Player One, then enable at least one AI token. Click 'Start Game' to begin.\n" +
-    "For multiplayer: Click 'Enable PC' on any token to assign it to a computer.\n" +
-    "Assign human or AI players to tokens for Players 2, 3, and 4 as needed.\n" +
-    "Once 2 to 4 tokens are selected, click 'Start Game' to begin.";
-    instruction.style.marginBottom = "17px";
-    tokenSelectionUI.appendChild(instruction);
-
     const tokenGrid = document.createElement("div");
     tokenGrid.style.display = "grid";
     tokenGrid.style.gridTemplateColumns = "repeat(2, 1fr)";
