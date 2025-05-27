@@ -5637,7 +5637,8 @@ function moveTokenToNewPosition(spaces, callback) {
 function showDiceResult(total, roll1, roll2) {
     const resultDisplay = document.createElement('div');
     resultDisplay.className = 'dice-result';
-    resultDisplay.textContent = `${isCurrentPlayerAI() ? 'AI ' : ''}Rolled an ${total}!`;
+    const article = [8, 11, 18].includes(total) ? 'an' : 'a';
+    resultDisplay.textContent = `${isCurrentPlayerAI() ? 'AI ' : ''}Rolled ${article} ${total}!`;
     document.body.appendChild(resultDisplay);
 
     setTimeout(() => {
