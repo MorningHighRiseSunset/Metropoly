@@ -3181,10 +3181,16 @@ function createPlayerTokenSelectionUI(playerIndex) {
     tokenSelectionUI.appendChild(title);
 
     const tokenGrid = document.createElement("div");
-    tokenGrid.style.display = "grid";
-    tokenGrid.style.gridTemplateColumns = "repeat(2, 1fr)";
-    tokenGrid.style.gap = "8px";
-    tokenGrid.style.padding = "5px";
+    tokenGrid.style.display = (window.innerWidth < 700) ? "flex" : "grid";
+    tokenGrid.style.flexDirection = (window.innerWidth < 700) ? "column" : "";
+    tokenGrid.style.gridTemplateColumns = (window.innerWidth < 700) ? "" : "repeat(2, 1fr)";
+    tokenGrid.style.gap = (window.innerWidth < 700) ? "2vw" : "8px";
+    tokenGrid.style.padding = (window.innerWidth < 700) ? "2vw" : "5px";
+
+    if (window.innerWidth < 700) {
+    tokenGrid.style.maxHeight = "60vh";
+    tokenGrid.style.overflowY = "auto";
+}
 
     availableTokens.forEach((token, index) => {
         const tokenButton = createTokenButton(token, index);

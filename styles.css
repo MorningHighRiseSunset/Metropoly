@@ -1461,3 +1461,106 @@
     display: flex;
     pointer-events: auto;
 }
+
+/* --- Add or modify these styles at the end of your CSS file --- */
+
+/* Responsive token selection UI for mobile */
+@media (max-width: 700px) {
+  .token-selection-ui,
+  #token-selection-ui,
+  [class*="token-selection-ui"] {
+    width: 98vw !important;
+    max-width: 98vw !important;
+    left: 1vw !important;
+    right: 1vw !important;
+    top: 1vh !important;
+    padding: 6vw 2vw 2vw 2vw !important;
+    border-radius: 12px !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+    z-index: 1000;
+    background: rgba(30,30,30,0.98) !important;
+    overflow: visible;
+  }
+  .token-selection-ui h2,
+  #token-selection-ui h2 {
+    font-size: 5vw !important;
+    margin-bottom: 2vw !important;
+    text-align: center;
+  }
+  .token-grid,
+  .token-selection-ui .token-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2vw !important;
+    max-height: 60vh;
+    overflow-y: auto;
+    width: 100%;
+    align-items: stretch;
+    margin-bottom: 2vw;
+  }
+  .token-button {
+    width: 96vw !important;
+    max-width: 96vw !important;
+    min-width: 0 !important;
+    height: 16vw !important;
+    min-height: 60px !important;
+    max-height: 90px !important;
+    margin: 0 auto 2vw auto !important;
+    padding: 2vw 0 !important;
+    border-radius: 8px !important;
+    font-size: 4vw !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 3vw !important;
+  }
+  .token-button img {
+    width: 12vw !important;
+    height: 12vw !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    margin: 0 2vw 0 2vw !important;
+    border-radius: 6px !important;
+  }
+  .token-content {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 2vw !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+  .token-button .ai-button {
+    font-size: 3.5vw !important;
+    padding: 1vw 3vw !important;
+    min-width: 70px;
+    margin-left: auto;
+    margin-right: 2vw;
+  }
+  .token-button .ai-indicator {
+    top: 1vw !important;
+    right: 1vw !important;
+    width: 3vw !important;
+    height: 3vw !important;
+    min-width: 12px;
+    min-height: 12px;
+  }
+  .token-button .taken-overlay {
+    font-size: 4vw !important;
+    border-radius: 8px !important;
+  }
+  .action-button {
+    width: 100% !important;
+    font-size: 5vw !important;
+    padding: 3vw 0 !important;
+    margin: 2vw 0 0 0 !important;
+    border-radius: 8px !important;
+  }
+  .arrow-flash {
+    font-size: 8vw !important;
+    top: -8vw !important;
+    bottom: -8vw !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+}
