@@ -6368,7 +6368,7 @@ setInterval(showSuggestionNotification, 240000);
 
 // Optionally, show once shortly after page load
 setTimeout(showSuggestionNotification, 10000);
-
+/*
 // Function to create a UI for testing mode
 function createTestingModeUI() {
     const testingModeContainer = document.createElement('div');
@@ -6428,6 +6428,7 @@ function createTestingModeUI() {
     testingModeContainer.appendChild(testButton);
     document.body.appendChild(testingModeContainer);
 }
+*/
 
 // Call this function to initialize the testing mode UI
 createTestingModeUI();
