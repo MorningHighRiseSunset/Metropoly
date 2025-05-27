@@ -6428,10 +6428,9 @@ function createTestingModeUI() {
     testingModeContainer.appendChild(testButton);
     document.body.appendChild(testingModeContainer);
 }
-*/
 
 // Call this function to initialize the testing mode UI
 createTestingModeUI();
-
+*/
 
 init();
