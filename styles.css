@@ -219,16 +219,6 @@
   color: #fff;
 }
 
-@media (max-width: 600px) {
-  .property-popup {
-    padding: 16px 6vw;
-    min-width: 0;
-  }
-  .property-popup .popup-header {
-    font-size: 20px;
-  }
-}
-
 .action-button.proceed {
   background-color: #424242;
   color: white;
@@ -393,16 +383,15 @@
 }
 
 .card-popup {
-    background: linear-gradient(145deg, #1a1a1a, #2d2d2d);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    padding: 25px;
-    width: 380px;
-    max-width: 90%;
-    transform: scale(0.7);
-    opacity: 0;
-    transition: all 0.3s ease-in-out;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+  background: #fff !important;
+  color: #222 !important;
+  border-radius: 10px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+}
+.card-popup .popup-header,
+.card-popup .card-prompt {
+  color: #222 !important;
+  background: #fff !important;
 }
 
 .card-popup.show {
@@ -1397,6 +1386,7 @@
     max-width: 98vw;
     padding: 12px 4vw;
     border-radius: 10px;
+    margin-bottom: 80px; /* Add margin to prevent overlap */
   }
   .property-content,
   .jail-content-container,
@@ -1589,4 +1579,30 @@
     left: 50% !important;
     transform: translateX(-50%) !important;
   }
+}
+
+.property-popup .card-prompt,
+.property-popup .card-prompt + .button-container,
+.property-popup .popup-header:contains('Chance'),
+.property-popup .popup-header:contains('Community') {
+  background: #fff !important;
+  color: #222 !important;
+}
+
+.property-popup .card-prompt {
+  color: #222 !important;
+  background: #fff !important;
+  border-radius: 8px;
+  padding: 18px 10px;
+  font-size: 18px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+}
+
+.property-popup .popup-header {
+  color: #222 !important;
+  background: #fff !important;
+  border-radius: 8px 8px 0 0;
+  font-weight: bold;
+  font-size: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
 }
