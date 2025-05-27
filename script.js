@@ -67,44 +67,6 @@ let hasMovedToken = false; // Tracks if the token has been moved
 let hasHandledProperty = false; // Tracks if the property has been handled
 let isAIProcessing = false;
 let turnCounter = 0;
-let tokenSelectionShown = false;
-
-function isMobile() {
-  return window.innerWidth <= 600;
-}
-
-function showTokenSelectionUI() {
-  const tokenUI = document.querySelector('.token-selection-ui');
-  if (tokenUI) {
-    tokenUI.style.display = 'flex';
-    tokenSelectionShown = true;
-  }
-}
-
-function hideTokenSelectionUI() {
-  const tokenUI = document.querySelector('.token-selection-ui');
-  if (tokenUI) {
-    tokenUI.style.display = 'none';
-    tokenSelectionShown = false;
-  }
-}
-
-let touchStartX = null;
-let touchStartY = null;
-document.addEventListener('touchstart', function(e) {
-    touchStartX = e.changedTouches[0].screenX;
-}, false);
-
-document.addEventListener('touchend', function(e) {
-    if (touchStartX === null) return;
-    let touchEndX = e.changedTouches[0].screenX;
-    if (touchEndX - touchStartX > 50) { // Swipe right
-        const tokenUI = document.querySelector('.token-selection-ui');
-        if (tokenUI) tokenUI.style.display = 'none';
-        // Optionally, trigger your main board logic here
-    }
-    touchStartX = null;
-}, false);
 
 // Initialize audio with proper settings
 let accelerationSound = new Audio('');
@@ -5228,8 +5190,6 @@ function resetGame() {
 }
 
 function startGame() {
-      gameStarted = true;
-    hideTokenSelectionUI();
     window.location.href = 'home.html'; // Redirects back to home screen
 }
 
