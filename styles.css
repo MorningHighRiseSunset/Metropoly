@@ -1450,3 +1450,31 @@
     display: flex;
     pointer-events: auto;
 }
+
+@media (max-width: 600px) {
+  .token-selection-ui {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: rgba(0,0,0,0.95) !important;
+    z-index: 3000 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow-y: auto !important;
+    max-height: 100vh !important;
+  }
+  .token-grid {
+    width: 100vw !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10vw !important;
+    padding: 0 5vw !important;
+  }
+}
