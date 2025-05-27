@@ -424,7 +424,6 @@ const properties = [{
             "Videos/MavHeli 1.mp4",
             "Videos/MavHeli 2.mp4",
             "Videos/MavHeli 3.mp4",
-
         ],
     },
     {
@@ -621,7 +620,7 @@ const properties = [{
         name: "Luxury Tax",
         type: "tax",
         price: 75,
-        imageUrl: "image.png.png",
+        imageUrl: "Images/1.png",
         description: "Pay Luxury Tax of $75",
         special: true
     },
@@ -5638,7 +5637,7 @@ function moveTokenToNewPosition(spaces, callback) {
 function showDiceResult(total, roll1, roll2) {
     const resultDisplay = document.createElement('div');
     resultDisplay.className = 'dice-result';
-    resultDisplay.textContent = `${isCurrentPlayerAI() ? 'AI ' : ''}Rolled a ${total}!`;
+    resultDisplay.textContent = `${isCurrentPlayerAI() ? 'AI ' : ''}Rolled an ${total}!`;
     document.body.appendChild(resultDisplay);
 
     setTimeout(() => {
@@ -6368,7 +6367,7 @@ setInterval(showSuggestionNotification, 240000);
 
 // Optionally, show once shortly after page load
 setTimeout(showSuggestionNotification, 10000);
-/*
+
 // Function to create a UI for testing mode
 function createTestingModeUI() {
     const testingModeContainer = document.createElement('div');
@@ -6431,6 +6430,6 @@ function createTestingModeUI() {
 
 // Call this function to initialize the testing mode UI
 createTestingModeUI();
-*/
+
 
 init();
