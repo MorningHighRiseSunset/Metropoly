@@ -793,7 +793,7 @@ const chanceCards = [
     "Win a high-stakes poker game. Collect $1,000.", // Increased from $500
     "Pay $150 for a luxury spa treatment.", // Increased from $75
     "Win a blackjack tournament. Collect $500.", // Increased from $250
-    "Caught speeding on the Strip. Pay a $100 fine.", // Increased from $50
+    "Caught speeding on the Strip. Pay a $200 fine.", // Increased from $50
     "Your investments pay off. Collect $800." // Increased from $400
 ];
 
