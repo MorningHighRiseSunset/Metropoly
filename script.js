@@ -92,25 +92,19 @@ function hideTokenSelectionUI() {
 let touchStartX = null;
 let touchStartY = null;
 document.addEventListener('touchstart', function(e) {
-  if (!isMobile() || gameStarted) return;
-  if (e.touches.length === 1) {
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-  }
-});
+    touchStartX = e.changedTouches[0].screenX;
+}, false);
+
 document.addEventListener('touchend', function(e) {
-  if (!isMobile() || gameStarted || tokenSelectionShown) return;
-  if (touchStartX === null || touchStartY === null) return;
-  const touchEndX = e.changedTouches[0].clientX;
-  const touchEndY = e.changedTouches[0].clientY;
-  const dx = touchEndX - touchStartX;
-  const dy = Math.abs(touchEndY - touchStartY);
-  if (dx < -50 && dy < 50) { // swipe left
-    showTokenSelectionUI();
-  }
-  touchStartX = null;
-  touchStartY = null;
-});
+    if (touchStartX === null) return;
+    let touchEndX = e.changedTouches[0].screenX;
+    if (touchEndX - touchStartX > 50) { // Swipe right
+        const tokenUI = document.querySelector('.token-selection-ui');
+        if (tokenUI) tokenUI.style.display = 'none';
+        // Optionally, trigger your main board logic here
+    }
+    touchStartX = null;
+}, false);
 
 // Initialize audio with proper settings
 let accelerationSound = new Audio('');
