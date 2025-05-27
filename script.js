@@ -87,6 +87,7 @@ const images = [
     // Bet MGM
     "Images/Screenshot 2024-12-12 033702.png", 
     "Images/unnamed.gif",// Brothel
+    "Images/1.png", // Luxury Tax
     // Bellagio
     "Images/raidersimage.png", // Las Vegas Raiders
     "https://s.abcnews.com/images/Sports/las-vegas-aces-gty-thg-180808_hpMain_16x9_992.jpg", // Las Vegas Aces
