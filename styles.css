@@ -219,6 +219,16 @@
   color: #fff;
 }
 
+@media (max-width: 600px) {
+  .property-popup {
+    padding: 16px 6vw;
+    min-width: 0;
+  }
+  .property-popup .popup-header {
+    font-size: 20px;
+  }
+}
+
 .action-button.proceed {
   background-color: #424242;
   color: white;
@@ -1377,69 +1387,70 @@
   background-color: #0056b3;
 }
 
-/* --- Responsive Token Selection UI for Mobile --- */
 @media (max-width: 600px) {
-  .token-selection-ui {
-    position: fixed !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    background: rgba(0,0,0,0.95) !important;
-    z-index: 3000 !important;
-    display: flex !important;
+  .property-popup,
+  .jail-popup,
+  .free-parking-popup,
+  .luxury-tax-popup {
+    min-width: 0;
+    width: 95vw;
+    max-width: 98vw;
+    padding: 12px 4vw;
+    border-radius: 10px;
+  }
+  .property-content,
+  .jail-content-container,
+  .free-parking-content-container {
     flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    overflow-y: auto !important;
+    gap: 10px;
+    align-items: stretch;
   }
-  .token-grid {
-    width: 100vw !important;
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10vw !important;
-    padding: 0 5vw !important;
+  .property-video-container,
+  .jail-video-container,
+  .free-parking-video-container {
+    width: 100% !important;
+    height: 160px !important;
+    margin-bottom: 10px;
   }
-  .token-button {
-    width: 40vw !important;
-    height: 40vw !important;
-    max-width: 140px;
-    max-height: 140px;
-    min-width: 80px;
-    min-height: 80px;
-    margin: 0 auto;
+  .popup-header {
+    font-size: 18px !important;
   }
-  .token-button img {
-    width: 60px !important;
-    height: 60px !important;
+  .action-button {
+    font-size: 15px;
+    padding: 10px 0;
+    width: 100%;
+    min-width: 0;
   }
-  .token-selection-ui h2 {
-    font-size: 6vw !important;
-    margin-bottom: 4vw !important;
-  }
-  /* Stack main action buttons vertically at bottom */
-  #end-turn-button,
-  .end-turn-button,
-  .dice-button {
-    width: 90vw !important;
-    left: 50% !important;
-    right: auto !important;
-    transform: translateX(-50%) !important;
-    bottom: 10px !important;
-    font-size: 16px !important;
-    padding: 12px 0 !important;
-    margin-bottom: 8px !important;
-    position: fixed !important;
-  }
-  .dice-button {
-    bottom: 60px !important;
+  .money-display,
+  #property-management-board,
+  #other-players-board {
+      width: 90vw;
+      left: 50%;
+      right: auto;
+      transform: translateX(-50%);
+      top: auto;
+      bottom: 10px;
+      font-size: 16px;
+      padding: 10px;
   }
   #end-turn-button,
   .end-turn-button {
-    bottom: 10px !important;
+    width: 90vw;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    bottom: 10px;
+    font-size: 16px;
+    padding: 12px 0;
+  }
+  .token-button img {
+    width: 60px;
+    height: 60px;
+  }
+  .token-button {
+    width: 100px;
+    height: 100px;
+    padding: 6px;
   }
 }
 
@@ -1449,32 +1460,4 @@
 #instructions-modal.show {
     display: flex;
     pointer-events: auto;
-}
-
-@media (max-width: 600px) {
-  .token-selection-ui {
-    position: fixed !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    background: rgba(0,0,0,0.95) !important;
-    z-index: 3000 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    justify-content: flex-start !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    overflow-y: auto !important;
-    max-height: 100vh !important;
-  }
-  .token-grid {
-    width: 100vw !important;
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10vw !important;
-    padding: 0 5vw !important;
-  }
 }
