@@ -2103,9 +2103,9 @@ function showPropertyUI(position) {
         video.controls = true;
         video.autoplay = true;
         video.muted = true;
-        video.style.width = '100%';
-        video.style.height = '100%';
-        video.style.objectFit = 'cover';
+        video.playsInline = true;
+        video.setAttribute('playsinline', '');
+        video.setAttribute('webkit-playsinline', '');
 
         video.addEventListener('loadeddata', () => {
             video.muted = false;
