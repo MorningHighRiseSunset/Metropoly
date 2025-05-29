@@ -1622,11 +1622,14 @@
 /* Make the button thumb-friendly on mobile */
 @media (max-width: 600px) {
   .dice-button {
-    left: 8px !important;
+    left: 50% !important;
+    right: auto !important;
     bottom: 10px !important;
+    transform: translateX(-50%) !important;
     padding: 10px 10px !important;
     font-size: 14px !important;
     min-width: 70px !important;
     max-width: 100px !important;
+    width: 90vw !important;
   }
 }
