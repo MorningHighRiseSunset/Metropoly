@@ -6377,8 +6377,15 @@ function setupPropertiesToggleButton() {
 
     const btn = document.createElement('button');
     btn.id = 'properties-toggle-btn';
-    btn.innerText = 'View Properties 📄';
-    // Optional: Add icon, tweak text for your style!
+    btn.innerText = 'My Properties'; // Remove emoji, make text short
+
+    // Make button smaller for mobile (handled by CSS, but also set here for initial render)
+    btn.style.fontSize = '14px';
+    btn.style.padding = '10px 14px';
+    btn.style.borderRadius = '8px';
+    btn.style.minWidth = '90px';
+    btn.style.maxWidth = '130px';
+    btn.style.width = 'auto';
 
     document.body.appendChild(btn);
 
@@ -6390,11 +6397,11 @@ function setupPropertiesToggleButton() {
         if (visible) {
             myBoard.classList.remove('board-visible');
             otherBoard.classList.remove('board-visible');
-            btn.innerText = 'View Properties 📄';
+            btn.innerText = 'My Properties';
         } else {
             myBoard.classList.add('board-visible');
             otherBoard.classList.add('board-visible');
-            btn.innerText = 'Hide Properties ❌';
+            btn.innerText = 'Hide Properties';
         }
     });
 }
