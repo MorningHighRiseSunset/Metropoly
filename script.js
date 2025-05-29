@@ -5794,9 +5794,8 @@ function showNotification(message) {
 
 function updateOtherPlayersBoard(currentPlayer) {
     const otherPlayersList = document.getElementById("other-players-list");
-    otherPlayersList.innerHTML = ""; // Clear the list
+    otherPlayersList.innerHTML = "";
 
-    // Display properties of all other players
     players.forEach(player => {
         if (player !== currentPlayer) {
             player.properties.forEach(property => {
@@ -5811,18 +5810,16 @@ function updateOtherPlayersBoard(currentPlayer) {
                 ownerInfo.textContent = `Owned by: ${player.name}`;
                 propertyItem.appendChild(ownerInfo);
 
-                const mortgageInfo = document.createElement("p");
-                mortgageInfo.textContent = property.mortgaged ?
-                    "Status: Mortgaged" :
-                    "Status: Not Mortgaged";
-                propertyItem.appendChild(mortgageInfo);
+                // Mortgage status INSIDE action group
+                const actions = document.createElement("div");
+                actions.className = "action-group";
+                const mortgageInfo = document.createElement("button");
+                mortgageInfo.textContent = property.mortgaged ? "Mortgaged" : "Not Mortgaged";
+                mortgageInfo.className = "status-btn";
+                mortgageInfo.disabled = true;
+                actions.appendChild(mortgageInfo);
 
-                // No buttons for other players' properties
-                const actionButton = document.createElement("button");
-                actionButton.textContent = "No Actions Allowed";
-                actionButton.disabled = true;
-                actionButton.style.cursor = "not-allowed";
-                propertyItem.appendChild(actionButton);
+                propertyItem.appendChild(actions);
 
                 otherPlayersList.appendChild(propertyItem);
             });
@@ -6303,6 +6300,46 @@ function validateTurnProgression() {
             currentState: null
         };
     }
+}
+
+function updatePropertyManagementBoard(player) {
+    const propertyList = document.getElementById("property-list");
+    propertyList.innerHTML = ""; // Clear the list
+
+    player.properties.forEach(property => {
+        const propertyItem = document.createElement("div");
+        propertyItem.className = "property-item";
+
+        const propertyName = document.createElement("h3");
+        propertyName.textContent = property.name;
+        propertyItem.appendChild(propertyName);
+
+        // START: Group action buttons
+        const actions = document.createElement("div");
+        actions.className = "action-group";
+
+        // Mortgage/unmortgage button
+        const actionButton = document.createElement("button");
+        if (property.mortgaged) {
+            actionButton.textContent = "Unmortgage";
+            actionButton.className = "unmortgage";
+            actionButton.disabled = player !== players[currentPlayerIndex];
+            actionButton.onclick = () => unmortgageProperty(player, property);
+        } else {
+            actionButton.textContent = "Mortgage";
+            actionButton.className = "mortgage";
+            actionButton.disabled = player !== players[currentPlayerIndex];
+            actionButton.onclick = () => mortgageProperty(player, property);
+        }
+        actions.appendChild(actionButton);
+
+        // If you want to add more actions, add more buttons here...
+
+        propertyItem.appendChild(actions);
+        // END: Group action buttons
+
+        propertyList.appendChild(propertyItem);
+    });
 }
 
 // Helper function to check if all required actions are completed
