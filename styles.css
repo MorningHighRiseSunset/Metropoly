@@ -38,8 +38,25 @@
   font-size: 18px;
   font-weight: bold;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  z-index: 1000;
+  z-index: 2002; /* Increased to stay above most UI */
   transition: all 0.3s ease;
+}
+
+@media (max-width: 700px) {
+  .money-display {
+    top: 10px !important;
+    right: 10px !important;
+    left: auto !important;
+    bottom: auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 90vw !important;
+    font-size: 16px !important;
+    padding: 10px 14px !important;
+    border-radius: 8px !important;
+    transform: none !important;
+    z-index: 2002 !important;
+  }
 }
 
 .token-button[style*="none"] {
