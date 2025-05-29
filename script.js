@@ -5722,36 +5722,6 @@ function declareWinner(winner, reason) {
     resetGame();
 }
 
-function updatePropertyManagementBoard(player) {
-    const propertyList = document.getElementById("property-list");
-    propertyList.innerHTML = ""; // Clear the list
-
-    // Display only the current player's properties
-    player.properties.forEach(property => {
-        const propertyItem = document.createElement("div");
-        propertyItem.className = "property-item";
-
-        const propertyName = document.createElement("h3");
-        propertyName.textContent = property.name;
-        propertyItem.appendChild(propertyName);
-
-        const actionButton = document.createElement("button");
-        if (property.mortgaged) {
-            actionButton.textContent = "Unmortgage";
-            actionButton.className = "unmortgage";
-            actionButton.disabled = player !== players[currentPlayerIndex]; // Disable if not the current player
-            actionButton.onclick = () => unmortgageProperty(player, property);
-        } else {
-            actionButton.textContent = "Mortgage";
-            actionButton.disabled = player !== players[currentPlayerIndex]; // Disable if not the current player
-            actionButton.onclick = () => mortgageProperty(player, property);
-        }
-        propertyItem.appendChild(actionButton);
-
-        propertyList.appendChild(propertyItem);
-    });
-}
-
 properties.forEach(property => {
     if (property.housePrice) {
         property.housePrice *= 2; // Double the cost of houses
