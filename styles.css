@@ -1479,6 +1479,23 @@
   }
 }
 
+@media (max-width: 600px) {
+  #property-management-board {
+    top: auto !important;
+    bottom: 15px !important;
+    left: auto !important;
+    right: 15px !important;
+    width: 90vw !important;
+    max-width: 96vw !important;
+    border-radius: 12px !important;
+    font-size: 16px !important;
+    padding: 12px !important;
+    z-index: 1003 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.42);
+    transform: none !important;
+  }
+}
+
 #instructions-modal {
     pointer-events: none;
 }
