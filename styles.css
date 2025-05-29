@@ -999,6 +999,41 @@
   flex-direction: column;
   gap: 10px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.property-item .action-group {
+  display: flex;
+  gap: 8px;
+}
+
+.property-item button,
+.other-property-item button {
+  padding: 10px;
+  font-size: 14px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  width: 100%;
+}
+
+.property-item button.unmortgage {
+  background-color: #ff5252;
+}
+.property-item button.unmortgage:hover {
+  background-color: #e53935;
+}
+
+.other-property-item .status-btn {
+  cursor: not-allowed;
+  background: #ccc;
+  color: #555;
+  opacity: 0.7;
 }
 
 .property-item h3 {
@@ -1453,131 +1488,39 @@
 }
 
 @media (max-width: 700px) {
-  .token-selection-ui,
-  #token-selection-ui,
-  [class*="token-selection-ui"] {
-    width: 98vw !important;
-    max-width: 98vw !important;
-    left: 1vw !important;
-    right: 1vw !important;
-    top: 1vh !important;
-    padding: 4vw 2vw 2vw 2vw !important;
-    border-radius: 12px !important;
-    min-width: 0 !important;
-    box-sizing: border-box;
-    z-index: 1000;
-    background: rgba(30,30,30,0.98) !important;
-    overflow: visible;
-  }
-  .token-selection-ui h2,
-  #token-selection-ui h2 {
-    font-size: 5vw !important;
-    margin-bottom: 2vw !important;
-    text-align: center;
-  }
-  .token-grid,
-  .token-selection-ui .token-grid {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 3vw !important;
-    max-height: 60vh;
-    overflow-y: auto;
-    width: 100%;
-    align-items: center;
-    margin-bottom: 2vw;
-  }
-  .token-button {
-    width: 80vw !important;
-    max-width: 350px !important;
-    min-width: 0 !important;
-    height: 70px !important;
-    margin: 0 auto 1vw auto !important;
-    padding: 0 !important;
-    border-radius: 12px !important;
-    font-size: 4vw !important;
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    gap: 4vw !important;
-    background: #232a36 !important;
-    border: 2.5px solid #444 !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-    position: relative;
-  }
-  .token-button.selected {
-    border-color: #4caf50 !important;
-    box-shadow: 0 0 0 3px #4caf5077;
-    background: #263e2b !important;
-  }
-  .token-button img {
-    width: 48px !important;
-    height: 48px !important;
-    min-width: 48px !important;
-    min-height: 48px !important;
-    margin: 0 2vw 0 2vw !important;
-    border-radius: 6px !important;
-    border: 2px solid #fff2;
-    background: #fff;
-    object-fit: contain;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-  }
-  .token-content {
-    flex-direction: row !important;
-    align-items: center !important;
-    gap: 2vw !important;
-    width: 100% !important;
-    height: auto !important;
-  }
-  .token-button .ai-button {
-    font-size: 15px !important;
-    padding: 6px 16px !important;
-    min-width: 60px;
-    margin-left: auto;
-    margin-right: 2vw;
-    border-radius: 6px;
-    background: #2196F3;
-    color: #fff;
-    border: none;
-    transition: background 0.2s, color 0.2s;
-    position: relative;
-  }
-  .token-button .ai-button.active {
-    background: #4caf50 !important;
-    color: #fff !important;
-  }
-  .token-button .ai-button.active::after {
-    content: "✓";
-    color: #fff;
-    font-size: 18px;
-    margin-left: 8px;
-    vertical-align: middle;
-  }
-  .token-button .ai-indicator {
-    display: none !important;
-  }
-  .token-button .taken-overlay {
-    font-size: 4vw !important;
-    border-radius: 8px !important;
-    background: rgba(255,255,255,0.7);
-    color: #d32f2f;
-    font-weight: bold;
-    z-index: 2;
-  }
-  .action-button {
-    width: 100% !important;
-    font-size: 5vw !important;
-    padding: 3vw 0 !important;
-    margin: 2vw 0 0 0 !important;
-    border-radius: 8px !important;
-  }
-  .arrow-flash {
-    font-size: 8vw !important;
-    top: -8vw !important;
-    bottom: -8vw !important;
+  #property-management-board,
+  #other-players-board {
+    position: fixed !important;
     left: 50% !important;
+    right: auto !important;
     transform: translateX(-50%) !important;
+    width: 94vw !important;
+    max-width: 98vw !important;
+    z-index: 1001 !important;
+    bottom: auto !important;
+    top: 10px !important;
+    margin-bottom: 0 !important;
+    margin-top: 0 !important;
+    font-size: 16px !important;
+    padding: 10px !important;
+  }
+  #property-management-board {
+    top: 10px !important;
+  }
+  #other-players-board {
+    top: 140px !important; /* Space below property-management-board */
+  }
+  .dice-button,
+  #end-turn-button,
+  .end-turn-button {
+    left: 50% !important;
+    right: auto !important;
+    bottom: 10px !important;
+    top: auto !important;
+    transform: translateX(-50%) !important;
+    width: 90vw !important;
+    max-width: 98vw !important;
+    z-index: 1002 !important;
   }
 }
 
