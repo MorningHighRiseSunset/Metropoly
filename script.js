@@ -6401,6 +6401,34 @@ function showSuggestionNotification() {
     }, 5000); // Show for 5 seconds
 }
 
+function setupPropertiesToggleButton() {
+    // Only add if not already present (prevents duplicates)
+    if (document.getElementById('properties-toggle-btn')) return;
+
+    const btn = document.createElement('button');
+    btn.id = 'properties-toggle-btn';
+    btn.innerText = 'View Properties 📄';
+    // Optional: Add icon, tweak text for your style!
+
+    document.body.appendChild(btn);
+
+    btn.addEventListener('click', function () {
+        const myBoard = document.getElementById('property-management-board');
+        const otherBoard = document.getElementById('other-players-board');
+
+        const visible = myBoard.classList.contains('board-visible');
+        if (visible) {
+            myBoard.classList.remove('board-visible');
+            otherBoard.classList.remove('board-visible');
+            btn.innerText = 'View Properties 📄';
+        } else {
+            myBoard.classList.add('board-visible');
+            otherBoard.classList.add('board-visible');
+            btn.innerText = 'Hide Properties ❌';
+        }
+    });
+}
+
 // Show every 4 minutes (240000 ms)
 setInterval(showSuggestionNotification, 240000);
 
@@ -6472,3 +6500,4 @@ createTestingModeUI();
 */
 
 init();
+setupPropertiesToggleButton();
