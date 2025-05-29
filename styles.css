@@ -1633,4 +1633,33 @@
     border-radius: 8px !important;
     z-index: 1002 !important;
   }
+
+  .dice-result {
+    left: 50% !important;
+    right: auto !important;
+    bottom: 16px !important;
+    transform: translateX(-50%) !important;
+    font-size: 15px !important;
+    padding: 10px 14px !important;
+    min-width: 90px !important;
+    max-width: 130px !important;
+    width: auto !important;
+    border-radius: 8px !important;
+    z-index: 1002 !important;
+    margin: 0 !important;
+  }
+
+  #properties-toggle-btn {
+    right: 16px !important;
+    left: auto !important;
+    bottom: 16px !important;
+    font-size: 14px !important;
+    padding: 10px 14px !important;
+    border-radius: 8px !important;
+    min-width: 90px !important;
+    max-width: 130px !important;
+    width: auto !important;
+    z-index: 1002 !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+  }
 }
