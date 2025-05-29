@@ -1621,8 +1621,8 @@
 
 @media (max-width: 600px) {
   .dice-button {
-    left: auto !important;
-    right: 16px !important;
+    left: 16px !important;
+    right: auto !important;
     bottom: 16px !important;
     transform: none !important;
     min-width: 90px !important;
