@@ -494,7 +494,7 @@ const properties = [{
     {
         name: "FREE PARKING",
         type: "special",
-        imageUrl: "Images/free parking (1).jpg",
+        imageUrl: "Images/free parking.jpg",
         description: "Take a break! No fee to park here.",
         special: true
     },
