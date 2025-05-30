@@ -1470,6 +1470,59 @@ function onMouseUp() {
     }
 }
 
+function showTokenSpinner(tokenName) {
+    // Prevent duplicate spinners
+    if (document.getElementById(`spinner-${tokenName}`)) return;
+
+    const spinner = document.createElement('div');
+    spinner.className = 'token-spinner';
+    spinner.id = `spinner-${tokenName}`;
+    spinner.innerHTML = `
+        <div class="spinner"></div>
+        <div style="font-size:13px;margin-top:8px">${tokenName.replace(/^\w/, c => c.toUpperCase())} loading...</div>
+    `;
+    spinner.style.position = 'fixed';
+    spinner.style.top = '50%';
+    spinner.style.left = '50%';
+    spinner.style.transform = 'translate(-50%, -50%)';
+    spinner.style.zIndex = 9999;
+    spinner.style.background = 'rgba(30,30,30,0.92)';
+    spinner.style.padding = '22px 36px';
+    spinner.style.borderRadius = '12px';
+    spinner.style.color = '#fff';
+    spinner.style.textAlign = 'center';
+    spinner.style.boxShadow = '0 4px 16px rgba(0,0,0,0.25)';
+    document.body.appendChild(spinner);
+
+    // Add spinner CSS if not present
+    if (!document.getElementById('token-spinner-style')) {
+        const style = document.createElement('style');
+        style.id = 'token-spinner-style';
+        style.textContent = `
+        .spinner {
+            border: 5px solid #eee;
+            border-top: 5px solid #4caf50;
+            border-radius: 50%;
+            width: 38px;
+            height: 38px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 8px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg);}
+            100% { transform: rotate(360deg);}
+        }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+function hideTokenSpinner(tokenName) {
+    const spinner = document.getElementById(`spinner-${tokenName}`);
+    if (spinner) spinner.remove();
+}
+
+// 2. Replace your createTokens function with this:
 function createTokens() {
     const loader = new GLTFLoader();
 
@@ -1483,41 +1536,48 @@ function createTokens() {
         model.visible = false;
         model.userData.isToken = true;
         model.userData.tokenName = tokenName;
-        model.position.set(22.5, heightOffset, 22.5); // Adjusted y-position to ensure tokens stand on property spaces
+        model.position.set(22.5, heightOffset, 22.5);
         scene.add(model);
     };
 
-    loader.load('Models/nike_air_zoom_pegasus_36/scene.gltf', (gltf) => {
-        const nikeModel = gltf.scene;
-        nikeModel.scale.set(1.5, 1.5, 1.5); // Adjust scale as needed
-        tokenSetup(nikeModel, 'nike', 3.0); // Adjusted height for Nike shoe
-    }, undefined, (error) => {
-        console.error('Error loading the Nike shoe model:', error);
-    });
+    // Helper for each token
+    function loadTokenModel(path, tokenName, scale, heightOffset, onLoaded) {
+        showTokenSpinner(tokenName);
+        loader.load(path, (gltf) => {
+            const model = gltf.scene;
+            model.scale.set(...scale);
+            tokenSetup(model, tokenName, heightOffset);
+            hideTokenSpinner(tokenName);
+            if (onLoaded) onLoaded(model, gltf);
+        }, undefined, (error) => {
+            hideTokenSpinner(tokenName);
+            console.error(`Error loading the ${tokenName} model:`, error);
+        });
+    }
 
-    loader.load('Models/mcdonalds_big_mac/scene.gltf', (gltf) => {
-        const bigMacModel = gltf.scene;
-        bigMacModel.scale.set(3.5, 3.5, 3.5); // Adjust scale as needed
-        tokenSetup(bigMacModel, 'burger', 3.0); // Adjusted height for burger
-    }, undefined, (error) => {
-        console.error('Error loading the burger model:', error);
-    });
+    loadTokenModel('Models/nike_air_zoom_pegasus_36/scene.gltf', 'nike', [1.5, 1.5, 1.5], 3.0);
+    loadTokenModel('Models/mcdonalds_big_mac/scene.gltf', 'burger', [3.5, 3.5, 3.5], 3.0);
+    loadTokenModel('Models/rolls-royce_ghost/scene.gltf', 'rolls royce', [0.9, 0.9, 0.9], 3.0);
+    loadTokenModel('Models/speed_boat_05/speedeboatscene.gltf', 'speed boat', [1.2, 1.2, 1.2], 3.0);
+    loadTokenModel('Models/top_hat__free_download/tophat.gltf', 'hat', [0.5, 0.5, 0.5], 3.0);
+    loadTokenModel('Models/wilson_football/football.gltf', 'football', [0.1, 0.1, 0.1], 3.0);
+    loadTokenModel('Models/helicopter/scene.gltf', 'helicopter', [0.01, 0.01, 0.01], 3.0);
 
+    // Woman token (with animation)
+    showTokenSpinner('woman');
     loader.load('../Models/ModelIdleAnim/WhiteGirlBlackandRedOutfit.gltf', function (gltf) {
         const whiteGirlModel = gltf.scene;
-
         whiteGirlModel.traverse((child) => {
             if (child.isMesh) {
                 child.material.transparent = false;
                 child.material.depthWrite = true;
             }
         });
-
-        whiteGirlModel.scale.set(0.02, 0.02, 0.02); // Match scale with other tokens
-        tokenSetup(whiteGirlModel, 'woman', 0.5); // Adjusted height for the woman token
+        whiteGirlModel.scale.set(0.02, 0.02, 0.02);
+        tokenSetup(whiteGirlModel, 'woman', 0.5);
 
         const idleMixer = new THREE.AnimationMixer(whiteGirlModel);
-        const idleAction = idleMixer.clipAction(gltf.animations[0]); // Assuming the first animation is the idle animation
+        const idleAction = idleMixer.clipAction(gltf.animations[0]);
         idleAction.clampWhenFinished = true;
         idleAction.loop = THREE.LoopRepeat;
         idleAction.play();
@@ -1533,49 +1593,14 @@ function createTokens() {
 
             whiteGirlModel.userData.walkMixer = walkMixer;
             whiteGirlModel.userData.walkAction = walkAction;
+            hideTokenSpinner('woman');
+        }, undefined, function (error) {
+            hideTokenSpinner('woman');
+            console.error(error);
         });
     }, undefined, function (error) {
+        hideTokenSpinner('woman');
         console.error(error);
-    });
-
-    loader.load('Models/rolls-royce_ghost/scene.gltf', (gltf) => {
-        const rollsRoyceModel = gltf.scene;
-        rollsRoyceModel.scale.set(0.9, 0.9, 0.9);
-        tokenSetup(rollsRoyceModel, 'rolls royce', 3.0); // Adjusted height for Rolls Royce
-    }, undefined, (error) => {
-        console.error('Error loading the Rolls Royce model:', error);
-    });
-
-    loader.load('Models/speed_boat_05/speedeboatscene.gltf', (gltf) => {
-        const speedBoatModel = gltf.scene;
-        speedBoatModel.scale.set(1.2, 1.2, 1.2);
-        tokenSetup(speedBoatModel, 'speed boat', 3.0); // Adjusted height for Speed Boat
-    }, undefined, (error) => {
-        console.error('Error loading the Speed Boat model:', error);
-    });
-
-    loader.load('Models/top_hat__free_download/tophat.gltf', (gltf) => {
-        const topHatModel = gltf.scene;
-        topHatModel.scale.set(0.5, 0.5, 0.5);
-        tokenSetup(topHatModel, 'hat', 3.0); // Adjusted height for Top Hat
-    }, undefined, (error) => {
-        console.error('Error loading the Top Hat model:', error);
-    });
-
-    loader.load('Models/wilson_football/football.gltf', (gltf) => {
-        const footballModel = gltf.scene;
-        footballModel.scale.set(0.1, 0.1, 0.1); // Adjust scale as needed
-        tokenSetup(footballModel, 'football', 3.0); // Adjusted height for Football
-    }, undefined, (error) => {
-        console.error('Error loading the Football model:', error);
-    });
-
-    loader.load('Models/helicopter/scene.gltf', (gltf) => {
-        const helicopterModel = gltf.scene;
-        helicopterModel.scale.set(0.01, 0.01, 0.01); // Adjust scale as needed
-        tokenSetup(helicopterModel, 'helicopter', 3.0); // Adjusted height for Helicopter
-    }, undefined, (error) => {
-        console.error('Error loading the Helicopter model:', error);
     });
 }
 
