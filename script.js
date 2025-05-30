@@ -5216,7 +5216,7 @@ function createImageCarousel(images, position) {
     }
 
     const BROTHEL_GIF_PATH = "Images/unnamed.gif";
-    const BROTHEL_GIF_DURATION = 4000;
+    const BROTHEL_GIF_DEFAULT_DURATION = 6000; // Set to your GIF's actual duration in ms
 
     function updateImage() {
         const currentImage = images[currentImageIndex];
@@ -5226,20 +5226,63 @@ function createImageCarousel(images, position) {
         // Always show the Three.js plane, even for GIFs
         plane.visible = true;
 
-        textureLoader.load(currentImage, (loadedTexture) => {
-            material.map = loadedTexture;
-            material.needsUpdate = true;
-        }, undefined, (error) => {
-            console.error("Failed to load image:", error);
-        });
+        // Remove any existing overlay GIF element
+        const existingGif = document.getElementById('brothel-gif-overlay');
+        if (existingGif) existingGif.remove();
 
-        let nextDelay = 3000;
         if (currentImage === BROTHEL_GIF_PATH || currentImage.endsWith('.gif')) {
-            nextDelay = BROTHEL_GIF_DURATION;
-        }
+            // Show the animated GIF as an HTML overlay
+            const gif = document.createElement('img');
+            gif.src = currentImage;
+            gif.id = 'brothel-gif-overlay';
+            gif.style.position = 'fixed';
+            gif.style.left = '50%';
+            gif.style.top = '50%';
+            gif.style.transform = 'translate(-50%, -50%)';
+            gif.style.width = '420px';
+            gif.style.height = '420px';
+            gif.style.pointerEvents = 'none';
+            gif.style.zIndex = 1000;
+            gif.style.borderRadius = '18px';
+            gif.style.boxShadow = '0 4px 32px rgba(0,0,0,0.25)';
+            document.body.appendChild(gif);
 
+            // Still update the plane with a static preview (optional)
+            textureLoader.load(currentImage, (loadedTexture) => {
+                material.map = loadedTexture;
+                material.needsUpdate = true;
+            }, undefined, (error) => {
+                console.error("Failed to load image:", error);
+            });
+
+            // Wait for the GIF to load, then use a default duration
+            gif.onload = () => {
+                // You can set a custom duration here if you know the GIF's length
+                carouselTimeout = setTimeout(() => {
+                    if (gif.parentElement) gif.parentElement.removeChild(gif);
+                    nextImage();
+                }, BROTHEL_GIF_DEFAULT_DURATION);
+            };
+        } else {
+            // Remove overlay GIF if present
+            const gif = document.getElementById('brothel-gif-overlay');
+            if (gif) gif.remove();
+
+            // Show the image on the Three.js plane
+            textureLoader.load(currentImage, (loadedTexture) => {
+                material.map = loadedTexture;
+                material.needsUpdate = true;
+            }, undefined, (error) => {
+                console.error("Failed to load image:", error);
+            });
+
+            carouselTimeout = setTimeout(nextImage, 3000);
+        }
+    }
+
+    function nextImage() {
         currentImageIndex = (currentImageIndex + 1) % images.length;
-        carouselTimeout = setTimeout(updateImage, nextDelay);
+        updateImage();
     }
 
     updateImage();
@@ -5471,28 +5514,14 @@ const DICE_POSITION = {
 };
 
 function createDiceButton() {
-    // Only create roll button if it doesn't exist
     if (!document.querySelector('.dice-button')) {
         const rollButton = document.createElement('button');
         rollButton.className = 'dice-button';
         rollButton.textContent = 'Roll Dice';
 
-        // Responsive/mobile-friendly styles
-        rollButton.style.position = 'fixed';
-        rollButton.style.bottom = '24px';
-        rollButton.style.left = '50%';
-        rollButton.style.transform = 'translateX(-50%)';
-        rollButton.style.display = 'none'; // Initially hide the button
-        rollButton.style.zIndex = '9999';
-        rollButton.style.fontSize = '22px';
-        rollButton.style.padding = '18px 38px';
-        rollButton.style.borderRadius = '18px';
-        rollButton.style.background = '#4caf50';
-        rollButton.style.color = '#fff';
-        rollButton.style.border = 'none';
-        rollButton.style.boxShadow = '0 4px 16px rgba(0,0,0,0.18)';
-        rollButton.style.cursor = 'pointer';
-        rollButton.style.transition = 'background 0.2s, box-shadow 0.2s';
+        // Only set display and z-index, let CSS handle the rest
+        rollButton.style.display = 'none';
+        rollButton.style.zIndex = '2001'; // Make sure it's above most UI
 
         // Touch and click support
         rollButton.addEventListener('click', rollDice);
@@ -5500,24 +5529,6 @@ function createDiceButton() {
             e.preventDefault();
             rollDice();
         });
-
-        // Responsive adjustment for small screens
-        const style = document.createElement('style');
-        style.textContent = `
-            @media (max-width: 700px) {
-                .dice-button {
-                    font-size: 20px !important;
-                    padding: 16px 24px !important;
-                    border-radius: 14px !important;
-                    bottom: 18px !important;
-                    left: 50% !important;
-                    width: 90vw !important;
-                    min-width: 0 !important;
-                    max-width: 98vw !important;
-                }
-            }
-        `;
-        document.head.appendChild(style);
 
         document.body.appendChild(rollButton);
     }
