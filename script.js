@@ -2148,24 +2148,36 @@ if (property.videoUrls && property.videoUrls.length > 0) {
         const selectedUrl = property.videoUrls[randomIndex];
 
         const video = document.createElement('video');
-        video.muted = true; // Must be true for autoplay on mobile!
+        video.controls = true;
+        video.muted = true; // Required for autoplay on mobile
         video.playsInline = true;
         video.setAttribute('playsinline', '');
         video.setAttribute('webkit-playsinline', '');
         video.autoplay = true;
-        video.controls = true;
-        video.preload = 'metadata';
+        video.preload = 'auto';
         video.poster = 'Images/video-placeholder.jpg';
+
+        // Set src after all attributes for best compatibility
         video.src = selectedUrl;
 
+        // Only show fallback if the video fails to load after a few seconds
+        let errorTimeout = setTimeout(() => {
+            video.onerror();
+        }, 5000);
+
         video.onerror = () => {
+            clearTimeout(errorTimeout);
             video.style.display = 'none';
             showImageFallback();
         };
 
-        // Try to unmute after loaded (may not work on all browsers)
+        video.oncanplay = () => {
+            clearTimeout(errorTimeout);
+        };
+
+        // Optionally, let user unmute after loaded
         video.addEventListener('loadeddata', () => {
-            video.muted = false;
+            // video.muted = false; // Uncomment if you want to try unmuting after load
             video.play().catch(() => {});
         });
 
