@@ -95,6 +95,7 @@ const images = [
     "Images/themirage.jpg", // Mirage
     "Images/unnamed.png",
     "https://upload.wikimedia.org/wikipedia/commons/c/c1/Wynn_2_%282%29.jpg", // Wynn Las Vegas
+    "Images/unnamed (1).png",
     "https://shrinerschildrensopen.com/wp-content/uploads/2022/10/ShrinersChildrens-18-hole-2022.jpg", // Shriners Children's Open
     "Images/thesphere.jpg", // Sphere
     "Images/welcome-to-caesars-palace.jpg", // Caesars Palace
@@ -2107,7 +2108,9 @@ function showPropertyUI(position) {
     content.style.fontSize = '13px';
 
     // --- Video on top ---
-    if (property.videoUrls && property.videoUrls.length > 0) {
+let mediaShown = false;
+
+if (property.videoUrls && property.videoUrls.length > 0) {
     const videoContainer = document.createElement('div');
     videoContainer.className = 'property-video-container';
     videoContainer.style.width = '160px';
@@ -2130,7 +2133,6 @@ function showPropertyUI(position) {
     placeholder.style.alignItems = 'center';
     placeholder.style.cursor = 'pointer';
 
-    // Play icon overlay
     const playIcon = document.createElement('div');
     playIcon.innerHTML = '&#9658;';
     playIcon.style.fontSize = '40px';
@@ -2139,7 +2141,6 @@ function showPropertyUI(position) {
     playIcon.style.pointerEvents = 'none';
     placeholder.appendChild(playIcon);
 
-    // Only load video on tap/click
     placeholder.onclick = () => {
         placeholder.style.display = 'none';
         const randomIndex = Math.floor(Math.random() * property.videoUrls.length);
@@ -2147,28 +2148,22 @@ function showPropertyUI(position) {
 
         const video = document.createElement('video');
         video.controls = true;
-        video.autoplay = true;
-        video.muted = true; // Required for autoplay on mobile
+        video.muted = true;
         video.playsInline = true;
         video.setAttribute('playsinline', '');
         video.setAttribute('webkit-playsinline', '');
+        video.autoplay = true;
         video.preload = 'metadata';
         video.poster = 'Images/video-placeholder.jpg';
-
-        // Set src only after user interaction
         video.src = selectedUrl;
+        video.load();
 
-        // Error fallback
         video.onerror = () => {
+            // If video fails, show image fallback if available
             video.style.display = 'none';
-            const fallback = document.createElement('div');
-            fallback.textContent = 'Video unavailable';
-            fallback.style.color = '#fff';
-            fallback.style.textAlign = 'center';
-            videoContainer.appendChild(fallback);
+            showImageFallback();
         };
 
-        // Unmute after loaded (for iOS)
         video.addEventListener('loadeddata', () => {
             video.muted = false;
             video.play().catch(() => {});
@@ -2179,6 +2174,59 @@ function showPropertyUI(position) {
 
     videoContainer.appendChild(placeholder);
     content.appendChild(videoContainer);
+    mediaShown = true;
+}
+
+// Fallback: show image if no video or if video fails
+function showImageFallback() {
+    let imageUrl = null;
+    if (Array.isArray(property.imageUrls) && property.imageUrls.length > 0) {
+        imageUrl = property.imageUrls[0];
+    } else if (typeof property.imageUrls === 'string' && property.imageUrls.length > 0) {
+        imageUrl = property.imageUrls;
+    }
+    if (imageUrl) {
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'property-image-container';
+        imageContainer.style.width = '160px';
+        imageContainer.style.height = '90px';
+        imageContainer.style.overflow = 'hidden';
+        imageContainer.style.borderRadius = '8px';
+        imageContainer.style.margin = '0 auto 4px auto';
+        imageContainer.style.position = 'relative';
+        imageContainer.style.display = 'flex';
+        imageContainer.style.justifyContent = 'center';
+        imageContainer.style.alignItems = 'center';
+
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+        img.style.borderRadius = '8px';
+        imageContainer.appendChild(img);
+        content.appendChild(imageContainer);
+        mediaShown = true;
+    } else {
+        // No image, show a placeholder
+        const placeholder = document.createElement('div');
+        placeholder.style.width = '160px';
+        placeholder.style.height = '90px';
+        placeholder.style.background = '#333';
+        placeholder.style.display = 'flex';
+        placeholder.style.justifyContent = 'center';
+        placeholder.style.alignItems = 'center';
+        placeholder.style.color = '#fff';
+        placeholder.style.borderRadius = '8px';
+        placeholder.textContent = 'No preview available';
+        content.appendChild(placeholder);
+        mediaShown = true;
+    }
+}
+
+// If no video, show image immediately
+if (!mediaShown) {
+    showImageFallback();
 }
 
     if ((!property.videoUrls || property.videoUrls.length === 0) && property.imageUrls && property.imageUrls.length > 0) {
@@ -5196,10 +5244,10 @@ function createImageCarousel(images, position) {
 
     const carouselGroup = new THREE.Group();
     const planeGeometry = new THREE.PlaneGeometry(60, 60);
-    const textureLoader = new THREE.TextureLoader();
 
     let currentImageIndex = 0;
     let carouselTimeout = null;
+    let gifImg = null; // For animated GIFs
 
     // Create a single plane for the carousel
     const material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
@@ -5210,73 +5258,46 @@ function createImageCarousel(images, position) {
     carouselGroup.position.set(position.x, position.y, position.z);
     scene.add(carouselGroup);
 
-    // Remove any existing overlay GIF element (if present)
-    const oldGifOverlay = document.getElementById('brothel-gif-overlay');
-    if (oldGifOverlay) {
-        oldGifOverlay.remove();
-    }
-
-    const BROTHEL_GIF_PATH = "Images/unnamed.gif";
-    const BROTHEL_GIF_DEFAULT_DURATION = 6000; // Set to your GIF's actual duration in ms
-
     function updateImage() {
-        const currentImage = images[currentImageIndex];
-
         if (carouselTimeout) clearTimeout(carouselTimeout);
 
-        // Always show the Three.js plane, even for GIFs
-        plane.visible = true;
+        const currentImage = images[currentImageIndex];
 
-        // Remove any existing overlay GIF element
-        const existingGif = document.getElementById('brothel-gif-overlay');
-        if (existingGif) existingGif.remove();
+        // If previous GIF image exists, remove its animation loop
+        if (gifImg) {
+            gifImg = null;
+        }
 
-        if (currentImage === BROTHEL_GIF_PATH || currentImage.endsWith('.gif')) {
-            // Show the animated GIF as an HTML overlay
-            const gif = document.createElement('img');
-            gif.src = currentImage;
-            gif.id = 'brothel-gif-overlay';
-            gif.style.position = 'fixed';
-            gif.style.left = '50%';
-            gif.style.top = '50%';
-            gif.style.transform = 'translate(-50%, -50%)';
-            gif.style.width = '420px';
-            gif.style.height = '420px';
-            gif.style.pointerEvents = 'none';
-            gif.style.zIndex = 1000;
-            gif.style.borderRadius = '18px';
-            gif.style.boxShadow = '0 4px 32px rgba(0,0,0,0.25)';
-            document.body.appendChild(gif);
-
-            // Still update the plane with a static preview (optional)
-            textureLoader.load(currentImage, (loadedTexture) => {
-                material.map = loadedTexture;
+        // If it's a GIF, use <img> so browser animates it
+        if (currentImage.endsWith('.gif')) {
+            gifImg = document.createElement('img');
+            gifImg.src = currentImage;
+            gifImg.crossOrigin = "anonymous";
+            gifImg.onload = () => {
+                const texture = new THREE.Texture(gifImg);
+                texture.needsUpdate = true;
+                material.map = texture;
                 material.needsUpdate = true;
-            }, undefined, (error) => {
-                console.error("Failed to load image:", error);
-            });
 
-            // Wait for the GIF to load, then use a default duration
-            gif.onload = () => {
-                // You can set a custom duration here if you know the GIF's length
-                carouselTimeout = setTimeout(() => {
-                    if (gif.parentElement) gif.parentElement.removeChild(gif);
-                    nextImage();
-                }, BROTHEL_GIF_DEFAULT_DURATION);
+                // Animate the GIF by updating the texture every frame
+                function animateGifTexture() {
+                    if (material.map && gifImg) {
+                        material.map.needsUpdate = true;
+                        requestAnimationFrame(animateGifTexture);
+                    }
+                }
+                animateGifTexture();
+
+                // Set how long to show the GIF (default: 6s, or adjust as needed)
+                carouselTimeout = setTimeout(nextImage, 6000);
             };
         } else {
-            // Remove overlay GIF if present
-            const gif = document.getElementById('brothel-gif-overlay');
-            if (gif) gif.remove();
-
-            // Show the image on the Three.js plane
+            // For static images, use TextureLoader
+            const textureLoader = new THREE.TextureLoader();
             textureLoader.load(currentImage, (loadedTexture) => {
                 material.map = loadedTexture;
                 material.needsUpdate = true;
-            }, undefined, (error) => {
-                console.error("Failed to load image:", error);
             });
-
             carouselTimeout = setTimeout(nextImage, 3000);
         }
     }
