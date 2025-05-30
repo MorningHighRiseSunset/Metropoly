@@ -2099,18 +2099,31 @@ function showPropertyUI(position) {
         const randomIndex = Math.floor(Math.random() * property.videoUrls.length);
         const selectedUrl = property.videoUrls[randomIndex];
 
+        // --- IMPROVED VIDEO LOADING FOR MOBILE ---
         const video = document.createElement('video');
         video.src = selectedUrl;
         video.controls = true;
         video.autoplay = true;
-        video.muted = true;
-        video.playsInline = true;
+        video.muted = true; // Required for autoplay on mobile
+        video.playsInline = true; // Prevents iOS fullscreen
         video.setAttribute('playsinline', '');
         video.setAttribute('webkit-playsinline', '');
+        video.preload = 'metadata'; // Only preload metadata
+        video.poster = 'Images/video-placeholder.jpg'; // Use a small placeholder image
+
+        // Optional: fallback if video fails to load
+        video.onerror = () => {
+            video.style.display = 'none';
+            const fallback = document.createElement('div');
+            fallback.textContent = 'Video unavailable';
+            fallback.style.color = '#fff';
+            fallback.style.textAlign = 'center';
+            videoContainer.appendChild(fallback);
+        };
 
         video.addEventListener('loadeddata', () => {
             video.muted = false;
-            video.play().catch(error => console.error("Failed to play video:", error));
+            video.play().catch(() => {}); // Ignore autoplay errors
         });
 
         videoContainer.appendChild(video);
@@ -2118,26 +2131,26 @@ function showPropertyUI(position) {
     }
 
     if ((!property.videoUrls || property.videoUrls.length === 0) && property.imageUrls && property.imageUrls.length > 0) {
-    const imageContainer = document.createElement('div');
-    imageContainer.className = 'property-image-container';
-    imageContainer.style.width = '160px';
-    imageContainer.style.height = '90px';
-    imageContainer.style.overflow = 'hidden';
-    imageContainer.style.borderRadius = '8px';
-    imageContainer.style.margin = '0 auto 4px auto';
-    imageContainer.style.position = 'relative';
-    imageContainer.style.display = 'flex';
-    imageContainer.style.justifyContent = 'center';
-    imageContainer.style.alignItems = 'center';
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'property-image-container';
+        imageContainer.style.width = '160px';
+        imageContainer.style.height = '90px';
+        imageContainer.style.overflow = 'hidden';
+        imageContainer.style.borderRadius = '8px';
+        imageContainer.style.margin = '0 auto 4px auto';
+        imageContainer.style.position = 'relative';
+        imageContainer.style.display = 'flex';
+        imageContainer.style.justifyContent = 'center';
+        imageContainer.style.alignItems = 'center';
 
-    const img = document.createElement('img');
-    img.src = property.imageUrls[0];
-    img.style.width = '100%';
-    img.style.height = '100%';
-    img.style.objectFit = 'cover';
-    img.style.borderRadius = '8px';
-    imageContainer.appendChild(img);
-    content.appendChild(imageContainer);
+        const img = document.createElement('img');
+        img.src = property.imageUrls[0];
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+        img.style.borderRadius = '8px';
+        imageContainer.appendChild(img);
+        content.appendChild(imageContainer);
     }
 
     // --- Title under video ---
