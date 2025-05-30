@@ -94,6 +94,7 @@ const images = [
     "Images/ResortsWorldTheater.jpg", // Resorts World Theatre
     "Images/themirage.jpg", // Mirage
     "Images/unnamed.png",
+    "Images/berry1.webp", // Nascar
     "https://upload.wikimedia.org/wikipedia/commons/c/c1/Wynn_2_%282%29.jpg", // Wynn Las Vegas
     "Images/unnamed (1).png",
     "https://shrinerschildrensopen.com/wp-content/uploads/2022/10/ShrinersChildrens-18-hole-2022.jpg", // Shriners Children's Open
@@ -2147,23 +2148,22 @@ if (property.videoUrls && property.videoUrls.length > 0) {
         const selectedUrl = property.videoUrls[randomIndex];
 
         const video = document.createElement('video');
-        video.controls = true;
-        video.muted = true;
+        video.muted = true; // Must be true for autoplay on mobile!
         video.playsInline = true;
         video.setAttribute('playsinline', '');
         video.setAttribute('webkit-playsinline', '');
         video.autoplay = true;
+        video.controls = true;
         video.preload = 'metadata';
         video.poster = 'Images/video-placeholder.jpg';
         video.src = selectedUrl;
-        video.load();
 
         video.onerror = () => {
-            // If video fails, show image fallback if available
             video.style.display = 'none';
             showImageFallback();
         };
 
+        // Try to unmute after loaded (may not work on all browsers)
         video.addEventListener('loadeddata', () => {
             video.muted = false;
             video.play().catch(() => {});
