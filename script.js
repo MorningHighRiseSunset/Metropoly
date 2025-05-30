@@ -84,7 +84,7 @@ const images = [
     // Las Vegas Monorail
     "Images/702-helicopters.webp", // Maverick Helicopter Rides
     // Brothel
-    // Bet MGM
+    "Images/693695_050215-ap-mayweather-img.jpg",// Bet MGM
     "Images/Screenshot 2024-12-12 033702.png", 
     "Images/unnamed.gif",// Brothel
     "Images/1.png", // Luxury Tax
@@ -463,9 +463,7 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [150, 450, 1000, 1200],
         rentWithHotel: 1400,
-        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
-
-        ],
+        imageUrls: "Images/4PFVVBO_copyright_image_38478.jpg",
     },
     {
         name: "Bellagio",
@@ -2109,34 +2107,57 @@ function showPropertyUI(position) {
 
     // --- Video on top ---
     if (property.videoUrls && property.videoUrls.length > 0) {
-        const videoContainer = document.createElement('div');
-        videoContainer.className = 'property-video-container';
-        videoContainer.style.width = '160px';
-        videoContainer.style.height = '90px';
-        videoContainer.style.overflow = 'hidden';
-        videoContainer.style.borderRadius = '8px';
-        videoContainer.style.margin = '0 auto 4px auto';
-        videoContainer.style.position = 'relative';
-        videoContainer.style.display = 'flex';
-        videoContainer.style.justifyContent = 'center';
-        videoContainer.style.alignItems = 'center';
+    const videoContainer = document.createElement('div');
+    videoContainer.className = 'property-video-container';
+    videoContainer.style.width = '160px';
+    videoContainer.style.height = '90px';
+    videoContainer.style.overflow = 'hidden';
+    videoContainer.style.borderRadius = '8px';
+    videoContainer.style.margin = '0 auto 4px auto';
+    videoContainer.style.position = 'relative';
+    videoContainer.style.display = 'flex';
+    videoContainer.style.justifyContent = 'center';
+    videoContainer.style.alignItems = 'center';
 
+    // Placeholder with play icon
+    const placeholder = document.createElement('div');
+    placeholder.style.width = '100%';
+    placeholder.style.height = '100%';
+    placeholder.style.background = '#222 url("Images/video-placeholder.jpg") center/cover no-repeat';
+    placeholder.style.display = 'flex';
+    placeholder.style.justifyContent = 'center';
+    placeholder.style.alignItems = 'center';
+    placeholder.style.cursor = 'pointer';
+
+    // Play icon overlay
+    const playIcon = document.createElement('div');
+    playIcon.innerHTML = '&#9658;';
+    playIcon.style.fontSize = '40px';
+    playIcon.style.color = '#fff';
+    playIcon.style.opacity = '0.85';
+    playIcon.style.pointerEvents = 'none';
+    placeholder.appendChild(playIcon);
+
+    // Only load video on tap/click
+    placeholder.onclick = () => {
+        placeholder.style.display = 'none';
         const randomIndex = Math.floor(Math.random() * property.videoUrls.length);
         const selectedUrl = property.videoUrls[randomIndex];
 
-        // --- IMPROVED VIDEO LOADING FOR MOBILE ---
         const video = document.createElement('video');
-        video.src = selectedUrl;
         video.controls = true;
         video.autoplay = true;
         video.muted = true; // Required for autoplay on mobile
-        video.playsInline = true; // Prevents iOS fullscreen
+        video.playsInline = true;
         video.setAttribute('playsinline', '');
         video.setAttribute('webkit-playsinline', '');
-        video.preload = 'metadata'; // Only preload metadata
-        video.poster = 'Images/video-placeholder.jpg'; // Use a small placeholder image
+        video.preload = 'metadata';
+        video.poster = 'Images/video-placeholder.jpg';
 
-        // Optional: fallback if video fails to load
+        // Set src only after user interaction
+        video.src = selectedUrl;
+
+        // Error fallback
         video.onerror = () => {
             video.style.display = 'none';
             const fallback = document.createElement('div');
@@ -2146,14 +2167,18 @@ function showPropertyUI(position) {
             videoContainer.appendChild(fallback);
         };
 
+        // Unmute after loaded (for iOS)
         video.addEventListener('loadeddata', () => {
             video.muted = false;
-            video.play().catch(() => {}); // Ignore autoplay errors
+            video.play().catch(() => {});
         });
 
         videoContainer.appendChild(video);
-        content.appendChild(videoContainer);
-    }
+    };
+
+    videoContainer.appendChild(placeholder);
+    content.appendChild(videoContainer);
+}
 
     if ((!property.videoUrls || property.videoUrls.length === 0) && property.imageUrls && property.imageUrls.length > 0) {
         const imageContainer = document.createElement('div');
@@ -5451,12 +5476,48 @@ function createDiceButton() {
         const rollButton = document.createElement('button');
         rollButton.className = 'dice-button';
         rollButton.textContent = 'Roll Dice';
+
+        // Responsive/mobile-friendly styles
         rollButton.style.position = 'fixed';
-        rollButton.style.bottom = '20px';
-        rollButton.style.left = '20px';
-        rollButton.style.transform = 'none';
+        rollButton.style.bottom = '24px';
+        rollButton.style.left = '50%';
+        rollButton.style.transform = 'translateX(-50%)';
         rollButton.style.display = 'none'; // Initially hide the button
-        rollButton.onclick = rollDice;
+        rollButton.style.zIndex = '9999';
+        rollButton.style.fontSize = '22px';
+        rollButton.style.padding = '18px 38px';
+        rollButton.style.borderRadius = '18px';
+        rollButton.style.background = '#4caf50';
+        rollButton.style.color = '#fff';
+        rollButton.style.border = 'none';
+        rollButton.style.boxShadow = '0 4px 16px rgba(0,0,0,0.18)';
+        rollButton.style.cursor = 'pointer';
+        rollButton.style.transition = 'background 0.2s, box-shadow 0.2s';
+
+        // Touch and click support
+        rollButton.addEventListener('click', rollDice);
+        rollButton.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            rollDice();
+        });
+
+        // Responsive adjustment for small screens
+        const style = document.createElement('style');
+        style.textContent = `
+            @media (max-width: 700px) {
+                .dice-button {
+                    font-size: 20px !important;
+                    padding: 16px 24px !important;
+                    border-radius: 14px !important;
+                    bottom: 18px !important;
+                    left: 50% !important;
+                    width: 90vw !important;
+                    min-width: 0 !important;
+                    max-width: 98vw !important;
+                }
+            }
+        `;
+        document.head.appendChild(style);
 
         document.body.appendChild(rollButton);
     }
