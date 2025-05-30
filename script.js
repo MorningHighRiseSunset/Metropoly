@@ -336,12 +336,13 @@ const properties = [{
         ],
     },
     {
-        name: "Income Tax",
-        type: "tax",
-        price: 200,
-        imageUrl: "https://www.radacutlery.com/wp-content/uploads/2015/09/Uncle-Sam-1.jpg",
-        description: "Pay Income Tax: $200 or 10% of your total worth",
-        special: true
+    name: "Income Tax",
+    type: "tax",
+    price: 200,
+    imageUrls: ["https://www.radacutlery.com/wp-content/uploads/2015/09/Uncle-Sam-1.jpg"],
+    videoUrls: [],
+    description: "Pay Income Tax: $200 or 10% of your total worth",
+    special: true
     },
     {
         name: "Las Vegas Monorail",
@@ -448,7 +449,7 @@ const properties = [{
         type: "utility",
         mortgageValue: 75,
         description: "If one utility is owned, rent is 4 times amount shown on dice. If both utilities are owned, rent is 10 times amount shown on dice.",
-        imageUrl: "yellow light bulb image.jpg"
+        imageUrls: "yellow light bulb image.jpg"
     },
     {
         name: "Bet MGM",
@@ -494,7 +495,7 @@ const properties = [{
     {
         name: "FREE PARKING",
         type: "special",
-        imageUrl: "Images/free parking.jpg",
+        imageUrls: "Images/free parking.jpg",
         description: "Take a break! No fee to park here.",
         special: true
     },
@@ -621,7 +622,7 @@ const properties = [{
         name: "Luxury Tax",
         type: "tax",
         price: 75,
-        imageUrl: "Images/1.png",
+        imageUrls: "Images/1.png",
         description: "Pay Luxury Tax of $75",
         special: true
     },
@@ -653,7 +654,7 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [350, 1100, 2500, 2700],
         rentWithHotel: 3000,
-        imageUrl: "unnamed.gif"
+        imageUrls: "unnamed.gif"
     },
     {
         name: "Community Cards",
@@ -2114,6 +2115,29 @@ function showPropertyUI(position) {
 
         videoContainer.appendChild(video);
         content.appendChild(videoContainer);
+    }
+
+    if ((!property.videoUrls || property.videoUrls.length === 0) && property.imageUrls && property.imageUrls.length > 0) {
+    const imageContainer = document.createElement('div');
+    imageContainer.className = 'property-image-container';
+    imageContainer.style.width = '160px';
+    imageContainer.style.height = '90px';
+    imageContainer.style.overflow = 'hidden';
+    imageContainer.style.borderRadius = '8px';
+    imageContainer.style.margin = '0 auto 4px auto';
+    imageContainer.style.position = 'relative';
+    imageContainer.style.display = 'flex';
+    imageContainer.style.justifyContent = 'center';
+    imageContainer.style.alignItems = 'center';
+
+    const img = document.createElement('img');
+    img.src = property.imageUrls[0];
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'cover';
+    img.style.borderRadius = '8px';
+    imageContainer.appendChild(img);
+    content.appendChild(imageContainer);
     }
 
     // --- Title under video ---
@@ -5122,20 +5146,10 @@ function createImageCarousel(images, position) {
     carouselGroup.position.set(position.x, position.y, position.z);
     scene.add(carouselGroup);
 
-    // Overlay GIF element
-    let gifOverlay = document.getElementById('brothel-gif-overlay');
-    if (!gifOverlay) {
-        gifOverlay = document.createElement('img');
-        gifOverlay.id = 'brothel-gif-overlay';
-        gifOverlay.style.position = 'fixed';
-        gifOverlay.style.left = '50%';
-        gifOverlay.style.top = '50%';
-        gifOverlay.style.transform = 'translate(-50%, -50%)';
-        gifOverlay.style.width = '400px'; // Adjust as needed
-        gifOverlay.style.height = '400px';
-        gifOverlay.style.zIndex = '9999';
-        gifOverlay.style.display = 'none';
-        document.body.appendChild(gifOverlay);
+    // Remove any existing overlay GIF element (if present)
+    const oldGifOverlay = document.getElementById('brothel-gif-overlay');
+    if (oldGifOverlay) {
+        oldGifOverlay.remove();
     }
 
     const BROTHEL_GIF_PATH = "Images/unnamed.gif";
@@ -5146,25 +5160,18 @@ function createImageCarousel(images, position) {
 
         if (carouselTimeout) clearTimeout(carouselTimeout);
 
-        if (currentImage === BROTHEL_GIF_PATH) {
-            // Hide Three.js plane, show GIF overlay
-            plane.visible = false;
-            gifOverlay.src = BROTHEL_GIF_PATH;
-            gifOverlay.style.display = 'block';
-        } else {
-            // Show Three.js plane, hide GIF overlay
-            plane.visible = true;
-            gifOverlay.style.display = 'none';
-            textureLoader.load(currentImage, (loadedTexture) => {
-                material.map = loadedTexture;
-                material.needsUpdate = true;
-            }, undefined, (error) => {
-                console.error("Failed to load image:", error);
-            });
-        }
+        // Always show the Three.js plane, even for GIFs
+        plane.visible = true;
+
+        textureLoader.load(currentImage, (loadedTexture) => {
+            material.map = loadedTexture;
+            material.needsUpdate = true;
+        }, undefined, (error) => {
+            console.error("Failed to load image:", error);
+        });
 
         let nextDelay = 3000;
-        if (currentImage === BROTHEL_GIF_PATH) {
+        if (currentImage === BROTHEL_GIF_PATH || currentImage.endsWith('.gif')) {
             nextDelay = BROTHEL_GIF_DURATION;
         }
 
@@ -6411,6 +6418,7 @@ setInterval(showSuggestionNotification, 240000);
 
 // Optionally, show once shortly after page load
 setTimeout(showSuggestionNotification, 10000);
+
 /*
 // Function to create a UI for testing mode
 function createTestingModeUI() {
