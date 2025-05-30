@@ -915,13 +915,15 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  z-index: 1000;
+  z-index: 2001;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   transition: all 0.3s ease;
   width: auto;
   min-width: 90px;
   max-width: 130px;
+  display: none;
 }
+
 
 .dice-button:hover {
   background-color: #45a049;
@@ -1605,20 +1607,24 @@
 @media (max-width: 600px) {
   .dice-button {
   position: fixed;
-  bottom: 20px;
-  left: 20px;
-  font-size: 18px;
-  padding: 12px 28px;
-  border-radius: 8px;
-  background: #4caf50;
-  color: #fff;
+  bottom: 18px;
+  left: 12px;
+  padding: 10px 18px;
+  font-size: 15px;
+  background-color: #4CAF50;
+  color: white;
   border: none;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  border-radius: 4px;
   cursor: pointer;
-  z-index: 2001; /* Above most UI, below modals */
-  transition: background 0.2s, box-shadow 0.2s;
-  display: none; /* JS will show/hide */
-  }
+  z-index: 2001;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: all 0.3s ease;
+  width: auto;
+  min-width: 90px;
+  max-width: 130px;
+  display: none;
+}
+
 
   .dice-button:hover,
   .dice-button:active {
@@ -1645,17 +1651,20 @@
   top: 20px;
   right: 20px;
   z-index: 2002; /* Above dice button */
-  }
+}
 }
 
 @media (max-width: 700px) {
   .dice-button {
-    font-size: 16px;
-    padding: 10px 18px;
-    left: 12px;
-    bottom: 14px;
-    width: auto;
-    min-width: 0;
-    max-width: 90vw;
+    font-size: 15px !important;
+    padding: 10px 14px !important;
+    left: 12px !important;
+    bottom: 14px !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 130px !important;
+    border-radius: 6px !important;
+    z-index: 2001 !important;
+    transform: none !important;
   }
 }
