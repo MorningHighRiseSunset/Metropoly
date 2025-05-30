@@ -84,7 +84,8 @@ const images = [
     // Las Vegas Monorail
     "Images/702-helicopters.webp", // Maverick Helicopter Rides
     // Brothel
-    "Images/693695_050215-ap-mayweather-img.jpg",// Bet MGM
+    "Images/693695_050215-ap-mayweather-img.jpg",
+    "Images/unnamed.png",
     "Images/Screenshot 2024-12-12 033702.png", 
     "Images/unnamed.gif",// Brothel
     "Images/1.png", // Luxury Tax
