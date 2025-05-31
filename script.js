@@ -2137,6 +2137,7 @@ if (property.videoUrls && property.videoUrls.length > 0) {
     spinner.style.borderTop = '4px solid #4caf50';
     spinner.style.borderRadius = '50%';
     spinner.style.animation = 'spin 1s linear infinite';
+    spinner.style.display = 'none';
     videoContainer.appendChild(spinner);
 
     // Add spinner CSS if not present
@@ -2192,10 +2193,10 @@ if (property.videoUrls && property.videoUrls.length > 0) {
         // Set src after all attributes for best compatibility
         video.src = selectedUrl;
 
-        // Give large files more time to load (e.g., 20 seconds)
+        // Give large files more time to load (e.g., 30 seconds)
         let errorTimeout = setTimeout(() => {
             video.onerror();
-        }, 20000);
+        }, 30000);
 
         video.onerror = () => {
             clearTimeout(errorTimeout);
