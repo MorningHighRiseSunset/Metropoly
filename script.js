@@ -2128,7 +2128,6 @@ if (property.videoUrls && property.videoUrls.length > 0) {
     const placeholder = document.createElement('div');
     placeholder.style.width = '100%';
     placeholder.style.height = '100%';
-    placeholder.style.background = '#222 url("Images/video-placeholder.jpg") center/cover no-repeat';
     placeholder.style.display = 'flex';
     placeholder.style.justifyContent = 'center';
     placeholder.style.alignItems = 'center';
