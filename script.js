@@ -2124,294 +2124,36 @@ if (property.videoUrls && property.videoUrls.length > 0) {
     videoContainer.style.justifyContent = 'center';
     videoContainer.style.alignItems = 'center';
 
-    // Loading spinner
-    const spinner = document.createElement('div');
-    spinner.className = 'video-spinner';
-    spinner.style.position = 'absolute';
-    spinner.style.top = '50%';
-    spinner.style.left = '50%';
-    spinner.style.transform = 'translate(-50%, -50%)';
-    spinner.style.width = '32px';
-    spinner.style.height = '32px';
-    spinner.style.border = '4px solid #eee';
-    spinner.style.borderTop = '4px solid #4caf50';
-    spinner.style.borderRadius = '50%';
-    spinner.style.animation = 'spin 1s linear infinite';
-    spinner.style.display = 'none';
-    videoContainer.appendChild(spinner);
+    // Randomly select one of the video URLs
+    const randomIndex = Math.floor(Math.random() * property.videoUrls.length);
+    const selectedUrl = property.videoUrls[randomIndex];
 
-    // Add spinner CSS if not present
-    if (!document.getElementById('video-spinner-style')) {
-        const style = document.createElement('style');
-        style.id = 'video-spinner-style';
-        style.textContent = `
-        @keyframes spin {
-            0% { transform: rotate(0deg);}
-            100% { transform: rotate(360deg);}
-        }
-        `;
-        document.head.appendChild(style);
-    }
+    const video = document.createElement('video');
+    video.src = selectedUrl;
+    video.controls = true;
+    video.autoplay = true;
+    video.muted = true; // Required for autoplay on mobile
+    video.playsInline = true;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
+    video.preload = 'auto';
+    video.poster = 'Images/video-placeholder.jpg';
+    video.style.width = '100%';
+    video.style.height = '100%';
+    video.style.objectFit = 'cover';
 
-    // Placeholder with play icon
-    const placeholder = document.createElement('div');
-    placeholder.style.width = '100%';
-    placeholder.style.height = '100%';
-    placeholder.style.background = '#222 url("Images/video-placeholder.jpg") center/cover no-repeat';
-    placeholder.style.display = 'flex';
-    placeholder.style.justifyContent = 'center';
-    placeholder.style.alignItems = 'center';
-    placeholder.style.cursor = 'pointer';
+    // Try to unmute after loaded
+    video.addEventListener('loadeddata', () => {
+        try {
+            video.muted = false;
+            video.play().catch(() => {});
+        } catch (e) {}
+    });
 
-    const playIcon = document.createElement('div');
-    playIcon.innerHTML = '&#9658;';
-    playIcon.style.fontSize = '40px';
-    playIcon.style.color = '#fff';
-    playIcon.style.opacity = '0.85';
-    playIcon.style.pointerEvents = 'none';
-    placeholder.appendChild(playIcon);
-
-    placeholder.onclick = () => {
-        placeholder.style.display = 'none';
-        spinner.style.display = 'block';
-        const randomIndex = Math.floor(Math.random() * property.videoUrls.length);
-        const selectedUrl = property.videoUrls[randomIndex];
-
-        const video = document.createElement('video');
-        video.controls = true;
-        video.muted = true; // Required for autoplay on mobile
-        video.playsInline = true;
-        video.setAttribute('playsinline', '');
-        video.setAttribute('webkit-playsinline', '');
-        video.autoplay = true;
-        video.preload = 'auto';
-        video.poster = 'Images/video-placeholder.jpg';
-        video.style.width = '100%';
-        video.style.height = '100%';
-        video.style.objectFit = 'cover';
-
-        // Set src after all attributes for best compatibility
-        video.src = selectedUrl;
-
-        // Give large files more time to load (e.g., 30 seconds)
-        let errorTimeout = setTimeout(() => {
-            video.onerror();
-        }, 30000);
-
-        video.onerror = () => {
-            clearTimeout(errorTimeout);
-            spinner.style.display = 'none';
-            video.style.display = 'none';
-            showImageFallback();
-        };
-
-        video.oncanplay = () => {
-            clearTimeout(errorTimeout);
-            spinner.style.display = 'none';
-        };
-
-        // Try to unmute after loaded and play
-        video.addEventListener('loadeddata', () => {
-            try {
-                video.muted = false;
-                video.play().catch(() => {});
-            } catch (e) {
-                // Some browsers may block unmuting
-            }
-        });
-
-        videoContainer.appendChild(video);
-    };
-
-    videoContainer.appendChild(placeholder);
+    videoContainer.appendChild(video);
     content.appendChild(videoContainer);
     mediaShown = true;
 }
-
-// Fallback: show image if no video or if video fails
-function showImageFallback() {
-    let imageUrl = null;
-    if (Array.isArray(property.imageUrls) && property.imageUrls.length > 0) {
-        imageUrl = property.imageUrls[0];
-    } else if (typeof property.imageUrls === 'string' && property.imageUrls.length > 0) {
-        imageUrl = property.imageUrls;
-    }
-    if (imageUrl) {
-        const imageContainer = document.createElement('div');
-        imageContainer.className = 'property-image-container';
-        imageContainer.style.width = '160px';
-        imageContainer.style.height = '90px';
-        imageContainer.style.overflow = 'hidden';
-        imageContainer.style.borderRadius = '8px';
-        imageContainer.style.margin = '0 auto 4px auto';
-        imageContainer.style.position = 'relative';
-        imageContainer.style.display = 'flex';
-        imageContainer.style.justifyContent = 'center';
-        imageContainer.style.alignItems = 'center';
-
-        const img = document.createElement('img');
-        img.src = imageUrl;
-        img.style.width = '100%';
-        img.style.height = '100%';
-        img.style.objectFit = 'cover';
-        img.style.borderRadius = '8px';
-        imageContainer.appendChild(img);
-        content.appendChild(imageContainer);
-        mediaShown = true;
-    } else {
-        // No image, show a placeholder
-        const placeholder = document.createElement('div');
-        placeholder.style.width = '160px';
-        placeholder.style.height = '90px';
-        placeholder.style.background = '#333';
-        placeholder.style.display = 'flex';
-        placeholder.style.justifyContent = 'center';
-        placeholder.style.alignItems = 'center';
-        placeholder.style.color = '#fff';
-        placeholder.style.borderRadius = '8px';
-        placeholder.textContent = 'No preview available';
-        content.appendChild(placeholder);
-        mediaShown = true;
-    }
-}
-
-// If no video, show image immediately
-if (!mediaShown) {
-    showImageFallback();
-}
-
-    if ((!property.videoUrls || property.videoUrls.length === 0) && property.imageUrls && property.imageUrls.length > 0) {
-        const imageContainer = document.createElement('div');
-        imageContainer.className = 'property-image-container';
-        imageContainer.style.width = '160px';
-        imageContainer.style.height = '90px';
-        imageContainer.style.overflow = 'hidden';
-        imageContainer.style.borderRadius = '8px';
-        imageContainer.style.margin = '0 auto 4px auto';
-        imageContainer.style.position = 'relative';
-        imageContainer.style.display = 'flex';
-        imageContainer.style.justifyContent = 'center';
-        imageContainer.style.alignItems = 'center';
-
-        const img = document.createElement('img');
-        img.src = property.imageUrls[0];
-        img.style.width = '100%';
-        img.style.height = '100%';
-        img.style.objectFit = 'cover';
-        img.style.borderRadius = '8px';
-        imageContainer.appendChild(img);
-        content.appendChild(imageContainer);
-    }
-
-    // --- Title under video ---
-    const titleDiv = document.createElement('div');
-    titleDiv.className = 'popup-header';
-    titleDiv.style.backgroundColor = "transparent";
-    titleDiv.style.fontSize = '14px';
-    titleDiv.style.padding = '5px';
-    titleDiv.style.margin = '0 0 4px 0';
-    titleDiv.style.width = '100%';
-    titleDiv.style.textAlign = 'center';
-    titleDiv.textContent = property.name;
-    content.appendChild(titleDiv);
-
-    // --- Details and buttons side by side ---
-    const rowContainer = document.createElement('div');
-    rowContainer.style.display = 'flex';
-    rowContainer.style.flexDirection = 'row';
-    rowContainer.style.justifyContent = 'flex-start';
-    rowContainer.style.alignItems = 'stretch'; // Make both columns stretch to same height
-    rowContainer.style.gap = '8px';
-    rowContainer.style.width = '100%';
-    rowContainer.style.marginLeft = '0';
-    rowContainer.style.boxSizing = 'border-box';
-
-    // Details (side by side)
-    const detailsContainer = document.createElement('div');
-    detailsContainer.style.flex = '1 1 0';
-    detailsContainer.style.fontSize = '11px';
-    detailsContainer.style.display = 'flex';
-    detailsContainer.style.alignItems = 'flex-start';
-    detailsContainer.style.height = '100%';
-    detailsContainer.style.minWidth = '0';
-    detailsContainer.innerHTML = `
-    <div class="property-details" style="display: flex; flex-direction: row; gap: 6px; height: 100%;">
-        <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
-            <span class="detail-label">Price:</span>
-            <span class="detail-value">$${property.price || 'N/A'}</span>
-        </div>
-        <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
-            <span class="detail-label">Rent:</span>
-            <span class="detail-value">$${property.rent || 'N/A'}</span>
-        </div>
-        <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
-            <span class="detail-label">Owner:</span>
-            <span class="detail-value">${property.owner ? property.owner.name : 'None'}</span>
-        </div>
-        <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
-            <span class="detail-label">Address:</span>
-            <span class="detail-value">${property.address || 'No address available'}</span>
-        </div>
-    </div>
-    `;
-
-    // Buttons (vertical stack, right of details)
-    const buttonContainer = createButtonContainer(property);
-    buttonContainer.style.display = 'flex';
-    buttonContainer.style.flexDirection = 'column';
-    buttonContainer.style.gap = '6px';
-    buttonContainer.style.alignItems = 'stretch';
-    buttonContainer.style.justifyContent = 'flex-end'; // Push close button to the bottom
-    buttonContainer.style.alignSelf = 'stretch'; // Stretch to match details height
-    buttonContainer.style.height = '100%';
-    buttonContainer.style.marginTop = '0';
-    buttonContainer.style.minWidth = '70px';
-    buttonContainer.style.maxWidth = '90px';
-
-    // Make the buttons themselves smaller
-    Array.from(buttonContainer.querySelectorAll('button')).forEach(btn => {
-        btn.style.padding = '6px 8px';
-        btn.style.fontSize = '12px';
-        btn.style.borderRadius = '4px';
-    });
-
-    // Make button container the same height as details for alignment (optional)
-    setTimeout(() => {
-        const detailsHeight = detailsContainer.offsetHeight;
-        buttonContainer.style.minHeight = detailsHeight + 'px';
-    }, 0);
-
-    rowContainer.appendChild(detailsContainer);
-    rowContainer.appendChild(buttonContainer);
-
-    content.appendChild(rowContainer);
-
-    popup.appendChild(content);
-    overlay.appendChild(popup);
-    document.body.appendChild(overlay);
-
-    requestAnimationFrame(() => {
-        popup.classList.add('show');
-    });
-
-    // Prevent countdown until a decision is made
-    const buyButton = buttonContainer.querySelector('.action-button.buy');
-    const closeButton = buttonContainer.querySelector('.action-button.close');
-
-    const startCountdown = () => {
-        closePropertyUI();
-        setTimeout(() => {
-            endTurn(); // Start the countdown after decision
-        }, 5000);
-    };
-
-    if (buyButton) {
-        buyButton.addEventListener('click', startCountdown);
-    }
-
-    if (closeButton) {
-        closeButton.addEventListener('click', startCountdown);
-    }
 }
 
 function showJailUI(player) {
