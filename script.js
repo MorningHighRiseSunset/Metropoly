@@ -2124,6 +2124,34 @@ if (property.videoUrls && property.videoUrls.length > 0) {
     videoContainer.style.justifyContent = 'center';
     videoContainer.style.alignItems = 'center';
 
+    // Loading spinner
+    const spinner = document.createElement('div');
+    spinner.className = 'video-spinner';
+    spinner.style.position = 'absolute';
+    spinner.style.top = '50%';
+    spinner.style.left = '50%';
+    spinner.style.transform = 'translate(-50%, -50%)';
+    spinner.style.width = '32px';
+    spinner.style.height = '32px';
+    spinner.style.border = '4px solid #eee';
+    spinner.style.borderTop = '4px solid #4caf50';
+    spinner.style.borderRadius = '50%';
+    spinner.style.animation = 'spin 1s linear infinite';
+    videoContainer.appendChild(spinner);
+
+    // Add spinner CSS if not present
+    if (!document.getElementById('video-spinner-style')) {
+        const style = document.createElement('style');
+        style.id = 'video-spinner-style';
+        style.textContent = `
+        @keyframes spin {
+            0% { transform: rotate(0deg);}
+            100% { transform: rotate(360deg);}
+        }
+        `;
+        document.head.appendChild(style);
+    }
+
     // Placeholder with play icon
     const placeholder = document.createElement('div');
     placeholder.style.width = '100%';
@@ -2144,6 +2172,7 @@ if (property.videoUrls && property.videoUrls.length > 0) {
 
     placeholder.onclick = () => {
         placeholder.style.display = 'none';
+        spinner.style.display = 'block';
         const randomIndex = Math.floor(Math.random() * property.videoUrls.length);
         const selectedUrl = property.videoUrls[randomIndex];
 
@@ -2156,29 +2185,38 @@ if (property.videoUrls && property.videoUrls.length > 0) {
         video.autoplay = true;
         video.preload = 'auto';
         video.poster = 'Images/video-placeholder.jpg';
+        video.style.width = '100%';
+        video.style.height = '100%';
+        video.style.objectFit = 'cover';
 
         // Set src after all attributes for best compatibility
         video.src = selectedUrl;
 
-        // Only show fallback if the video fails to load after a few seconds
+        // Give large files more time to load (e.g., 20 seconds)
         let errorTimeout = setTimeout(() => {
             video.onerror();
-        }, 5000);
+        }, 20000);
 
         video.onerror = () => {
             clearTimeout(errorTimeout);
+            spinner.style.display = 'none';
             video.style.display = 'none';
             showImageFallback();
         };
 
         video.oncanplay = () => {
             clearTimeout(errorTimeout);
+            spinner.style.display = 'none';
         };
 
-        // Optionally, let user unmute after loaded
+        // Try to unmute after loaded and play
         video.addEventListener('loadeddata', () => {
-            // video.muted = false; // Uncomment if you want to try unmuting after load
-            video.play().catch(() => {});
+            try {
+                video.muted = false;
+                video.play().catch(() => {});
+            } catch (e) {
+                // Some browsers may block unmuting
+            }
         });
 
         videoContainer.appendChild(video);
