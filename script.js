@@ -2154,6 +2154,145 @@ if (property.videoUrls && property.videoUrls.length > 0) {
     content.appendChild(videoContainer);
     mediaShown = true;
 }
+
+
+// If no video, show image immediately
+if (!mediaShown) {
+    showImageFallback();
+}
+
+    if ((!property.videoUrls || property.videoUrls.length === 0) && property.imageUrls && property.imageUrls.length > 0) {
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'property-image-container';
+        imageContainer.style.width = '160px';
+        imageContainer.style.height = '90px';
+        imageContainer.style.overflow = 'hidden';
+        imageContainer.style.borderRadius = '8px';
+        imageContainer.style.margin = '0 auto 4px auto';
+        imageContainer.style.position = 'relative';
+        imageContainer.style.display = 'flex';
+        imageContainer.style.justifyContent = 'center';
+        imageContainer.style.alignItems = 'center';
+
+        const img = document.createElement('img');
+        img.src = property.imageUrls[0];
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+        img.style.borderRadius = '8px';
+        imageContainer.appendChild(img);
+        content.appendChild(imageContainer);
+    }
+
+    // --- Title under video ---
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'popup-header';
+    titleDiv.style.backgroundColor = "transparent";
+    titleDiv.style.fontSize = '14px';
+    titleDiv.style.padding = '5px';
+    titleDiv.style.margin = '0 0 4px 0';
+    titleDiv.style.width = '100%';
+    titleDiv.style.textAlign = 'center';
+    titleDiv.textContent = property.name;
+    content.appendChild(titleDiv);
+
+    // --- Details and buttons side by side ---
+    const rowContainer = document.createElement('div');
+    rowContainer.style.display = 'flex';
+    rowContainer.style.flexDirection = 'row';
+    rowContainer.style.justifyContent = 'flex-start';
+    rowContainer.style.alignItems = 'stretch'; // Make both columns stretch to same height
+    rowContainer.style.gap = '8px';
+    rowContainer.style.width = '100%';
+    rowContainer.style.marginLeft = '0';
+    rowContainer.style.boxSizing = 'border-box';
+
+    // Details (side by side)
+    const detailsContainer = document.createElement('div');
+    detailsContainer.style.flex = '1 1 0';
+    detailsContainer.style.fontSize = '11px';
+    detailsContainer.style.display = 'flex';
+    detailsContainer.style.alignItems = 'flex-start';
+    detailsContainer.style.height = '100%';
+    detailsContainer.style.minWidth = '0';
+    detailsContainer.innerHTML = `
+    <div class="property-details" style="display: flex; flex-direction: row; gap: 6px; height: 100%;">
+        <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+            <span class="detail-label">Price:</span>
+            <span class="detail-value">$${property.price || 'N/A'}</span>
+        </div>
+        <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+            <span class="detail-label">Rent:</span>
+            <span class="detail-value">$${property.rent || 'N/A'}</span>
+        </div>
+        <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+            <span class="detail-label">Owner:</span>
+            <span class="detail-value">${property.owner ? property.owner.name : 'None'}</span>
+        </div>
+        <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+            <span class="detail-label">Address:</span>
+            <span class="detail-value">${property.address || 'No address available'}</span>
+        </div>
+    </div>
+    `;
+
+    // Buttons (vertical stack, right of details)
+    const buttonContainer = createButtonContainer(property);
+    buttonContainer.style.display = 'flex';
+    buttonContainer.style.flexDirection = 'column';
+    buttonContainer.style.gap = '6px';
+    buttonContainer.style.alignItems = 'stretch';
+    buttonContainer.style.justifyContent = 'flex-end'; // Push close button to the bottom
+    buttonContainer.style.alignSelf = 'stretch'; // Stretch to match details height
+    buttonContainer.style.height = '100%';
+    buttonContainer.style.marginTop = '0';
+    buttonContainer.style.minWidth = '70px';
+    buttonContainer.style.maxWidth = '90px';
+
+    // Make the buttons themselves smaller
+    Array.from(buttonContainer.querySelectorAll('button')).forEach(btn => {
+        btn.style.padding = '6px 8px';
+        btn.style.fontSize = '12px';
+        btn.style.borderRadius = '4px';
+    });
+
+    // Make button container the same height as details for alignment (optional)
+    setTimeout(() => {
+        const detailsHeight = detailsContainer.offsetHeight;
+        buttonContainer.style.minHeight = detailsHeight + 'px';
+    }, 0);
+
+    rowContainer.appendChild(detailsContainer);
+    rowContainer.appendChild(buttonContainer);
+
+    content.appendChild(rowContainer);
+
+    popup.appendChild(content);
+    overlay.appendChild(popup);
+    document.body.appendChild(overlay);
+
+    requestAnimationFrame(() => {
+        popup.classList.add('show');
+    });
+
+    // Prevent countdown until a decision is made
+    const buyButton = buttonContainer.querySelector('.action-button.buy');
+    const closeButton = buttonContainer.querySelector('.action-button.close');
+
+    const startCountdown = () => {
+        closePropertyUI();
+        setTimeout(() => {
+            endTurn(); // Start the countdown after decision
+        }, 5000);
+    };
+
+    if (buyButton) {
+        buyButton.addEventListener('click', startCountdown);
+    }
+
+    if (closeButton) {
+        closeButton.addEventListener('click', startCountdown);
+    }
 }
 
 function showJailUI(player) {
