@@ -2124,37 +2124,105 @@ if (property.videoUrls && property.videoUrls.length > 0) {
     videoContainer.style.justifyContent = 'center';
     videoContainer.style.alignItems = 'center';
 
-    // Randomly select one of the video URLs
-    const randomIndex = Math.floor(Math.random() * property.videoUrls.length);
-    const selectedUrl = property.videoUrls[randomIndex];
+    // Placeholder with play icon
+    const placeholder = document.createElement('div');
+    placeholder.style.width = '100%';
+    placeholder.style.height = '100%';
+    placeholder.style.background = '#222 url("Images/video-placeholder.jpg") center/cover no-repeat';
+    placeholder.style.display = 'flex';
+    placeholder.style.justifyContent = 'center';
+    placeholder.style.alignItems = 'center';
+    placeholder.style.cursor = 'pointer';
 
-    const video = document.createElement('video');
-    video.src = selectedUrl;
-    video.controls = true;
-    video.autoplay = true;
-    video.muted = true; // Required for autoplay on mobile
-    video.playsInline = true;
-    video.setAttribute('playsinline', '');
-    video.setAttribute('webkit-playsinline', '');
-    video.preload = 'auto';
-    video.poster = 'Images/video-placeholder.jpg';
-    video.style.width = '100%';
-    video.style.height = '100%';
-    video.style.objectFit = 'cover';
+    const playIcon = document.createElement('div');
+    playIcon.innerHTML = '&#9658;';
+    playIcon.style.fontSize = '40px';
+    playIcon.style.color = '#fff';
+    playIcon.style.opacity = '0.85';
+    playIcon.style.pointerEvents = 'none';
+    placeholder.appendChild(playIcon);
 
-    // Try to unmute after loaded
-    video.addEventListener('loadeddata', () => {
-        try {
+    placeholder.onclick = () => {
+        placeholder.style.display = 'none';
+        const randomIndex = Math.floor(Math.random() * property.videoUrls.length);
+        const selectedUrl = property.videoUrls[randomIndex];
+
+        const video = document.createElement('video');
+        video.muted = true; // Must be true for autoplay on mobile!
+        video.playsInline = true;
+        video.setAttribute('playsinline', '');
+        video.setAttribute('webkit-playsinline', '');
+        video.autoplay = true;
+        video.controls = true;
+        video.preload = 'metadata';
+        video.poster = 'Images/video-placeholder.jpg';
+        video.src = selectedUrl;
+
+        video.onerror = () => {
+            video.style.display = 'none';
+            showImageFallback();
+        };
+
+        // Try to unmute after loaded (may not work on all browsers)
+        video.addEventListener('loadeddata', () => {
             video.muted = false;
             video.play().catch(() => {});
-        } catch (e) {}
-    });
+        });
 
-    videoContainer.appendChild(video);
+        videoContainer.appendChild(video);
+    };
+
+    videoContainer.appendChild(placeholder);
     content.appendChild(videoContainer);
     mediaShown = true;
 }
 
+// Fallback: show image if no video or if video fails
+function showImageFallback() {
+    let imageUrl = null;
+    if (Array.isArray(property.imageUrls) && property.imageUrls.length > 0) {
+        imageUrl = property.imageUrls[0];
+    } else if (typeof property.imageUrls === 'string' && property.imageUrls.length > 0) {
+        imageUrl = property.imageUrls;
+    }
+    if (imageUrl) {
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'property-image-container';
+        imageContainer.style.width = '160px';
+        imageContainer.style.height = '90px';
+        imageContainer.style.overflow = 'hidden';
+        imageContainer.style.borderRadius = '8px';
+        imageContainer.style.margin = '0 auto 4px auto';
+        imageContainer.style.position = 'relative';
+        imageContainer.style.display = 'flex';
+        imageContainer.style.justifyContent = 'center';
+        imageContainer.style.alignItems = 'center';
+
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+        img.style.borderRadius = '8px';
+        imageContainer.appendChild(img);
+        content.appendChild(imageContainer);
+        mediaShown = true;
+    } else {
+        // No image, show a placeholder
+        const placeholder = document.createElement('div');
+        placeholder.style.width = '160px';
+        placeholder.style.height = '90px';
+        placeholder.style.background = '#333';
+        placeholder.style.display = 'flex';
+        placeholder.style.justifyContent = 'center';
+        placeholder.style.alignItems = 'center';
+        placeholder.style.color = '#fff';
+        placeholder.style.borderRadius = '8px';
+        placeholder.textContent = 'No preview available';
+        content.appendChild(placeholder);
+        mediaShown = true;
+    }
+}
 
 // If no video, show image immediately
 if (!mediaShown) {
