@@ -89,9 +89,10 @@ const images = [
     "Images/unnamed.gif",// Brothel
     "Images/1.png", // Luxury Tax
     // Bellagio
+    "Images/11929141633_b4ab5fd45e_k.webp", // Horseback Riding
     "Images/raidersimage.png", // Las Vegas Raiders
     "https://s.abcnews.com/images/Sports/las-vegas-aces-gty-thg-180808_hpMain_16x9_992.jpg", // Las Vegas Aces
-    "Images/ResortsWorldTheater.jpg", // Resorts World Theatre
+    "", // Resorts World Theatre
     "Images/themirage.jpg", // Mirage
     "Images/unnamed.png",
     "Images/berry1.webp", // Nascar
@@ -5211,6 +5212,7 @@ function createImageCarousel(images, position) {
     let currentImageIndex = 0;
     let carouselTimeout = null;
     let gifImg = null; // For animated GIFs
+    let baseplate = null; // <-- Add this line
 
     // Create a single plane for the carousel
     const material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
@@ -5221,10 +5223,41 @@ function createImageCarousel(images, position) {
     carouselGroup.position.set(position.x, position.y, position.z);
     scene.add(carouselGroup);
 
+    function spawnBaseplate() {
+        if (baseplate) return; // Already exists
+        const baseGeometry = new THREE.BoxGeometry(62, 1, 62); // Slightly larger than image
+        const baseMaterial = new THREE.MeshPhongMaterial({
+            color: 0x222222,
+            shininess: 30,
+            opacity: 0.85,
+            transparent: true
+        });
+        baseplate = new THREE.Mesh(baseGeometry, baseMaterial);
+        baseplate.position.set(
+            carouselGroup.position.x,
+            carouselGroup.position.y - 1, // Just below the carousel
+            carouselGroup.position.z
+        );
+        baseplate.receiveShadow = true;
+        scene.add(baseplate);
+    }
+
+    function removeBaseplate() {
+        if (baseplate) {
+            scene.remove(baseplate);
+            baseplate.geometry.dispose();
+            baseplate.material.dispose();
+            baseplate = null;
+        }
+    }
+
     function updateImage() {
         if (carouselTimeout) clearTimeout(carouselTimeout);
 
         const currentImage = images[currentImageIndex];
+
+        // Remove baseplate by default
+        removeBaseplate();
 
         // If previous GIF image exists, remove its animation loop
         if (gifImg) {
@@ -5251,6 +5284,9 @@ function createImageCarousel(images, position) {
                 }
                 animateGifTexture();
 
+                // --- SPAWN BASEPLATE ONLY FOR GIF ---
+                spawnBaseplate();
+
                 // Set how long to show the GIF (default: 6s, or adjust as needed)
                 carouselTimeout = setTimeout(nextImage, 6000);
             };
@@ -5266,6 +5302,8 @@ function createImageCarousel(images, position) {
     }
 
     function nextImage() {
+        // Remove baseplate when switching away from GIF
+        removeBaseplate();
         currentImageIndex = (currentImageIndex + 1) % images.length;
         updateImage();
     }
