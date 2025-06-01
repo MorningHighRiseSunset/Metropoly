@@ -356,8 +356,7 @@ const properties = [{
         address: "",
         mortgageValue: 100,
         rentWithRailroads: [25, 50, 100, 200],
-        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
-
+        videoUrls: [ "Videos/Monorail.mp4",
         ],
     },
     {
