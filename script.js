@@ -566,8 +566,7 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [280, 850, 2000, 2200],
         rentWithHotel: 2400,
-        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
-
+        videoUrls: [ "Videos/Sphere.mp4",
         ],
     },
     {
