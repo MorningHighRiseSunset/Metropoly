@@ -1446,13 +1446,6 @@ function onMouseDown(event) {
     }
 }
 
-function updateEditModeUI() {
-    const xStatus = document.getElementById('x-status');
-    const zStatus = document.getElementById('z-status');
-    xStatus.textContent = `X-axis movement: ${enableXMovement ? 'Enabled' : 'Disabled'}`;
-    zStatus.textContent = `Z-axis movement: ${enableZMovement ? 'Enabled' : 'Disabled'}`;
-}
-
 function onMouseUp() {
     if (draggedObject) {
         const finalPosition = `Position: x=${draggedObject.position.x.toFixed(3)}, y=${draggedObject.position.y.toFixed(3)}, z=${draggedObject.position.z.toFixed(3)}`;
@@ -3787,33 +3780,7 @@ function onMouseMove(event) {
     const intersectPoint = new THREE.Vector3();
 }
 
-
-// Event Listeners
-window.addEventListener('keydown', (event) => {
-    if (!editMode) return;
-
-    switch (event.code) {
-        case 'KeyZ':
-            toggleZMovement();
-            break;
-        case 'KeyX':
-            toggleXMovement();
-            break;
-    }
-});
-
 // Call updateEditModeUI within toggle functions
-function toggleXMovement() {
-    enableXMovement = !enableXMovement;
-    updateEditModeUI();
-    console.log(`X-axis movement ${enableXMovement ? 'enabled' : 'disabled'}`);
-}
-
-function toggleZMovement() {
-    enableZMovement = !enableZMovement;
-    updateEditModeUI();
-    console.log(`Z-axis movement ${enableZMovement ? 'enabled' : 'disabled'}`);
-}
 
 window.addEventListener("keydown", (event) => {
     if (event.code === "KeyE") {
@@ -6134,10 +6101,6 @@ function showFreeParkingUI(player) {
 
     // Add a single randomized Free Parking video
     const freeParkingVideos = [
-        "Videos/free_parking_clip1.mp4",
-        "Videos/free_parking_clip2.mp4",
-        "Videos/free_parking_clip3.mp4",
-        "Videos/lv_raiders.mp4" // Add LV Raiders video if not already present
     ];
     const randomVideo = freeParkingVideos[Math.floor(Math.random() * freeParkingVideos.length)];
 
