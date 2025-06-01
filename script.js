@@ -452,7 +452,7 @@ const properties = [{
         type: "utility",
         mortgageValue: 75,
         description: "If one utility is owned, rent is 4 times amount shown on dice. If both utilities are owned, rent is 10 times amount shown on dice.",
-        imageUrls: "yellow light bulb image.jpg"
+        imageUrls: "Images/yellow light bulb image.jpg",
     },
     {
         name: "Bet MGM",
@@ -549,9 +549,7 @@ const properties = [{
         type: "utility",
         mortgageValue: 75,
         description: "If one utility is owned, rent is 4 times amount shown on dice. If both utilities are owned, rent is 10 times amount shown on dice.",
-        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
-
-        ],
+        imageUrls: "",
     },
     {
         name: "Sphere",

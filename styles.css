@@ -6,27 +6,20 @@ body {
   color: #f3f6fa;
 }
 
-#title {
-  position: absolute;
+/* --- Money Display --- */
+.money-display {
+  position: fixed;
   top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 42px;
+  right: 20px;
+  background: rgba(40,40,40,0.9);
   color: #fff;
-  text-align: center;
   padding: 15px 20px;
-  background: rgba(0,0,0,0.7);
-  border-radius: 12px;
-  box-shadow: 0 0 15px #fff8, 0 0 30px #0008;
-  z-index: 1002;
-  animation: pulse 3s infinite;
-  letter-spacing: 2px;
-  text-shadow: 0 0 10px #fff8, 0 0 20px #fff8;
-}
-
-@keyframes pulse {
-  0%,100% { transform: translateX(-50%) scale(1);}
-  50% { transform: translateX(-50%) scale(1.05);}
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: bold;
+  box-shadow: 0 2px 10px #0005;
+  z-index: 2002;
+  transition: all 0.3s;
 }
 
 /* --- Buttons --- */
@@ -56,60 +49,42 @@ button:hover,
   transform: translateY(-2px) scale(1.03);
 }
 
-.action-button.close {
-  background: #232a36;
-  color: #a0aec0;
-}
-.action-button.close:hover {
-  background: #d32f2f;
-  color: #fff;
-}
-.action-button.pay {
-  background: #007bff;
-}
-.action-button.pay:hover {
-  background: #0056b3;
-}
-.action-button.buy,
-.action-button.proceed {
-  background: #424242;
-  color: #fff;
-  border: 1px solid #fff2;
-}
-.action-button.buy:hover,
-.action-button.proceed:hover {
-  background: #4caf50;
-  box-shadow: 0 5px 15px #4caf504d;
-}
-
 /* --- Dice & Turn Buttons --- */
-.dice-button,
-.end-turn-button,
-#end-turn-button,
-#properties-toggle-btn {
+.dice-button {
   position: fixed;
-  z-index: 2001;
+  bottom: 18px;
+  left: 12px;
   min-width: 90px;
   max-width: 130px;
   width: auto;
-  display: none;
-}
-.dice-button {
-  bottom: 18px; left: 12px;
-}
-.end-turn-button, #end-turn-button {
-  bottom: 20px; right: 20px;
-}
-#properties-toggle-btn {
-  bottom: 14px; right: 12px;
-  border-radius: 6px;
-  z-index: 2002;
-}
-.end-turn-button.active, #end-turn-button.active, .dice-button.active {
+  z-index: 2001;
   display: block;
 }
+.end-turn-button,
+#end-turn-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  min-width: 90px;
+  max-width: 130px;
+  width: auto;
+  z-index: 2001;
+  display: none;
+}
+#properties-toggle-btn {
+  position: fixed;
+  bottom: 14px;
+  right: 12px;
+  border-radius: 6px;
+  z-index: 2002;
+  min-width: 90px;
+  max-width: 130px;
+  width: auto;
+  font-size: 15px;
+  padding: 10px 14px;
+}
 
-/* --- Dice Result --- */
+/* --- Dice Result Notification --- */
 .dice-result {
   position: fixed;
   bottom: 20px;
@@ -129,6 +104,117 @@ button:hover,
   margin: 0;
 }
 .dice-result.show { opacity: 1; }
+
+/* --- Token Selection UI --- */
+.token-selection-ui,
+#token-selection-ui {
+  position: fixed;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(30,30,30,0.98);
+  border-radius: 12px;
+  padding: 18px 10px 10px 10px;
+  z-index: 3000;
+  box-shadow: 0 4px 24px #0008;
+  max-width: 98vw;
+  width: 420px;
+  max-height: 80vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.token-selection-ui h2,
+#token-selection-ui h2 {
+  margin-bottom: 15px;
+  font-size: 18px;
+  color: #fff;
+  text-align: center;
+}
+.token-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 10px;
+}
+.token-button {
+  width: 110px;
+  height: 110px;
+  padding: 10px;
+  background: #333;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s, transform 0.2s;
+}
+.token-button img {
+  width: 60px;
+  height: 60px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  object-fit: contain;
+}
+.token-button[style*="none"] {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.token-button:hover,
+.token-button:not([style*="none"]):hover {
+  background: #444;
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px #0004;
+  border-color: #666;
+}
+.token-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+.token-button .ai-button {
+  margin-top: 5px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  background: #666;
+  color: #fff;
+  font-size: 12px;
+}
+.token-button .ai-button.active {
+  background: #4caf50;
+}
+.token-button .ai-indicator {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: transparent;
+}
+.token-button .ai-indicator.active {
+  background: #4caf50;
+}
+.taken-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #fffB;
+  border-radius: 8px;
+  color: #222;
+  font-weight: bold;
+  font-size: 14px;
+  z-index: 2;
+}
 
 /* --- Boards --- */
 #property-management-board,
@@ -335,54 +421,60 @@ button:hover,
 .feedback { opacity: 1; transform: translateX(-50%) translateY(-20px);}
 .feedback.fade-out { opacity: 0; transition: opacity 0.5s;}
 
-/* --- Money Display --- */
-.money-display {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  background: rgba(40,40,40,0.9);
-  color: #fff;
-  padding: 15px 20px;
-  border-radius: 8px;
-  font-size: 18px;
-  font-weight: bold;
-  box-shadow: 0 2px 10px #0005;
-  z-index: 2002;
-  transition: all 0.3s;
-}
-
 /* --- Responsive --- */
 @media (max-width: 700px) {
-  .money-display,
+  .money-display {
+    top: 10px !important;
+    right: 10px !important;
+    left: auto !important;
+    width: auto !important;
+    max-width: 90vw !important;
+    font-size: 15px !important;
+    padding: 10px !important;
+    border-radius: 8px !important;
+  }
   #property-management-board,
   #other-players-board {
-    width: 90vw;
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
-    top: auto;
-    bottom: 10px;
-    font-size: 16px;
-    padding: 10px;
+    width: 90vw !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    top: auto !important;
+    bottom: 10px !important;
+    font-size: 16px !important;
+    padding: 10px !important;
+    max-width: 98vw !important;
   }
   #property-management-board { top: 10px !important;}
   #other-players-board { top: 140px !important;}
-  .dice-button,
-  .end-turn-button,
-  #end-turn-button {
-    left: 50% !important;
+  .dice-button {
+    left: 10px !important;
     right: auto !important;
     bottom: 10px !important;
     top: auto !important;
-    transform: translateX(-50%) !important;
-    width: 90vw !important;
-    max-width: 98vw !important;
+    transform: none !important;
+    width: 44vw !important;
+    max-width: 48vw !important;
+    min-width: 90px !important;
     z-index: 2002 !important;
     font-size: 15px !important;
     padding: 10px 14px !important;
     border-radius: 6px !important;
-    min-width: 0 !important;
-    display: block;
+    display: block !important;
+  }
+  #properties-toggle-btn {
+    position: fixed !important;
+    bottom: 14px !important;
+    right: 10px !important;
+    left: auto !important;
+    top: auto !important;
+    z-index: 2002 !important;
+    width: 44vw !important;
+    max-width: 48vw !important;
+    min-width: 90px !important;
+    font-size: 15px !important;
+    padding: 10px 14px !important;
+    border-radius: 6px !important;
   }
   .dice-result {
     left: 50% !important;
@@ -398,85 +490,38 @@ button:hover,
     z-index: 1002 !important;
     margin: 0 !important;
   }
-  #properties-toggle-btn {
-    position: fixed !important;
-    bottom: 14px !important;
-    right: 12px !important;
-    top: auto !important;
-    left: auto !important;
-    z-index: 2002 !important;
-    width: auto !important;
-    min-width: 90px !important;
-    max-width: 130px !important;
-    font-size: 15px !important;
-    padding: 10px 14px !important;
-    border-radius: 6px !important;
+  /* Token selection UI: full width, scrollable, grid */
+  .token-selection-ui,
+  #token-selection-ui {
+    top: 60px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 98vw !important;
+    max-width: 99vw !important;
+    min-width: 0 !important;
+    padding: 10px 2vw 10px 2vw !important;
+    max-height: 60vh !important;
+    overflow-y: auto !important;
   }
-  .property-popup,
-  .jail-popup,
-  .free-parking-popup,
-  .luxury-tax-popup {
-    min-width: 0;
-    width: 95vw;
-    max-width: 98vw;
-    padding: 12px 4vw;
-    border-radius: 10px;
-    margin-bottom: 80px;
-  }
-  .property-content,
-  .jail-content-container,
-  .free-parking-content-container {
-    flex-direction: column !important;
-    gap: 10px;
-    align-items: stretch;
-  }
-  .property-video-container,
-  .jail-video-container,
-  .free-parking-video-container {
+  .token-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 10px !important;
     width: 100% !important;
-    height: 160px !important;
-    margin-bottom: 10px;
+    margin-bottom: 10px !important;
   }
-  .popup-header { font-size: 18px !important;}
-  .action-button {
-    font-size: 15px;
-    padding: 10px 0;
-    width: 100%;
-    min-width: 0;
+  .token-button {
+    width: 90px !important;
+    height: 90px !important;
+    padding: 6px !important;
   }
-  .token-button img { width: 60px; height: 60px;}
-  .token-button { width: 100px; height: 100px; padding: 6px;}
+  .token-button img {
+    width: 48px !important;
+    height: 48px !important;
+  }
 }
-
-/* --- Hide Boards by Default --- */
-#property-management-board,
-#other-players-board { display: none; }
-.board-visible { display: block !important; }
 
 /* --- Miscellaneous --- */
-.token-button {
-  width: 140px;
-  height: 140px;
-  padding: 10px;
-}
-.token-button img {
-  width: 80px;
-  height: 80px;
-  margin-bottom: 8px;
-  border-radius: 6px;
-  object-fit: contain;
-}
-.token-button[style*="none"] {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-.token-button:hover,
-.token-button:not([style*="none"]):hover {
-  background: #444;
-  transform: scale(1.05);
-  box-shadow: 0 5px 15px #0004;
-  border-color: #666;
-}
 .property-options {
   position: fixed;
   left: 50%;
@@ -499,15 +544,6 @@ button:hover,
   color: #fff;
 }
 .property-options button:hover { background: #45a049; }
-.taken-overlay {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #fffB;
-  border-radius: 8px;
-}
 .instructions {
   max-height: 0;
   overflow: hidden;
