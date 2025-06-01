@@ -86,7 +86,7 @@ const images = [
     // Brothel
     "Images/693695_050215-ap-mayweather-img.jpg",
     "Images/Screenshot 2024-12-12 033702.png", 
-    "Images/unnamed.gif",// Brothel
+    "Videos/tapDancingWomen.mp4",// Brothel
     "Images/1.png", // Luxury Tax
     // Bellagio
     "Images/11929141633_b4ab5fd45e_k.webp", // Horseback Riding
@@ -5211,8 +5211,9 @@ function createImageCarousel(images, position) {
 
     let currentImageIndex = 0;
     let carouselTimeout = null;
-    let gifImg = null; // For animated GIFs
-    let baseplate = null; // <-- Add this line
+    let gifImg = null;
+    let baseplate = null;
+    let videoElement = null; // <-- Add this line
 
     // Create a single plane for the carousel
     const material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
@@ -5224,8 +5225,8 @@ function createImageCarousel(images, position) {
     scene.add(carouselGroup);
 
     function spawnBaseplate() {
-        if (baseplate) return; // Already exists
-        const baseGeometry = new THREE.BoxGeometry(62, 1, 62); // Slightly larger than image
+        if (baseplate) return;
+        const baseGeometry = new THREE.BoxGeometry(62, 1, 62);
         const baseMaterial = new THREE.MeshPhongMaterial({
             color: 0x222222,
             shininess: 30,
@@ -5235,7 +5236,7 @@ function createImageCarousel(images, position) {
         baseplate = new THREE.Mesh(baseGeometry, baseMaterial);
         baseplate.position.set(
             carouselGroup.position.x,
-            carouselGroup.position.y - 1, // Just below the carousel
+            carouselGroup.position.y - 1,
             carouselGroup.position.z
         );
         baseplate.receiveShadow = true;
@@ -5251,20 +5252,85 @@ function createImageCarousel(images, position) {
         }
     }
 
+    function removeVideoElement() {
+        if (videoElement) {
+            document.body.removeChild(videoElement);
+            videoElement = null;
+        }
+    }
+
     function updateImage() {
         if (carouselTimeout) clearTimeout(carouselTimeout);
 
         const currentImage = images[currentImageIndex];
 
-        // Remove baseplate by default
+        // Remove baseplate and video by default
         removeBaseplate();
+        removeVideoElement();
 
         // If previous GIF image exists, remove its animation loop
         if (gifImg) {
             gifImg = null;
         }
 
-        // If it's a GIF, use <img> so browser animates it
+        // --- VIDEO SUPPORT ---
+        if (currentImage.endsWith('.mp4')) {
+            // Create a video element
+            videoElement = document.createElement('video');
+            videoElement.src = currentImage;
+            videoElement.crossOrigin = "anonymous";
+            videoElement.autoplay = true;
+            videoElement.muted = true;
+            videoElement.loop = false;
+            videoElement.playsInline = true;
+            videoElement.style.display = "none";
+            document.body.appendChild(videoElement);
+
+            // --- Calculate screen position from 3D board position ---
+            const boardPos = carouselGroup.position.clone(); // Or use the desired 3D position
+            const vector = boardPos.project(camera);
+            const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+            const y = (1 - (vector.y * 0.5 + 0.5)) * window.innerHeight;
+
+            // --- Position the video at the board's screen position ---
+            videoElement.style.display = 'block';
+            videoElement.style.position = 'fixed';
+            videoElement.style.left = `${x - 160}px`;  // Center the video (320/2)
+            videoElement.style.top = `${y - 90}px`;    // Center the video (180/2)
+            videoElement.width = 320;
+            videoElement.height = 180;
+
+            videoElement.onloadeddata = () => {
+                // Create a texture from the video
+                const videoTexture = new THREE.VideoTexture(videoElement);
+                videoTexture.minFilter = THREE.LinearFilter;
+                videoTexture.magFilter = THREE.LinearFilter;
+                videoTexture.format = THREE.RGBFormat;
+                material.map = videoTexture;
+                material.needsUpdate = true;
+
+                // Show baseplate for video
+                spawnBaseplate();
+
+                // Play the video
+                videoElement.play();
+
+                // When video ends, go to next image
+                videoElement.onended = () => {
+                    removeVideoElement();
+                    nextImage();
+                };
+
+                // If video doesn't end (e.g., short video), fallback to timeout
+                carouselTimeout = setTimeout(() => {
+                    removeVideoElement();
+                    nextImage();
+                }, Math.max(4000, videoElement.duration * 1000 || 6000));
+            };
+            return;
+        }
+
+        // GIF support
         if (currentImage.endsWith('.gif')) {
             gifImg = document.createElement('img');
             gifImg.src = currentImage;
@@ -5275,7 +5341,6 @@ function createImageCarousel(images, position) {
                 material.map = texture;
                 material.needsUpdate = true;
 
-                // Animate the GIF by updating the texture every frame
                 function animateGifTexture() {
                     if (material.map && gifImg) {
                         material.map.needsUpdate = true;
@@ -5284,26 +5349,24 @@ function createImageCarousel(images, position) {
                 }
                 animateGifTexture();
 
-                // --- SPAWN BASEPLATE ONLY FOR GIF ---
                 spawnBaseplate();
-
-                // Set how long to show the GIF (default: 6s, or adjust as needed)
                 carouselTimeout = setTimeout(nextImage, 6000);
             };
-        } else {
-            // For static images, use TextureLoader
-            const textureLoader = new THREE.TextureLoader();
-            textureLoader.load(currentImage, (loadedTexture) => {
-                material.map = loadedTexture;
-                material.needsUpdate = true;
-            });
-            carouselTimeout = setTimeout(nextImage, 3000);
+            return;
         }
+
+        // Static image support
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.load(currentImage, (loadedTexture) => {
+            material.map = loadedTexture;
+            material.needsUpdate = true;
+        });
+        carouselTimeout = setTimeout(nextImage, 3000);
     }
 
     function nextImage() {
-        // Remove baseplate when switching away from GIF
         removeBaseplate();
+        removeVideoElement();
         currentImageIndex = (currentImageIndex + 1) % images.length;
         updateImage();
     }
