@@ -342,8 +342,7 @@ const properties = [{
     name: "Income Tax",
     type: "tax",
     price: 200,
-    imageUrls: ["https://www.radacutlery.com/wp-content/uploads/2015/09/Uncle-Sam-1.jpg"],
-    videoUrls: [],
+    imageUrls: ["Images/Uncle-Sam-1.jpg"],
     description: "Pay Income Tax: $200 or 10% of your total worth",
     special: true
     },
@@ -621,7 +620,7 @@ const properties = [{
         name: "Luxury Tax",
         type: "tax",
         price: 75,
-        imageUrls: "Images/1.png",
+        imageUrls: "Images/luxuryTax.png",
         description: "Pay Luxury Tax of $75",
         special: true
     },
