@@ -444,6 +444,7 @@ const properties = [{
         rentWithHotel: 1100,
         videoUrls: [ 
             "Videos/tapDancingWomen.mp4",
+            "Videos/BrothelVid.mp4",
         ],
     },
     {
