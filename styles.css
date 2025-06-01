@@ -453,14 +453,15 @@ button:hover,
     bottom: 10px !important;
     top: auto !important;
     transform: none !important;
-    width: 38vw !important;
-    max-width: 44vw !important;
-    min-width: 70px !important;
+    width: 80px !important;
+    max-width: 90px !important;
+    min-width: 60px !important;
     z-index: 2002 !important;
     font-size: 15px !important;
-    padding: 10px 8px !important;
+    padding: 8px 4px !important;
     border-radius: 6px !important;
     display: block !important;
+    text-align: center !important;
   }
   #properties-toggle-btn {
     position: fixed !important;
@@ -469,12 +470,13 @@ button:hover,
     left: auto !important;
     top: auto !important;
     z-index: 2002 !important;
-    width: 38vw !important;
-    max-width: 44vw !important;
-    min-width: 70px !important;
+    width: 80px !important;
+    max-width: 90px !important;
+    min-width: 60px !important;
     font-size: 15px !important;
-    padding: 10px 8px !important;
+    padding: 8px 4px !important;
     border-radius: 6px !important;
+    text-align: center !important;
   }
   .dice-result {
     left: 50% !important;
