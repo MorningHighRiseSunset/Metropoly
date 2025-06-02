@@ -570,6 +570,40 @@ button:hover,
 #instructions-modal.show { display: flex; pointer-events: auto;}
 /* Add any additional unique styles below as needed */
 
-html.android-zoom, body.android-zoom {
-  zoom: 1.18;
+@media (max-width: 900px) {
+  .dice-button {
+    position: fixed !important;
+    left: 12px !important;
+    bottom: 18px !important;
+    right: auto !important;
+    top: auto !important;
+    display: block !important;
+    z-index: 3000 !important;
+  }
+  #properties-toggle-btn {
+    position: fixed !important;
+    right: 12px !important;
+    bottom: 18px !important;
+    left: auto !important;
+    top: auto !important;
+    display: block !important;
+    z-index: 3000 !important;
+  }
+
+    .money-display {
+    position: fixed !important;
+    top: 8px !important;
+    right: 8px !important;
+    left: auto !important;
+    width: auto !important;
+    max-width: 90vw !important;
+    font-size: 15px !important;
+    padding: 8px 10px !important;
+    border-radius: 8px !important;
+    box-sizing: border-box !important;
+    z-index: 3001 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
 }
