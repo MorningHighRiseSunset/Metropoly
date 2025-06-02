@@ -1717,6 +1717,19 @@ function playWalkAnimation(token) {
 
         // Play the walking animation
         token.userData.walkAction.play();
+
+        // --- Play walking sound for the woman token ---
+        if (!token.userData.walkSound) {
+            const walkSound = new Audio('Sounds/steps-high-heels-beautiful-fashion-shopping-mall-walking-movie-and-tv-sound-effects.mp3');
+            walkSound.loop = true;
+            walkSound.volume = 0.7;
+            token.userData.walkSound = walkSound;
+        }
+        // Only play if not already playing
+        if (token.userData.walkSound.paused) {
+            token.userData.walkSound.currentTime = 0;
+            token.userData.walkSound.play().catch(() => {});
+        }
     }
 }
 
@@ -1728,6 +1741,12 @@ function stopWalkAnimation(token) {
         // Resume idle animation
         if (token.userData.idleAction) {
             token.userData.idleAction.play();
+        }
+
+        // --- Stop walking sound for the woman token ---
+        if (token.userData.walkSound) {
+            token.userData.walkSound.pause();
+            token.userData.walkSound.currentTime = 0;
         }
     }
 }
