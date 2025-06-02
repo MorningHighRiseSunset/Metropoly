@@ -2159,8 +2159,8 @@ if (property.videoUrls && property.videoUrls.length > 0) {
         const selectedUrl = property.videoUrls[randomIndex];
 
         const video = document.createElement('video');
-        video.muted = true; // Must be true for autoplay!
-        video.setAttribute('muted', ''); // For some browsers
+        video.muted = true; // Start muted for autoplay
+        video.setAttribute('muted', '');
         video.playsInline = true;
         video.setAttribute('playsinline', '');
         video.setAttribute('webkit-playsinline', '');
@@ -2172,14 +2172,18 @@ if (property.videoUrls && property.videoUrls.length > 0) {
         video.src = selectedUrl;
 
         videoContainer.appendChild(video);
-        video.play().catch(() => {});
+
+        // Try to play and then unmute after play starts (loophole: user gesture)
+        video.play().then(() => {
+            setTimeout(() => {
+                video.muted = false;
+            }, 200); // Small delay to ensure play started
+        }).catch(() => {});
 
         video.onerror = () => {
             video.style.display = 'none';
             showImageFallback();
         };
-
-        videoContainer.appendChild(video);
     };
 
     videoContainer.appendChild(placeholder);
@@ -5760,39 +5764,33 @@ function moveTokenToNewPosition(spaces, callback) {
     const newPosition = (oldPosition + spaces + propertiesCount) % propertiesCount;
 
     const token = currentPlayer.selectedToken;
-    const startPos = positions[oldPosition];
-    const endPos = positions[newPosition];
 
-    if (token.userData.tokenName === "football") {
-        // Use the throwFootballAnimation for the entire movement
-        const finalHeight = getTokenHeight(token.userData.tokenName, endPos.y) + 1.0; // Add height for the throw
-        throwFootballAnimation(token, endPos, finalHeight, () => {
+    // --- START WALK SOUND ONCE ---
+    let isWoman = token.userData.tokenName === "woman";
+    if (isWoman) playWalkAnimation(token);
+
+    let currentSpace = oldPosition;
+
+    function moveOneSpace() {
+        if (currentSpace === newPosition) {
             finishMove(currentPlayer, newPosition, oldPosition + spaces >= propertiesCount);
+            // --- STOP WALK SOUND ONCE ---
+            if (isWoman) stopWalkAnimation(token);
             if (callback) callback();
-        });
-    } else {
-        // Default behavior for other tokens
-        let currentSpace = oldPosition;
-
-        function moveOneSpace() {
-            if (currentSpace === newPosition) {
-                finishMove(currentPlayer, newPosition, oldPosition + spaces >= propertiesCount);
-                if (callback) callback();
-                return;
-            }
-
-            const nextSpace = (currentSpace + 1) % propertiesCount;
-            const startPos = positions[currentSpace];
-            const endPos = positions[nextSpace];
-
-            moveToken(startPos, endPos, token, () => {
-                currentSpace = nextSpace;
-                moveOneSpace();
-            });
+            return;
         }
 
-        moveOneSpace();
+        const nextSpace = (currentSpace + 1) % propertiesCount;
+        const startPos = positions[currentSpace];
+        const endPos = positions[nextSpace];
+
+        moveToken(startPos, endPos, token, () => {
+            currentSpace = nextSpace;
+            moveOneSpace();
+        });
     }
+
+    moveOneSpace();
 }
 
 function showDiceResult(total, roll1, roll2) {
