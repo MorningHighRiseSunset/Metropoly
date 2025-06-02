@@ -570,8 +570,20 @@ button:hover,
 #instructions-modal.show { display: flex; pointer-events: auto;}
 /* Add any additional unique styles below as needed */
 
-@media screen and (max-width: 900px) {
-  html.android-zoom, body.android-zoom {
-    zoom: 1.12;
+@media (max-width: 700px) {
+  .money-display {
+    top: 8px;
+    right: 8px;
+    font-size: 15px;
+    padding: 10px 12px;
+    max-width: 90vw;
+  }
+  .dice-button, .end-turn-button, #end-turn-button, #properties-toggle-btn {
+    bottom: 8px !important;
+    left: 8px !important;
+    right: 8px !important;
+    max-width: 95vw;
+    font-size: 15px;
+    padding: 10px 12px;
   }
 }
