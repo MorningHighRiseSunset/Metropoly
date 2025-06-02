@@ -571,6 +571,27 @@ button:hover,
 /* Add any additional unique styles below as needed */
 
 @media (max-width: 900px) {
+  .money-display {
+    position: fixed !important;
+    top: 10px !important;
+    right: 10px !important;
+    left: auto !important;
+    width: auto !important;
+    max-width: 85vw !important;
+    font-size: 18px !important;
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+    box-sizing: border-box !important;
+    z-index: 9999 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    background: #222 !important;
+    color: #fff !important;
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
   .dice-button {
     position: fixed !important;
     left: 12px !important;
@@ -578,7 +599,7 @@ button:hover,
     right: auto !important;
     top: auto !important;
     display: block !important;
-    z-index: 3000 !important;
+    z-index: 9999 !important;
   }
   #properties-toggle-btn {
     position: fixed !important;
@@ -587,23 +608,6 @@ button:hover,
     left: auto !important;
     top: auto !important;
     display: block !important;
-    z-index: 3000 !important;
-  }
-
-    .money-display {
-    position: fixed !important;
-    top: 8px !important;
-    right: 8px !important;
-    left: auto !important;
-    width: auto !important;
-    max-width: 90vw !important;
-    font-size: 15px !important;
-    padding: 8px 10px !important;
-    border-radius: 8px !important;
-    box-sizing: border-box !important;
-    z-index: 3001 !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
+    z-index: 9999 !important;
   }
 }
