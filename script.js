@@ -2159,26 +2159,25 @@ if (property.videoUrls && property.videoUrls.length > 0) {
         const selectedUrl = property.videoUrls[randomIndex];
 
         const video = document.createElement('video');
-        video.muted = true; // Must be true for autoplay on mobile!
+        video.muted = true; // Must be true for autoplay!
+        video.setAttribute('muted', ''); // For some browsers
         video.playsInline = true;
         video.setAttribute('playsinline', '');
         video.setAttribute('webkit-playsinline', '');
         video.autoplay = true;
+        video.setAttribute('autoplay', '');
         video.controls = true;
         video.preload = 'metadata';
         video.poster = 'Images/video-placeholder.jpg';
         video.src = selectedUrl;
 
+        videoContainer.appendChild(video);
+        video.play().catch(() => {});
+
         video.onerror = () => {
             video.style.display = 'none';
             showImageFallback();
         };
-
-        // Try to unmute after loaded (may not work on all browsers)
-        video.addEventListener('loadeddata', () => {
-            video.muted = false;
-            video.play().catch(() => {});
-        });
 
         videoContainer.appendChild(video);
     };
