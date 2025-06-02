@@ -1,3 +1,14 @@
+if (/android/i.test(navigator.userAgent)) {
+    let meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) {
+        meta = document.createElement('meta');
+        meta.name = "viewport";
+        document.head.appendChild(meta);
+    }
+    // This disables Android's default scaling and matches iOS behavior
+    meta.content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0";
+}
+
 import * as THREE from '../libs/three.module.js';
 import {
     GLTFLoader
