@@ -2136,57 +2136,37 @@ if (property.videoUrls && property.videoUrls.length > 0) {
     videoContainer.style.justifyContent = 'center';
     videoContainer.style.alignItems = 'center';
 
-    // Placeholder with play icon
-    const placeholder = document.createElement('div');
-    placeholder.style.width = '100%';
-    placeholder.style.height = '100%';
-    placeholder.style.display = 'flex';
-    placeholder.style.justifyContent = 'center';
-    placeholder.style.alignItems = 'center';
-    placeholder.style.cursor = 'pointer';
+    // Immediately create and autoplay the video
+    const randomIndex = Math.floor(Math.random() * property.videoUrls.length);
+    const selectedUrl = property.videoUrls[randomIndex];
 
-    const playIcon = document.createElement('div');
-    playIcon.innerHTML = '&#9658;';
-    playIcon.style.fontSize = '40px';
-    playIcon.style.color = '#fff';
-    playIcon.style.opacity = '0.85';
-    playIcon.style.pointerEvents = 'none';
-    placeholder.appendChild(playIcon);
+    const video = document.createElement('video');
+    video.muted = true; // Start muted for autoplay
+    video.setAttribute('muted', '');
+    video.playsInline = true;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
+    video.autoplay = true;
+    video.setAttribute('autoplay', '');
+    video.controls = true;
+    video.preload = 'metadata';
+    video.poster = 'Images/video-placeholder.jpg';
+    video.src = selectedUrl;
 
-    placeholder.onclick = () => {
-        placeholder.style.display = 'none';
-        const randomIndex = Math.floor(Math.random() * property.videoUrls.length);
-        const selectedUrl = property.videoUrls[randomIndex];
+    videoContainer.appendChild(video);
 
-        const video = document.createElement('video');
-        video.muted = true; // Start muted for autoplay
-        video.setAttribute('muted', '');
-        video.playsInline = true;
-        video.setAttribute('playsinline', '');
-        video.setAttribute('webkit-playsinline', '');
-        video.autoplay = true;
-        video.setAttribute('autoplay', '');
-        video.controls = true;
-        video.preload = 'metadata';
-        video.poster = 'Images/video-placeholder.jpg';
-        video.src = selectedUrl;
+    // Try to play and then unmute after play starts (loophole: user gesture)
+    video.play().then(() => {
+        setTimeout(() => {
+            video.muted = false;
+        }, 200); // Small delay to ensure play started
+    }).catch(() => {});
 
-        videoContainer.appendChild(video);
-
-        // Try to play and then unmute after play starts (loophole: user gesture)
-        video.play().then(() => {
-            setTimeout(() => {
-                video.muted = false;
-            }, 200); // Small delay to ensure play started
-        }).catch(() => {});
-
-        video.onerror = () => {
-            video.style.display = 'none';
-            showImageFallback();
-        };
+    video.onerror = () => {
+        video.style.display = 'none';
+        showImageFallback();
     };
 
-    videoContainer.appendChild(placeholder);
     content.appendChild(videoContainer);
     mediaShown = true;
 }
@@ -3885,11 +3865,6 @@ function moveToken(startPos, endPos, token, callback) {
     isFollowingToken = true; // Activate the follow camera
     selectedToken = token; // Set the token for the follow camera
 
-    // Play the walking animation for the "woman" token
-    if (token.userData.tokenName === "woman") {
-        playWalkAnimation(token);
-    }
-
     // Determine the animation based on the token type
     const tokenName = token.userData.tokenName;
 
@@ -4022,27 +3997,24 @@ function finalizeMove(token, endPos, callback) {
 
     // Adjust height for specific tokens
     if (token.userData.tokenName === "nike") {
-        finalHeight += 0.5; // Raise the Nike shoe to the correct height
+        finalHeight += 0.5;
     } else if (token.userData.tokenName === "burger") {
-        finalHeight += 0.7; // Raise the burger to the correct height
+        finalHeight += 0.7;
     } else if (token.userData.tokenName === "speed boat") {
-        finalHeight += 0.5; // Raise the boat slightly higher
+        finalHeight += 0.5;
     } else if (token.userData.tokenName === "rolls royce") {
-        finalHeight += 0.3; // Raise the Rolls Royce slightly higher
+        finalHeight += 0.3;
     } else if (token.userData.tokenName === "football") {
-        finalHeight += 1.0; // Raise the football higher
+        finalHeight += 1.0;
     }
 
     // Ensure final position is exact
     token.position.set(endPos.x, finalHeight, endPos.z);
 
-    // Stop the walking animation and switch to idle for the "woman" token
-    if (token.userData.tokenName === "woman") {
-        stopWalkAnimation(token);
-    }
+    // --- DO NOT stopWalkAnimation(token) here for "woman"! ---
 
-    isTokenMoving = false; // Set the flag to false when movement ends
-    isFollowingToken = false; // Deactivate the follow camera
+    isTokenMoving = false;
+    isFollowingToken = false;
 
     if (callback) callback();
 }
@@ -5765,7 +5737,7 @@ function moveTokenToNewPosition(spaces, callback) {
 
     const token = currentPlayer.selectedToken;
 
-    // --- START WALK SOUND ONCE ---
+    // --- START WALK SOUND/ANIMATION ONCE ---
     let isWoman = token.userData.tokenName === "woman";
     if (isWoman) playWalkAnimation(token);
 
@@ -5774,7 +5746,7 @@ function moveTokenToNewPosition(spaces, callback) {
     function moveOneSpace() {
         if (currentSpace === newPosition) {
             finishMove(currentPlayer, newPosition, oldPosition + spaces >= propertiesCount);
-            // --- STOP WALK SOUND ONCE ---
+            // --- STOP WALK SOUND/ANIMATION ONCE ---
             if (isWoman) stopWalkAnimation(token);
             if (callback) callback();
             return;
