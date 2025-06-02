@@ -569,3 +569,9 @@ button:hover,
 #instructions-modal { pointer-events: none;}
 #instructions-modal.show { display: flex; pointer-events: auto;}
 /* Add any additional unique styles below as needed */
+
+@media screen and (max-width: 900px) {
+  html.android-zoom, body.android-zoom {
+    zoom: 1.12;
+  }
+}

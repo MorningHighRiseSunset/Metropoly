@@ -1,28 +1,6 @@
 if (/android/i.test(navigator.userAgent)) {
-    let meta = document.querySelector('meta[name="viewport"]');
-    if (!meta) {
-        meta = document.createElement('meta');
-        meta.name = "viewport";
-        document.head.appendChild(meta);
-    }
-    // Force Android to use device width and disable zooming
-    meta.content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0";
-
-    // Dynamically scale UI to fill viewport (fixes cut-off UI on some Androids)
-    function adjustAndroidZoom() {
-        const vvp = window.visualViewport;
-        if (vvp) {
-            // Calculate scale so content fits the viewport width
-            const scale = vvp.width / window.innerWidth;
-            document.body.style.transform = `scale(${scale})`;
-            document.body.style.transformOrigin = "top left";
-            document.body.style.width = (100 / scale) + "vw";
-            document.body.style.height = (100 / scale) + "vh";
-        }
-    }
-    window.visualViewport && window.visualViewport.addEventListener('resize', adjustAndroidZoom);
-    window.addEventListener('DOMContentLoaded', adjustAndroidZoom);
-    window.addEventListener('orientationchange', () => setTimeout(adjustAndroidZoom, 300));
+    document.documentElement.classList.add('android-zoom');
+    document.body.classList.add('android-zoom');
 }
 
 import * as THREE from '../libs/three.module.js';
