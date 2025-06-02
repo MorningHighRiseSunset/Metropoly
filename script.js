@@ -469,7 +469,7 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [150, 450, 1000, 1200],
         rentWithHotel: 1400,
-        imageUrls: "Images/4PFVVBO_copyright_image_38478.jpg",
+        imageUrls: ["Images/4PFVVBO_copyright_image_38478.jpg"],
     },
     {
         name: "Bellagio",
@@ -499,7 +499,7 @@ const properties = [{
     {
         name: "FREE PARKING",
         type: "special",
-        imageUrls: "Images/free parking.jpg",
+        imageUrls: ["Images/free parking.jpg"],
         description: "Take a break! No fee to park here.",
         special: true
     },
@@ -623,7 +623,7 @@ const properties = [{
         name: "Luxury Tax",
         type: "tax",
         price: 75,
-        imageUrls: "Images/luxuryTax.png",
+        imageUrls: ["Images/luxuryTax.png"],
         description: "Pay Luxury Tax of $75",
         special: true
     },
@@ -655,7 +655,7 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [350, 1100, 2500, 2700],
         rentWithHotel: 3000,
-        imageUrls: "unnamed.gif"
+        imageUrls: "",
     },
     {
         name: "Community Cards",
@@ -2237,7 +2237,9 @@ if (!mediaShown) {
         imageContainer.style.alignItems = 'center';
 
         const img = document.createElement('img');
-        img.src = property.imageUrls[0];
+        // FIX: Always use the first image, whether array or string
+        let imageUrl = Array.isArray(property.imageUrls) ? property.imageUrls[0] : property.imageUrls;
+        img.src = imageUrl;
         img.style.width = '100%';
         img.style.height = '100%';
         img.style.objectFit = 'cover';
