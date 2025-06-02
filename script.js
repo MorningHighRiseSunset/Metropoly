@@ -1,3 +1,8 @@
+if (/android/i.test(navigator.userAgent)) {
+  document.documentElement.classList.add('android-zoom');
+  document.body.classList.add('android-zoom');
+}
+
 import * as THREE from '../libs/three.module.js';
 import {
     GLTFLoader
