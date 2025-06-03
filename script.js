@@ -340,12 +340,12 @@ const properties = [{
         ],
     },
     {
-    name: "Income Tax",
-    type: "tax",
-    price: 200,
-    imageUrls: ["Images/Uncle-Sam-1.jpg"],
-    description: "Pay Income Tax: $200 or 10% of your total worth",
-    special: true
+        name: "Income Tax",
+        type: "tax",
+        price: 200,
+        imageUrls: "Images/Uncle-Sam-1.jpg", // <-- use string, not array
+        description: "Pay Income Tax: $200 or 10% of your total worth",
+        special: true
     },
     {
         name: "Las Vegas Monorail",
@@ -623,7 +623,7 @@ const properties = [{
         name: "Luxury Tax",
         type: "tax",
         price: 75,
-        imageUrls: ["Images/luxuryTax.png"],
+        imageUrls: "Images/luxuryTax.png", // <-- use string, not array
         description: "Pay Luxury Tax of $75",
         special: true
     },
@@ -6515,7 +6515,7 @@ setInterval(showSuggestionNotification, 240000);
 // Optionally, show once shortly after page load
 setTimeout(showSuggestionNotification, 10000);
 
-/*
+
 // Function to create a UI for testing mode
 function createTestingModeUI() {
     const testingModeContainer = document.createElement('div');
@@ -6578,7 +6578,7 @@ function createTestingModeUI() {
 
 // Call this function to initialize the testing mode UI
 createTestingModeUI();
-*/
+
 
 init();
 setupPropertiesToggleButton();
