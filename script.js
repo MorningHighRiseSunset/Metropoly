@@ -2223,31 +2223,6 @@ if (!mediaShown) {
     showImageFallback();
 }
 
-    if ((!property.videoUrls || property.videoUrls.length === 0) && property.imageUrls && property.imageUrls.length > 0) {
-        const imageContainer = document.createElement('div');
-        imageContainer.className = 'property-image-container';
-        imageContainer.style.width = '160px';
-        imageContainer.style.height = '90px';
-        imageContainer.style.overflow = 'hidden';
-        imageContainer.style.borderRadius = '8px';
-        imageContainer.style.margin = '0 auto 4px auto';
-        imageContainer.style.position = 'relative';
-        imageContainer.style.display = 'flex';
-        imageContainer.style.justifyContent = 'center';
-        imageContainer.style.alignItems = 'center';
-
-        const img = document.createElement('img');
-        // FIX: Always use the first image, whether array or string
-        let imageUrl = Array.isArray(property.imageUrls) ? property.imageUrls[0] : property.imageUrls;
-        img.src = imageUrl;
-        img.style.width = '100%';
-        img.style.height = '100%';
-        img.style.objectFit = 'cover';
-        img.style.borderRadius = '8px';
-        imageContainer.appendChild(img);
-        content.appendChild(imageContainer);
-    }
-
     // --- Title under video ---
     const titleDiv = document.createElement('div');
     titleDiv.className = 'popup-header';
