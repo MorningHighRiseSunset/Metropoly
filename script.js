@@ -469,6 +469,7 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [150, 450, 1000, 1200],
         rentWithHotel: 1400,
+        isPenthouse: true,
         imageUrls: ["Images/4PFVVBO_copyright_image_38478.jpg"],
     },
     {
@@ -483,6 +484,7 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [200, 600, 1400, 1700],
         rentWithHotel: 2000,
+        isPenthouse: true,
         videoUrls: [ // Changed from imageUrls to videoUrls for clarity
 
         ],
@@ -540,6 +542,7 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [250, 750, 1600, 1950],
         rentWithHotel: 2200,
+        isPenthouse: true,
         videoUrls: [ // Changed from imageUrls to videoUrls for clarity
 
         ],
@@ -583,13 +586,14 @@ const properties = [{
         price: 500,
         rent: 50,
         owner: null,
-        address: "",
+        address: "3570 S Las Vegas Blvd, Paradise, NV 89109",
         color: "green",
         mortgageValue: 250,
         housePrice: 200,
         hotelPrice: 250,
         rentWithHouse: [300, 900, 2200, 2400],
         rentWithHotel: 2600,
+        isPenthouse: true,
         videoUrls: [ // Changed from imageUrls to videoUrls for clarity
 
         ],
@@ -606,6 +610,7 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [320, 950, 2300, 2500],
         rentWithHotel: 2700,
+        isPenthouse: true,
         videoUrls: [ // Changed from imageUrls to videoUrls for clarity
 
         ],
@@ -655,6 +660,7 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [350, 1100, 2500, 2700],
         rentWithHotel: 3000,
+        isPenthouse: true,
         imageUrls: "",
     },
     {
@@ -713,6 +719,7 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [260, 800, 1900, 2100],
         rentWithHotel: 2300,
+        isPenthouse: true,
         videoUrls: [ // Changed from imageUrls to videoUrls for clarity
 
         ],
@@ -2513,16 +2520,25 @@ function createButtonContainer(property) {
         };
         topButtons.appendChild(payRentButton);
     } else if (!property.owner) {
-        // Buy Property button
+        // Buy Property or Rent Penthouse button
         const buyButton = document.createElement('button');
         buyButton.className = 'action-button buy';
-        buyButton.textContent = 'Buy Property';
+        // Custom label for penthouse properties
+        if (property.isPenthouse) {
+            buyButton.textContent = 'Rent Penthouse';
+        } else {
+            buyButton.textContent = 'Buy Property';
+        }
         buyButton.onclick = () => {
             if (currentPlayer.money >= property.price) {
                 buyProperty(currentPlayer, property);
                 closePropertyUI();
             } else {
-                showFeedback("Not enough money to buy this property!");
+                showFeedback(
+                    property.isPenthouse
+                        ? "Not enough money to rent this penthouse!"
+                        : "Not enough money to buy this property!"
+                );
             }
         };
         topButtons.appendChild(buyButton);
@@ -6511,7 +6527,7 @@ setInterval(showSuggestionNotification, 240000);
 // Optionally, show once shortly after page load
 setTimeout(showSuggestionNotification, 10000);
 
-/*
+
 // Function to create a UI for testing mode
 function createTestingModeUI() {
     const testingModeContainer = document.createElement('div');
@@ -6574,7 +6590,7 @@ function createTestingModeUI() {
 
 // Call this function to initialize the testing mode UI
 createTestingModeUI();
-*/
+
 
 init();
 setupPropertiesToggleButton();
