@@ -2144,8 +2144,13 @@ if (property.videoUrls && property.videoUrls.length > 0) {
     videoContainer.style.justifyContent = 'center';
     videoContainer.style.alignItems = 'center';
 
-    // Immediately create and autoplay the video
-    const randomIndex = Math.floor(Math.random() * property.videoUrls.length);
+    // Improved randomization: avoid immediate repeats
+    if (!property._lastVideoIndex) property._lastVideoIndex = -1;
+    let randomIndex;
+    do {
+        randomIndex = Math.floor(Math.random() * property.videoUrls.length);
+    } while (property.videoUrls.length > 1 && randomIndex === property._lastVideoIndex);
+    property._lastVideoIndex = randomIndex;
     const selectedUrl = property.videoUrls[randomIndex];
 
     const video = document.createElement('video');
