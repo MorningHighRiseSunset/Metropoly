@@ -586,7 +586,7 @@ const properties = [{
         price: 2500,
         rent: 200,
         owner: null,
-        address: "160 E Flamingo Rd, Las Vegas, NV 89109",
+        address: "3570 S Las Vegas Blvd, Las Vegas, NV 89109",
         color: "green",
         mortgageValue: 250,
         housePrice: 200,
