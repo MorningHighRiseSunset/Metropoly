@@ -460,6 +460,7 @@ const properties = [{
     {
         name: "Bet MGM",
         price: 2500,
+        rent: 200,
         owner: null,
         address: "3799 S Las Vegas Blvd, Las Vegas, NV 89109",
         color: "pink",
@@ -474,6 +475,7 @@ const properties = [{
     {
         name: "Bellagio",
         price: 2500,
+        rent: 200,
         owner: null,
         address: "3600 S Las Vegas Blvd, Las Vegas, NV 89109",
         color: "orange",
@@ -531,6 +533,7 @@ const properties = [{
     {
         name: "The Mirage",
         price: 2500,
+        rent: 200,
         owner: null,
         address: "3400 S Las Vegas Blvd, Las Vegas, NV 89109",
         color: "red",
@@ -581,6 +584,7 @@ const properties = [{
     {
         name: "Caesars Palace",
         price: 2500,
+        rent: 200,
         owner: null,
         address: "3570 S Las Vegas Blvd, Paradise, NV 89109",
         color: "green",
@@ -597,6 +601,7 @@ const properties = [{
     {
         name: "Santa Fe Hotel and Casino",
         price: 2500,
+        rent: 200,
         owner: null,
         address: "4949 N Rancho Dr, Las Vegas, NV 89130",
         color: "green",
@@ -630,6 +635,7 @@ const properties = [{
     {
         name: "House of Blues",
         price: 2500,
+        rent: 200,
         owner: null,
         address: "3950 S Las Vegas Blvd, Las Vegas, NV 89119 (inside Mandalay Bay)",
         color: "blue",
@@ -638,6 +644,7 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [330, 1000, 2400, 2600],
         rentWithHotel: 2800,
+        isPenthouse: true,
         videoUrls: [ // Changed from imageUrls to videoUrls for clarity
 
         ],
@@ -645,6 +652,7 @@ const properties = [{
     {
         name: "The Cosmopolitan",
         price: 2500,
+        rent: 200,
         owner: null,
         address: "3708 S Las Vegas Blvd, Las Vegas, NV 89109",
         color: "blue",
@@ -703,6 +711,7 @@ const properties = [{
     {
         name: "Wynn Las Vegas",
         price: 2500,
+        rent: 200,
         owner: null,
         address: "3131 S Las Vegas Blvd, Las Vegas, NV 89109",
         color: "yellow",
@@ -2512,12 +2521,12 @@ function createButtonContainer(property) {
         };
         topButtons.appendChild(payRentButton);
     } else if (!property.owner) {
-        // Buy Property or Rent Penthouse button
+        // Buy Property or Penthouse button
         const buyButton = document.createElement('button');
         buyButton.className = 'action-button buy';
-        // Custom label for penthouse properties
+        // Always say "Buy Penthouse" for penthouse properties
         if (property.isPenthouse) {
-            buyButton.textContent = 'Rent Penthouse';
+            buyButton.textContent = 'Buy Penthouse';
         } else {
             buyButton.textContent = 'Buy Property';
         }
@@ -2528,7 +2537,7 @@ function createButtonContainer(property) {
             } else {
                 showFeedback(
                     property.isPenthouse
-                        ? "Not enough money to rent this penthouse!"
+                        ? "Not enough money to buy this penthouse!"
                         : "Not enough money to buy this property!"
                 );
             }
