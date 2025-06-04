@@ -345,7 +345,7 @@ const properties = [{
         name: "Income Tax",
         type: "tax",
         price: 200,
-        imageUrls: ["Images/Uncle-Sam-1.jpg"], // <-- use string, not array
+        imageUrls: ["Images/Uncle-Sam-1.jpg"], // <-- use an array
         description: "Pay Income Tax: $200 or 10% of your total worth",
         special: true
     },
@@ -630,7 +630,7 @@ const properties = [{
         name: "Luxury Tax",
         type: "tax",
         price: 75,
-        imageUrls: ["Images/luxuryTax.png"], // <-- use string, not array
+        imageUrls: ["Images/luxuryTax.png"], // <-- use an array
         description: "Pay Luxury Tax of $75",
         special: true
     },
