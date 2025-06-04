@@ -6072,6 +6072,9 @@ function showFreeParkingUI(player) {
         return;
     }
 
+    // Get the Free Parking property object
+    const freeParkingProperty = properties.find(p => p.name === "FREE PARKING");
+
     // Create the overlay
     const overlay = document.createElement('div');
     overlay.className = 'free-parking-overlay';
@@ -6080,49 +6083,50 @@ function showFreeParkingUI(player) {
     const popup = document.createElement('div');
     popup.className = 'free-parking-popup';
 
-    // Create a container for the video and content
+    // Create a container for the image and content
     const contentContainer = document.createElement('div');
     contentContainer.className = 'free-parking-content-container';
     contentContainer.style.display = 'flex';
     contentContainer.style.gap = '20px';
 
-    // Add video container on the left
-    const videoContainer = document.createElement('div');
-    videoContainer.className = 'free-parking-video-container';
-    videoContainer.style.width = '40vw'; // Responsive width
-    videoContainer.style.maxWidth = '500px';
-    videoContainer.style.height = '28vw'; // Responsive height
-    videoContainer.style.maxHeight = '350px';
-    videoContainer.style.minWidth = '220px';
-    videoContainer.style.minHeight = '150px';
-    videoContainer.style.overflow = 'hidden';
-    videoContainer.style.borderRadius = '8px';
-    videoContainer.style.display = 'flex';
-    videoContainer.style.alignItems = 'center';
-    videoContainer.style.justifyContent = 'center';
+    // Add image container on the left
+    const imageContainer = document.createElement('div');
+    imageContainer.className = 'free-parking-image-container';
+    imageContainer.style.width = '40vw';
+    imageContainer.style.maxWidth = '500px';
+    imageContainer.style.height = '28vw';
+    imageContainer.style.maxHeight = '350px';
+    imageContainer.style.minWidth = '220px';
+    imageContainer.style.minHeight = '150px';
+    imageContainer.style.overflow = 'hidden';
+    imageContainer.style.borderRadius = '8px';
+    imageContainer.style.display = 'flex';
+    imageContainer.style.alignItems = 'center';
+    imageContainer.style.justifyContent = 'center';
 
-    // Add a single randomized Free Parking video
-    const freeParkingVideos = [
-    ];
-    const randomVideo = freeParkingVideos[Math.floor(Math.random() * freeParkingVideos.length)];
-
-    const video = document.createElement('video');
-    video.src = randomVideo;
-    video.controls = true;
-    video.autoplay = true;
-    video.muted = true; // Start muted
-    video.style.width = '100%';
-    video.style.height = '100%';
-    video.style.objectFit = 'cover';
-    video.style.borderRadius = '8px';
-    video.style.background = '#000';
-    video.style.display = 'block';
+    // Show the image from the properties array
+    let imageUrl = "";
+    if (freeParkingProperty && freeParkingProperty.imageUrls) {
+        if (Array.isArray(freeParkingProperty.imageUrls)) {
+            imageUrl = freeParkingProperty.imageUrls[0];
+        } else {
+            imageUrl = freeParkingProperty.imageUrls;
+        }
+    }
+    const img = document.createElement('img');
+    img.src = imageUrl;
+    img.alt = 'Free Parking';
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'cover';
+    img.style.borderRadius = '8px';
+    imageContainer.appendChild(img);
 
     // Responsive adjustment for small screens
     const style = document.createElement('style');
     style.textContent = `
         @media (max-width: 700px) {
-            .free-parking-video-container {
+            .free-parking-image-container {
                 width: 90vw !important;
                 height: 40vw !important;
                 max-width: 98vw !important;
@@ -6131,14 +6135,6 @@ function showFreeParkingUI(player) {
         }
     `;
     document.head.appendChild(style);
-
-    // Unmute the video when it is loaded
-    video.addEventListener('loadeddata', () => {
-        video.muted = false; // Unmute the video
-        video.play().catch(error => console.error("Failed to play video:", error));
-    });
-
-    videoContainer.appendChild(video);
 
     // Add content container on the right
     const content = document.createElement('div');
@@ -6185,8 +6181,8 @@ function showFreeParkingUI(player) {
     content.appendChild(message);
     content.appendChild(buttonContainer);
 
-    // Add video and content to the container
-    contentContainer.appendChild(videoContainer);
+    // Add image and content to the container
+    contentContainer.appendChild(imageContainer);
     contentContainer.appendChild(content);
 
     // Add the content container to the popup
