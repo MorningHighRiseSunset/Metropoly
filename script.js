@@ -336,7 +336,9 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [60, 180, 500, 700],
         rentWithHotel: 900,
-        videoUrls: [ "Videos/LV Grand Prix.mp4",
+        videoUrls: [ 
+        "Videos/LV Grand Prix.mp4",
+        "Videos/LV Grand Prix End.mp4",
         ],
     },
     {
