@@ -459,7 +459,7 @@ const properties = [{
     },
     {
         name: "Bet MGM",
-        price: 280,
+        price: 2500,
         rent: 28,
         owner: null,
         address: "3799 S Las Vegas Blvd, Las Vegas, NV 89109",
