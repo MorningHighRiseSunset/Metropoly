@@ -533,7 +533,7 @@ const properties = [{
         price: 400,
         rent: 40,
         owner: null,
-        address: "",
+        address: "3400 S Las Vegas Blvd, Las Vegas, NV 89109",
         color: "red",
         mortgageValue: 200,
         housePrice: 200,
