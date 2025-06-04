@@ -3233,7 +3233,7 @@ function validateGameState() {
     players.forEach((player, index) => {
         if (typeof player.money !== 'number') {
             console.error(`Player ${index + 1} has invalid money value`);
-            player.money = 1500;
+            player.money = 5000;
         }
         if (!Array.isArray(player.properties)) {
             player.properties = [];
@@ -3408,7 +3408,7 @@ function finalizePlayerSelection() {
     players.forEach((player, index) => {
         player.isAI = aiPlayers.has(player.tokenName);
         player.currentPosition = 0;
-        player.money = 1500;
+        player.money = 5000;
         player.properties = [];
         player.inJail = false;
         player.jailTurns = 0;
@@ -5295,7 +5295,7 @@ function checkGameEnd() {
 
 function resetGame() {
     players.forEach(player => {
-        player.money = 1500;
+        player.money = 5000;
         player.properties = [];
         player.currentPosition = 0;
         player.tokenName = null;
