@@ -867,28 +867,28 @@ let tokenSelectionUI = null;
 
 let players = [{
         name: "Player 1",
-        money: 1500,
+        money: 5000,
         properties: [],
         selectedToken: null,
         currentPosition: 0
     },
     {
         name: "Player 2",
-        money: 1500,
+        money: 5000,
         properties: [],
         selectedToken: null,
         currentPosition: 0
     },
     {
         name: "Player 3",
-        money: 1500,
+        money: 5000,
         properties: [],
         selectedToken: null,
         currentPosition: 0
     },
     {
         name: "Player 4",
-        money: 1500,
+        money: 5000,
         properties: [],
         selectedToken: null,
         currentPosition: 0
@@ -2605,7 +2605,7 @@ function addBuildingButtons(container, property) {
     } else if (!property.hotel) {
         const buyHotelButton = document.createElement('button');
         buyHotelButton.className = 'action-button buy-hotel';
-        buyHotelButton.textContent = 'Buy Hotel';
+        buyHotelButton.textContent = 'Buy Penthouse'; // Changed from 'Buy Hotel'
         buyHotelButton.onclick = () => buyHotel(property);
         container.appendChild(buyHotelButton);
     }
@@ -6515,7 +6515,7 @@ setInterval(showSuggestionNotification, 240000);
 // Optionally, show once shortly after page load
 setTimeout(showSuggestionNotification, 10000);
 
-
+/*
 // Function to create a UI for testing mode
 function createTestingModeUI() {
     const testingModeContainer = document.createElement('div');
@@ -6578,7 +6578,7 @@ function createTestingModeUI() {
 
 // Call this function to initialize the testing mode UI
 createTestingModeUI();
-
+*/
 
 init();
 setupPropertiesToggleButton();
