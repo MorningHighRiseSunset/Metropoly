@@ -460,7 +460,6 @@ const properties = [{
     {
         name: "Bet MGM",
         price: 2500,
-        rent: 28,
         owner: null,
         address: "3799 S Las Vegas Blvd, Las Vegas, NV 89109",
         color: "pink",
@@ -475,7 +474,6 @@ const properties = [{
     {
         name: "Bellagio",
         price: 2500,
-        rent: 30,
         owner: null,
         address: "3600 S Las Vegas Blvd, Las Vegas, NV 89109",
         color: "orange",
@@ -533,7 +531,6 @@ const properties = [{
     {
         name: "The Mirage",
         price: 2500,
-        rent: 40,
         owner: null,
         address: "3400 S Las Vegas Blvd, Las Vegas, NV 89109",
         color: "red",
@@ -584,7 +581,6 @@ const properties = [{
     {
         name: "Caesars Palace",
         price: 2500,
-        rent: 50,
         owner: null,
         address: "3570 S Las Vegas Blvd, Paradise, NV 89109",
         color: "green",
@@ -601,7 +597,6 @@ const properties = [{
     {
         name: "Santa Fe Hotel and Casino",
         price: 2500,
-        rent: 52,
         owner: null,
         address: "4949 N Rancho Dr, Las Vegas, NV 89130",
         color: "green",
@@ -635,7 +630,6 @@ const properties = [{
     {
         name: "House of Blues",
         price: 2500,
-        rent: 54,
         owner: null,
         address: "3950 S Las Vegas Blvd, Las Vegas, NV 89119 (inside Mandalay Bay)",
         color: "blue",
@@ -651,7 +645,6 @@ const properties = [{
     {
         name: "The Cosmopolitan",
         price: 2500,
-        rent: 56,
         owner: null,
         address: "3708 S Las Vegas Blvd, Las Vegas, NV 89109",
         color: "blue",
@@ -710,7 +703,6 @@ const properties = [{
     {
         name: "Wynn Las Vegas",
         price: 2500,
-        rent: 44,
         owner: null,
         address: "3131 S Las Vegas Blvd, Las Vegas, NV 89109",
         color: "yellow",
