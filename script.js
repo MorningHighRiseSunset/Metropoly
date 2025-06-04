@@ -3251,7 +3251,7 @@ function initializePlayers() {
     for (let i = 0; i < 4; i++) {
         players.push({
             name: `Player ${i + 1}`,
-            money: 1500,
+            money: 5000,
             properties: [],
             selectedToken: null,
             tokenName: null,
