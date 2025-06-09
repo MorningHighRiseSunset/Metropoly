@@ -17,6 +17,7 @@
             z-index: 100;
             font-weight: bold;
             letter-spacing: 1px;
+            white-space: nowrap; /* Prevent wrapping */
         }
         #instructions-button {
             position: absolute;
@@ -89,8 +90,9 @@
         }
         @media (max-width: 600px) {
             #title {
-                font-size: 1.3em;
+                font-size: 1.1em; /* Reduce font size more for mobile */
                 top: 2.5%;
+                white-space: nowrap; /* Ensure no wrapping on mobile */
             }
             #instructions-content {
                 font-size: 19px;
