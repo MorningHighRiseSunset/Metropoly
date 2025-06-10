@@ -6143,11 +6143,14 @@ function showFreeParkingUI(player) {
     }
     const img = document.createElement('img');
     img.src = imageUrl;
-    img.alt = 'Free Parking';
     img.style.width = '100%';
     img.style.height = '100%';
     img.style.objectFit = 'cover';
     img.style.borderRadius = '8px';
+    // Move Water Works image down to show more of the top
+    if (property.name === "Water Works") {
+        img.style.objectPosition = 'center 30%'; // Show more of the top (adjust 30% as needed)
+    }
     imageContainer.appendChild(img);
 
     // Responsive adjustment for small screens

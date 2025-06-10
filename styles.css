@@ -609,3 +609,7 @@ button:hover,
     white-space: nowrap !important;
   }
 }
+
+.property-popup img[src*="waterworks"] {
+  object-position: center 35% !important;
+}
