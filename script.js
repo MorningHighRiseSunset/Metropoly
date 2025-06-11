@@ -476,7 +476,11 @@ const properties = [{
         rentWithHouse: [150, 450, 1000, 1200],
         rentWithHotel: 1400,
         isPenthouse: true,
-        imageUrls: ["Images/4PFVVBO_copyright_image_38478.jpg"],
+        videoUrls: [ 
+            "Videos/MGMBoxing 1.mp4",
+            "Videos/MGMBoxing 2.mp4",
+            "Videos/MGMBoxing 3.mp4",
+        ],
     },
     {
         name: "Bellagio",
@@ -634,7 +638,7 @@ const properties = [{
         name: "Luxury Tax",
         type: "tax",
         price: 75,
-        imageUrls: ["Images/luxuryTax.png"], // <-- use an array
+        imageUrls: ["Images/luxuryTax.png"], // <-- always array
         description: "Pay Luxury Tax of $75",
         special: true
     },
