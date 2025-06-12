@@ -3431,36 +3431,21 @@ function finalizePlayerSelection() {
         return;
     }
 
-    console.log('Finalizing player selection...');
+    // Filter out players without tokens and re-index
+    let selectedPlayers = players.filter(player => player.tokenName !== null);
 
-    // Filter out players without tokens
-    players = players.filter(player => player.tokenName !== null);
-
-    // Set up each player properly
-    players.forEach((player, index) => {
-        player.isAI = aiPlayers.has(player.tokenName);
-        player.currentPosition = 0;
-        player.money = 5000;
-        player.properties = [];
-        player.inJail = false;
-        player.jailTurns = 0;
-        player.cards = [];
-
+    // Rebuild the players array with correct indices and properties
+    players = selectedPlayers.map((player, idx) => {
         // Find and set up the token
         const tokenObject = scene.children.find(obj =>
             obj.userData.isToken &&
             obj.userData.tokenName === player.tokenName
         );
-
         if (tokenObject) {
-            // Set up token
-            player.selectedToken = tokenObject;
             tokenObject.visible = true;
-
-            // Position at GO
             const startPos = positions[0];
             tokenObject.position.set(startPos.x, 2.5, startPos.z);
-            tokenObject.userData.playerIndex = index;
+            tokenObject.userData.playerIndex = idx;
 
             // Remove any existing highlights/indicators
             tokenObject.children = tokenObject.children.filter(
@@ -3469,36 +3454,33 @@ function finalizePlayerSelection() {
 
             // Add new highlight
             const highlightMaterial = new THREE.MeshPhongMaterial({
-                color: getPlayerColor(index),
+                color: getPlayerColor(idx),
                 transparent: true,
                 opacity: 0.3
             });
-
             const highlightGeometry = new THREE.CylinderGeometry(1, 1, 0.1, 32);
             const highlight = new THREE.Mesh(highlightGeometry, highlightMaterial);
             highlight.position.y = -0.5;
             highlight.userData.isHighlight = true;
             tokenObject.add(highlight);
-
-            console.log(`Set up player ${index + 1}:`, {
-                tokenName: player.tokenName,
-                position: tokenObject.position.toArray(),
-                isAI: player.isAI
-            });
-        } else {
-            console.error(`Could not find token for player ${index + 1}:`, player.tokenName);
-            alert(`Error: Token for Player ${index + 1} (${player.name}) is missing. Please reselect tokens.`);
         }
+
+        return {
+            name: `Player ${idx + 1}`,
+            money: 5000,
+            properties: [],
+            selectedToken: tokenObject || null,
+            tokenName: player.tokenName,
+            currentPosition: 0,
+            isAI: aiPlayers.has(player.tokenName),
+            inJail: false,
+            jailTurns: 0,
+            cards: []
+        };
     });
 
-    // Final checks
-    const invalidPlayers = players.filter(p => !p.selectedToken);
-    if (invalidPlayers.length > 0) {
-        console.error("Some players are missing tokens:", invalidPlayers);
-        alert("Error setting up players. Please refresh and try again.");
-        return;
-    }
-
+    // Reset indices and state
+    currentPlayerIndex = 0;
     initialSelectionComplete = true;
 
     // Remove token selection UI
@@ -3513,20 +3495,16 @@ function finalizePlayerSelection() {
         rollButton.style.display = 'block';
     }
 
-    // Set up first turn
-    currentPlayerIndex = 0;
     updateMoneyDisplay();
 
     // Start game with appropriate turn
     if (isCurrentPlayerAI()) {
-        console.log('Starting with AI turn');
         executeAITurn();
     } else {
-        console.log('Starting with human turn');
         allowedToRoll = true;
     }
 
-    // Debug log final game state
+    // Debug log
     console.log('Game started with players:', players.map(p => ({
         name: p.name,
         tokenName: p.tokenName,
@@ -3534,8 +3512,6 @@ function finalizePlayerSelection() {
         position: p.currentPosition,
         hasToken: !!p.selectedToken
     })));
-
-    console.log('Finalizing player selection...');
 }
 
 function isJailCorner(startPos, endPos) {
