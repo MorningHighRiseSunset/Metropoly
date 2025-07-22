@@ -18,6 +18,8 @@ import {
  * const exporter = new PLYExporter();
  * const data = exporter.parse( scene, options );
  * ```
+ *
+ * @three_import import { PLYExporter } from 'three/addons/exporters/PLYExporter.js';
  */
 class PLYExporter {
 
@@ -318,7 +320,7 @@ class PLYExporter {
 
 							tempColor.fromBufferAttribute( colors, i );
 
-							ColorManagement.fromWorkingColorSpace( tempColor, SRGBColorSpace );
+							ColorManagement.workingToColorSpace( tempColor, SRGBColorSpace );
 
 							output.setUint8( vOffset, Math.floor( tempColor.r * 255 ) );
 							vOffset += 1;
@@ -477,7 +479,7 @@ class PLYExporter {
 
 							tempColor.fromBufferAttribute( colors, i );
 
-							ColorManagement.fromWorkingColorSpace( tempColor, SRGBColorSpace );
+							ColorManagement.workingToColorSpace( tempColor, SRGBColorSpace );
 
 							line += ' ' +
 								Math.floor( tempColor.r * 255 ) + ' ' +

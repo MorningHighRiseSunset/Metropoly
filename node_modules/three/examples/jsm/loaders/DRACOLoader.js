@@ -41,6 +41,7 @@ const _taskCache = new WeakMap();
  * ```
  *
  * @augments Loader
+ * @three_import import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
  */
 class DRACOLoader extends Loader {
 
@@ -309,7 +310,7 @@ class DRACOLoader extends Loader {
 		for ( let i = 0, il = attribute.count; i < il; i ++ ) {
 
 			_color.fromBufferAttribute( attribute, i );
-			ColorManagement.toWorkingColorSpace( _color, SRGBColorSpace );
+			ColorManagement.colorSpaceToWorking( _color, SRGBColorSpace );
 			attribute.setXYZ( i, _color.r, _color.g, _color.b );
 
 		}

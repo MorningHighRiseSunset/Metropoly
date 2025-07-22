@@ -1,40 +1,15 @@
 import { RenderTarget, Vector2, NodeMaterial, RendererUtils, QuadMesh, TempNode, NodeUpdateType } from 'three/webgpu';
-import { nodeObject, Fn, If, float, uv, uniform, convertToTexture, vec2, vec4, passTexture, mul } from 'three/tsl';
+import { nodeObject, Fn, float, uv, uniform, convertToTexture, vec2, vec4, passTexture, mul, premultiplyAlpha, unpremultiplyAlpha } from 'three/tsl';
 
 const _quadMesh = /*@__PURE__*/ new QuadMesh();
 
 let _rendererState;
 
-const premult = /*@__PURE__*/ Fn( ( [ color ] ) => {
-
-	return vec4( color.rgb.mul( color.a ), color.a );
-
-} ).setLayout( {
-	name: 'premult',
-	type: 'vec4',
-	inputs: [
-		{ name: 'color', type: 'vec4' }
-	]
-} );
-
-const unpremult = /*@__PURE__*/ Fn( ( [ color ] ) => {
-
-	If( color.a.equal( 0.0 ), () => vec4( 0.0 ) );
-
-	return vec4( color.rgb.div( color.a ), color.a );
-
-} ).setLayout( {
-	name: 'unpremult',
-	type: 'vec4',
-	inputs: [
-		{ name: 'color', type: 'vec4' }
-	]
-} );
-
 /**
  * Post processing node for creating a gaussian blur effect.
  *
  * @augments TempNode
+ * @three_import import { gaussianBlur, premultipliedGaussianBlur } from 'three/addons/tsl/display/GaussianBlurNode.js';
  */
 class GaussianBlurNode extends TempNode {
 
@@ -274,8 +249,8 @@ class GaussianBlurNode extends TempNode {
 
 			// https://lisyarus.github.io/blog/posts/blur-coefficients-generator.html
 
-			sampleTexture = ( uv ) => premult( textureNode.sample( uv ) );
-			output = ( color ) => unpremult( color );
+			sampleTexture = ( uv ) => premultiplyAlpha( textureNode.sample( uv ) );
+			output = ( color ) => unpremultiplyAlpha( color );
 
 		} else {
 

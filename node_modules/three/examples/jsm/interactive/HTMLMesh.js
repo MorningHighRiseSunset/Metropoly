@@ -23,6 +23,7 @@ import {
  * ```
  *
  * @augments Mesh
+ * @three_import import { HTMLMesh } from 'three/addons/interactive/HTMLMesh.js';
  */
 class HTMLMesh extends Mesh {
 
@@ -574,6 +575,12 @@ function htmlevent( element, event, x, y ) {
 					const proportion = offsetX / width;
 					element.value = min + ( max - min ) * proportion;
 					element.dispatchEvent( new InputEvent( 'input', { bubbles: true } ) );
+
+				}
+
+				if ( element instanceof HTMLInputElement && ( element.type === 'text' || element.type === 'number' ) && ( event === 'mousedown' || event === 'click' ) ) {
+
+					element.focus();
 
 				}
 
