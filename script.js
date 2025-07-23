@@ -1,9 +1,16 @@
 import * as THREE from '../libs/three.module.js';
-import { Water } from '../libs/Water2.js';
-import { OrbitControls } from '../libs/OrbitControls.js';
-import { GLTFLoader } from '../libs/GLTFLoader.js';
-import { TextGeometry } from '../libs/TextGeometry.js';
-import { FontLoader } from '../libs/FontLoader.js';
+import {
+    GLTFLoader
+} from '../libs/GLTFLoader.js';
+import {
+    OrbitControls
+} from '../libs/OrbitControls.js';
+import {
+    TextGeometry
+} from '../libs/TextGeometry.js';
+import {
+    FontLoader
+} from '../libs/FontLoader.js';
 
 // Initialize the GLTFLoader
 const loader = new GLTFLoader();
@@ -33,12 +40,6 @@ function animate() {
     if (isFollowingToken && selectedToken) {
         updateFollowCamera(selectedToken);
     }
-
-    // --- ADD THIS BLOCK FOR WATER ANIMATION ---
-    if (scene.userData.water && scene.userData.water.material.uniforms['time']) {
-        scene.userData.water.material.uniforms['time'].value += delta;
-    }
-    // ------------------------------------------
 
     controls.update();
     renderer.render(scene, isFollowingToken ? followCamera : camera); // Render with the active camera
@@ -75,42 +76,6 @@ accelerationSound.load();
 window.addEventListener('mousedown', onMouseDown);
 window.addEventListener('mousemove', onMouseMove);
 window.addEventListener('mouseup', onMouseUp);
-
-// Show an animated banner for the current player's turn
-function showTurnBanner(playerName) {
-    // Remove any existing banner
-    const oldBanner = document.getElementById('turn-banner');
-    if (oldBanner) oldBanner.remove();
-
-    const banner = document.createElement('div');
-    banner.id = 'turn-banner';
-    banner.textContent = `${playerName}'s Turn!`;
-    banner.style.position = 'fixed';
-    banner.style.top = '40px';
-    banner.style.left = '50%';
-    banner.style.transform = 'translateX(-50%)';
-    banner.style.background = 'linear-gradient(90deg,#222,#444,#222)';
-    banner.style.color = '#fff';
-    banner.style.fontSize = '2.2rem';
-    banner.style.padding = '18px 48px';
-    banner.style.borderRadius = '16px';
-    banner.style.zIndex = 9999;
-    banner.style.opacity = '0';
-    banner.style.transition = 'opacity 0.5s, top 0.5s';
-    banner.style.boxShadow = '0 8px 32px rgba(0,0,0,0.25)';
-    document.body.appendChild(banner);
-
-    setTimeout(() => {
-        banner.style.opacity = '1';
-        banner.style.top = '70px';
-    }, 50);
-
-    setTimeout(() => {
-        banner.style.opacity = '0';
-        banner.style.top = '40px';
-        setTimeout(() => banner.remove(), 600);
-    }, 1800);
-}
 
 const images = [
     "Images/p-las-vegas-motor-speedway_55_660x440_201404181828.webp", // Grand Prix
@@ -987,8 +952,6 @@ let availableTokens = [
 function startTurn() {
     console.log(`Starting turn for Player ${currentPlayerIndex + 1} (${players[currentPlayerIndex].name})`);
 
-    showTurnBanner(players[currentPlayerIndex].name); 
-
     // Reset turn-related flags
     hasDrawnCard = false;
 
@@ -1044,6 +1007,25 @@ function toggleAI(token, button) {
 
             // Find and set up the token
             const selectedTokenObject = scene.children.find(obj => obj.userData.tokenName === token.name);
+            if (selectedTokenObject) {
+                selectedTokenObject.visible = true;
+                selectedTokenObject.position.set(22.5, 2.5, 22.5);
+                selectedTokenObject.userData.playerIndex = aiPlayerIndex;
+                currentPlayer.selectedToken = selectedTokenObject;
+
+                // Add highlight effect
+                const highlightMaterial = new THREE.MeshPhongMaterial({
+                    color: getPlayerColor(aiPlayerIndex),
+                    transparent: true,
+                    opacity: 0.3
+                });
+
+                const highlightGeometry = new THREE.CylinderGeometry(1, 1, 0.1, 32);
+                const highlight = new THREE.Mesh(highlightGeometry, highlightMaterial);
+                highlight.position.y = -0.5;
+                highlight.userData.isHighlight = true;
+                selectedTokenObject.add(highlight);
+            }
 
             aiPlayers.add(token.name);
             button.textContent = "Click to Disable PC";
@@ -2191,7 +2173,7 @@ if (property.videoUrls && property.videoUrls.length > 0) {
     video.setAttribute('autoplay', '');
     video.controls = true;
     video.preload = 'metadata';
-    video.poster = '';
+    video.poster = 'Images/video-placeholder.jpg';
     video.src = selectedUrl;
 
     videoContainer.appendChild(video);
@@ -3012,7 +2994,6 @@ function createBoard() {
     const boardSize = 70; // Adjust size accordingly
     const boardOffset = 0; // Center the board at origin
 
-    // Board (under the water)
     const boardGeometry = new THREE.BoxGeometry(boardSize, 1, boardSize);
     const boardMaterial = new THREE.MeshPhongMaterial({
         color: 0x444444,
@@ -3022,9 +3003,6 @@ function createBoard() {
     const board = new THREE.Mesh(boardGeometry, boardMaterial);
     board.receiveShadow = true;
     board.position.set(boardOffset, 0, boardOffset);
-
-    // --- REALISTIC WATER ---
-    // Create water geometry and mesh
 
     scene.add(board);
 }
@@ -3473,6 +3451,18 @@ function finalizePlayerSelection() {
             tokenObject.children = tokenObject.children.filter(
                 child => !child.userData.isHighlight && !child.userData.isPlayerIndicator
             );
+
+            // Add new highlight
+            const highlightMaterial = new THREE.MeshPhongMaterial({
+                color: getPlayerColor(idx),
+                transparent: true,
+                opacity: 0.3
+            });
+            const highlightGeometry = new THREE.CylinderGeometry(1, 1, 0.1, 32);
+            const highlight = new THREE.Mesh(highlightGeometry, highlightMaterial);
+            highlight.position.y = -0.5;
+            highlight.userData.isHighlight = true;
+            tokenObject.add(highlight);
         }
 
         return {
@@ -3925,11 +3915,15 @@ function moveToken(startPos, endPos, token, callback) {
         }
 
         animate();
-    } else if (tokenName === "rolls royce") {
-        driveWithDefaultEffect(startPos, endPos, token, () => {
+    } else if (tokenName === "speed boat") {
+        driveWithSpeedboatEffect(startPos, endPos, token, () => {
             finalizeMove(token, endPos, callback);
         });
-    } else if (tokenName === "helicopter") {
+    } else if (tokenName === "rolls royce") {
+		driveWithRollsRoyceEffect(startPos, endPos, token, () => {
+			finalizeMove(token, endPos, callback);
+		});
+	} else if (tokenName === "helicopter") {
         flyWithHelicopterEffect(startPos, endPos, token, () => {
             finalizeMove(token, endPos, callback);
         });
@@ -3990,12 +3984,18 @@ function finalizeMove(token, endPos, callback) {
         finalHeight += 0.5;
     } else if (token.userData.tokenName === "burger") {
         finalHeight += 0.7;
+    } else if (token.userData.tokenName === "speed boat") {
+        finalHeight += 0.5;
     } else if (token.userData.tokenName === "rolls royce") {
         finalHeight += 0.3;
+    } else if (token.userData.tokenName === "football") {
+        finalHeight += 1.0;
     }
 
     // Ensure final position is exact
     token.position.set(endPos.x, finalHeight, endPos.z);
+
+    // --- DO NOT stopWalkAnimation(token) here for "woman"! ---
 
     isTokenMoving = false;
     isFollowingToken = false;
@@ -4212,78 +4212,102 @@ function createTokenButton(token, index) {
     return tokenButton;
 }
 
-function throwFootballAlongPath(path, token, callback) {
-    if (!token || !path || path.length < 2) {
-        console.error("Invalid parameters passed to throwFootballAlongPath");
-        if (callback) callback();
+function driveWithRollsRoyceEffect(startPos, endPos, token, callback) {
+    if (!token || !startPos || !endPos) {
+        console.error("Invalid parameters passed to driveWithRollsRoyceEffect");
         return;
     }
 
-    const arcHeight = 5; // Height of the arc for the throw
-    const totalSegments = path.length - 1;
-    const totalDuration = 1200 * totalSegments; // Adjust speed as needed
+    isFollowingToken = true;
+    selectedToken = token;
+
+    const distance = Math.sqrt(
+        Math.pow(endPos.x - startPos.x, 2) +
+        Math.pow(endPos.z - startPos.z, 2)
+    );
+    const duration = 400 + distance * 18;
     const startTime = Date.now();
-
-    // Play woosh sound once
-    const wooshSound = new Audio('Sounds/long-whoosh-194554.mp3');
-    wooshSound.volume = 0.5;
-    wooshSound.play().catch(() => {});
-
-    function interpolatePath(path, t) {
-        const totalSegments = path.length - 1;
-        const totalProgress = t * totalSegments;
-        const segmentIndex = Math.floor(totalProgress);
-        const segmentProgress = totalProgress - segmentIndex;
-
-        if (segmentIndex >= totalSegments) {
-            return {
-                x: path[totalSegments].x,
-                y: path[totalSegments].y,
-                z: path[totalSegments].z,
-                angle: 0
-            };
-        }
-
-        const startPos = path[segmentIndex];
-        const endPos = path[segmentIndex + 1];
-
-        // Ease in-out for the current segment
-        const easeProgress = segmentProgress < 0.5
-            ? 2 * segmentProgress * segmentProgress
-            : 1 - Math.pow(-2 * segmentProgress + 2, 2) / 2;
-
-        const x = startPos.x + (endPos.x - startPos.x) * easeProgress;
-        const z = startPos.z + (endPos.z - startPos.z) * easeProgress;
-        // Arc for the whole path
-        const y = startPos.y + Math.sin(Math.PI * t) * arcHeight;
-        const directionVector = new THREE.Vector3(endPos.x - startPos.x, 0, endPos.z - startPos.z).normalize();
-        const angle = Math.atan2(directionVector.x, directionVector.z);
-
-        return { x, y, z, angle };
-    }
 
     function animate() {
         const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / totalDuration, 1);
+        const progress = Math.min(elapsed / duration, 1);
 
-        const { x, y, z, angle } = interpolatePath(path, progress);
+        const easeProgress = progress < 0.5
+            ? 2 * progress * progress
+            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
 
-        // Move football and spin it
-        token.position.set(x, y, z);
-        token.rotation.x += 0.2;
-        token.rotation.y += 0.1;
+        const currentX = startPos.x + (endPos.x - startPos.x) * easeProgress;
+        const currentZ = startPos.z + (endPos.z - startPos.z) * easeProgress;
+        const currentY = startPos.y + 0.29;
 
-        // Update follow camera if active
-        if (isFollowingToken) {
-            updateFollowCamera(token);
-        }
+        const directionVector = new THREE.Vector3(endPos.x - startPos.x, 0, endPos.z - startPos.z).normalize();
+        const angle = Math.atan2(directionVector.x, directionVector.z);
+
+        token.position.set(currentX, currentY, currentZ);
+        token.rotation.set(0, angle, 0);
+
+        // Update follow camera during animation
+        if (isFollowingToken) updateFollowCamera(token);
 
         if (progress < 1) {
             requestAnimationFrame(animate);
         } else {
-            // Land at the final spot
-            const end = path[path.length - 1];
-            token.position.set(end.x, end.y + 1.0, end.z);
+            isFollowingToken = false;
+            if (callback) callback();
+        }
+    }
+
+    animate();
+}
+
+function driveRollsRoyceAlongPath(token, path, callback) {
+    if (!token || !path || path.length < 2) {
+        if (callback) callback();
+        return;
+    }
+
+    isFollowingToken = true;
+    selectedToken = token;
+
+    const duration = 400 + path.length * 180; // Duration scales with path length
+    const startTime = Date.now();
+
+    function lerp(a, b, t) {
+        return a + (b - a) * t;
+    }
+
+    function animate() {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // Find which segment we're on
+        const totalSegments = path.length - 1;
+        const totalProgress = progress * totalSegments;
+        const segmentIndex = Math.floor(totalProgress);
+        const segmentT = totalProgress - segmentIndex;
+
+        const from = path[segmentIndex];
+        const to = path[segmentIndex + 1] || path[segmentIndex];
+
+        // Interpolate position
+        const currentX = lerp(from.x, to.x, segmentT);
+        const currentZ = lerp(from.z, to.z, segmentT);
+        const currentY = from.y + 0.29; // Flat, no jump
+
+        // Face direction of movement
+        const directionVector = new THREE.Vector3(to.x - from.x, 0, to.z - from.z).normalize();
+        const angle = Math.atan2(directionVector.x, directionVector.z);
+
+        token.position.set(currentX, currentY, currentZ);
+        token.rotation.set(0, angle, 0);
+
+        // Update follow camera
+        if (isFollowingToken) updateFollowCamera(token);
+
+        if (progress < 1) {
+            requestAnimationFrame(animate);
+        } else {
+            isFollowingToken = false;
             if (callback) callback();
         }
     }
@@ -4293,58 +4317,48 @@ function throwFootballAlongPath(path, token, callback) {
 
 function throwFootballAnimation(token, endPos, finalHeight, callback) {
     const startPos = token.position.clone();
-    const duration = 2000; // Duration of the throw animation in milliseconds
-    const startTime = Date.now();
+    const duration = 1200; // Faster throw for a tight spiral
     const arcHeight = 5; // Height of the arc for the throw
 
-    // Create and play the woosh sound
-    const wooshSound = new Audio('Sounds/long-whoosh-194554.mp3');
-    wooshSound.volume = 0.5; // Adjust volume as needed
-    wooshSound.play().catch(error => console.error("Failed to play woosh sound:", error));
+    // Remove sound effect
 
     // Switch to the follow camera
     isFollowingToken = true;
-    selectedToken = token; // Set the token for the follow camera
+    selectedToken = token;
 
     function animate() {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
 
-        // Easing function for smooth animation
+        // Easing for smooth throw
         const easeProgress = progress < 0.5
             ? 2 * progress * progress
             : 1 - Math.pow(-2 * progress + 2, 2) / 2;
 
-        // Calculate the current position
+        // Parabolic arc for Y
         const currentX = startPos.x + (endPos.x - startPos.x) * easeProgress;
         const currentZ = startPos.z + (endPos.z - startPos.z) * easeProgress;
         const currentY = startPos.y + Math.sin(progress * Math.PI) * arcHeight;
 
-        // Update the token's position
         token.position.set(currentX, currentY, currentZ);
 
-        // Rotate the football to simulate spinning
-        token.rotation.x += 0.2;
-        token.rotation.y += 0.1;
+        // Tight spiral: rapid spin around X, slight wobble on Y
+        token.rotation.x += 0.45;
+        token.rotation.y += 0.08;
 
-        // Update the follow camera position
-        if (isFollowingToken) {
-            updateFollowCamera(token);
-        }
+        // Update follow camera
+        if (isFollowingToken) updateFollowCamera(token);
 
         if (progress < 1) {
             requestAnimationFrame(animate);
         } else {
-            // Ensure the football lands at the correct height
             token.position.set(endPos.x, finalHeight, endPos.z);
-
-            // Revert to the main camera after the animation
             isFollowingToken = false;
-
             if (callback) callback();
         }
     }
 
+    const startTime = Date.now();
     animate();
 }
 
@@ -4436,62 +4450,34 @@ function driveWithSpeedboatEffect(startPos, endPos, token, callback) {
         return;
     }
 
-    const duration = 1200;
+    const duration = 1000; // Reduced from 2000 to 1000 (1 second)
     const startTime = Date.now();
+    const bobbingHeight = 0.05;
+    const bobbingFrequency = 1.5;
     const modelOffsetAngle = Math.PI / 2;
-
-    // Create a small water patch under the boat
-    const waterSize = 8;
-    const waterGeometry = new Water(
-        new THREE.PlaneGeometry(waterSize, waterSize, 64, 64),
-        {
-            color: 0x3399ff,
-            scale: 4,
-            flowDirection: new THREE.Vector2(1, 1),
-            textureWidth: 512,
-            textureHeight: 512,
-            reflectivity: 0.7
-        }
-    );
-    waterGeometry.rotation.x = -Math.PI / 2;
-    waterGeometry.position.set(startPos.x, startPos.y + 0.01, startPos.z);
-    scene.add(waterGeometry);
 
     function animate() {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
 
-        // Ease in-out
-        const easeProgress = progress < 0.5
-            ? 2 * progress * progress
-            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+        const easeProgress = progress < 0.5 ?
+            2 * progress * progress :
+            1 - Math.pow(-2 * progress + 2, 2) / 2;
 
-        // Position
         const currentX = startPos.x + (endPos.x - startPos.x) * easeProgress;
         const currentZ = startPos.z + (endPos.z - startPos.z) * easeProgress;
+        const currentY = startPos.y + 0.7 + Math.sin(elapsed / 1000 * bobbingFrequency * Math.PI) * bobbingHeight;
+
         const directionVector = new THREE.Vector3(endPos.x - startPos.x, 0, endPos.z - startPos.z).normalize();
         const angle = Math.atan2(directionVector.x, directionVector.z);
-        const currentY = startPos.y + 0.7;
 
-        // Move boat
         token.position.set(currentX, currentY, currentZ);
         token.rotation.set(0, angle + modelOffsetAngle, 0);
 
-        // Move water patch with boat
-        waterGeometry.position.set(currentX, startPos.y + 0.01, currentZ);
-
-        // Animate water waves
-        if (waterGeometry.material.uniforms['time']) {
-            waterGeometry.material.uniforms['time'].value += 0.03;
-        }
-
         if (progress < 1) {
             requestAnimationFrame(animate);
-        } else {
-            scene.remove(waterGeometry);
-            waterGeometry.geometry.dispose();
-            waterGeometry.material.dispose();
-            if (callback) callback();
+        } else if (callback) {
+            callback();
         }
     }
 
@@ -4502,148 +4488,56 @@ function driveStraightWithSpeedboat(startPos, endPos, token, callback) {
     driveWithSpeedboatEffect(startPos, endPos, token, callback);
 }
 
-function driveSpeedboatAlongPath(path, token, callback) {
-    if (!token || !path || path.length < 2) {
-        console.error("Invalid parameters passed to driveSpeedboatAlongPath");
-        if (callback) callback();
-        return;
-    }
-
-    // Make the water patch long and narrow for a wake effect
-    const waterLength = 13;
-    const waterWidth = 2.2;
-    const waterGeometry = new Water(
-        new THREE.PlaneGeometry(waterLength, waterWidth, 32, 32),
-        {
-            color: 0x3399ff,
-            scale: 13,
-            flowDirection: new THREE.Vector2(1, 0.4),
-            textureWidth: 1024,
-            textureHeight: 1024,
-            reflectivity: 0.95,
-            opacity: 0.92
-        }
-    );
-    waterGeometry.rotation.x = -Math.PI / 2;
-    waterGeometry.position.set(path[0].x, path[0].y + 0.32, path[0].z);
-    scene.add(waterGeometry);
-
-    const modelOffsetAngle = Math.PI / 2;
-    const totalSegments = path.length - 1;
-    const totalDuration = 600 * totalSegments;
-    const startTime = Date.now();
-
-    function interpolatePath(path, t) {
-        // t: 0 to 1
-        const totalSegments = path.length - 1;
-        const totalProgress = t * totalSegments;
-        const segmentIndex = Math.floor(totalProgress);
-        const segmentProgress = totalProgress - segmentIndex;
-
-        if (segmentIndex >= totalSegments) {
-            return {
-                x: path[totalSegments].x,
-                y: path[totalSegments].y,
-                z: path[totalSegments].z,
-                angle: 0
-            };
-        }
-
-        const startPos = path[segmentIndex];
-        const endPos = path[segmentIndex + 1];
-
-        // Ease in-out for the current segment
-        const easeProgress = segmentProgress < 0.5
-            ? 2 * segmentProgress * segmentProgress
-            : 1 - Math.pow(-2 * segmentProgress + 2, 2) / 2;
-
-        const x = startPos.x + (endPos.x - startPos.x) * easeProgress;
-        const z = startPos.z + (endPos.z - startPos.z) * easeProgress;
-        const y = startPos.y + 0.7;
-        const directionVector = new THREE.Vector3(endPos.x - startPos.x, 0, endPos.z - startPos.z).normalize();
-        const angle = Math.atan2(directionVector.x, directionVector.z);
-
-        return { x, y, z, angle, startY: startPos.y };
-    }
-
-    function animate() {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / totalDuration, 1);
-
-        const { x, y, z, angle, startY } = interpolatePath(path, progress);
-
-        // Move boat
-        token.position.set(x, y, z);
-        token.rotation.set(0, angle + modelOffsetAngle, 0);
-
-        // Move water patch with boat (keep Y consistent with board)
-        waterGeometry.position.set(x, (typeof startY === "number" ? startY : path[0].y) + 0.32, z);
-
-        // Animate water waves (faster for choppier effect)
-        if (waterGeometry.material.uniforms['time']) {
-            waterGeometry.material.uniforms['time'].value += 0.13;
-        }
-
-        // Update follow camera if active
-        if (isFollowingToken) {
-            updateFollowCamera(token);
-        }
-
-        if (progress < 1) {
-            requestAnimationFrame(animate);
-        } else {
-            scene.remove(waterGeometry);
-            waterGeometry.geometry.dispose();
-            waterGeometry.material.dispose();
-            if (callback) callback();
-        }
-    }
-
-    animate();
-}
-
 function flyWithHelicopterEffect(startPos, endPos, token, callback) {
     if (!token || !startPos || !endPos) {
         console.error("Invalid parameters passed to flyWithHelicopterEffect");
         return;
     }
 
-    const duration = 1000; // Duration for the animation
-    const flightHeight = 5; // Height the helicopter will fly at
+    const duration = 1000;
+    const flightHeight = 5;
     const startTime = Date.now();
-    const modelOffsetAngle = Math.PI + Math.PI / 2; // Rotate to face west correctly
+    const modelOffsetAngle = Math.PI + Math.PI / 2;
+
+    // Helper for smooth arc
+    function easeInOutSine(t) {
+        return -(Math.cos(Math.PI * t) - 1) / 2;
+    }
 
     function animate() {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
 
-        // Smooth easing for the movement
-        const easeProgress = progress < 0.5 ?
-            2 * progress * progress :
-            1 - Math.pow(-2 * progress + 2, 2) / 2;
+        // Arc up at start, arc down at end
+        let y;
+        if (progress < 0.18) {
+            y = startPos.y + easeInOutSine(progress / 0.18) * flightHeight;
+        } else if (progress > 0.82) {
+            y = startPos.y + flightHeight - easeInOutSine((progress - 0.82) / 0.18) * flightHeight;
+        } else {
+            y = startPos.y + flightHeight;
+        }
 
-        // Calculate the current position
-        const currentX = startPos.x + (endPos.x - startPos.x) * easeProgress;
-        const currentZ = startPos.z + (endPos.z - startPos.z) * easeProgress;
+        // Interpolate position
+        const currentX = startPos.x + (endPos.x - startPos.x) * progress;
+        const currentZ = startPos.z + (endPos.z - startPos.z) * progress;
 
-        // Maintain a constant flight height during the animation
-        const currentY = startPos.y + flightHeight;
-
-        // Update the token's position
-        token.position.set(currentX, currentY, currentZ);
-
-        // Calculate the direction vector and angle
+        // Calculate direction and angle
         const directionVector = new THREE.Vector3(endPos.x - startPos.x, 0, endPos.z - startPos.z).normalize();
         const angle = Math.atan2(directionVector.x, directionVector.z);
 
-        // Update the helicopter's rotation to face the movement direction with an offset
-        token.rotation.set(0, angle + modelOffsetAngle, 0);
+        // Tilt/bank when turning
+        let tilt = Math.sin(progress * Math.PI) * 0.4; // Bank right/left in the middle of the move
+
+        token.position.set(currentX, y, currentZ);
+        token.rotation.set(tilt, angle + modelOffsetAngle, 0);
 
         if (progress < 1) {
             requestAnimationFrame(animate);
         } else {
-            // Ensure the helicopter lands at the correct height
-            token.position.set(endPos.x, 1.9, endPos.z); // Set `y` to the board's surface height
+            // Land at correct board height
+            token.position.set(endPos.x, 1.5, endPos.z);
+            token.rotation.set(0, angle + modelOffsetAngle, 0);
             if (callback) callback();
         }
     }
@@ -5853,39 +5747,40 @@ function rollDice() {
     scene.add(dice1);
     scene.add(dice2);
 
-    let rotations = 0;
-    const maxRotations = 5;
+	let rotations = 0;
+	const maxRotations = 5;
 
-    const animate = () => {
-        if (rotations < 2.5) { // Fewer rotations for faster animation
-            dice1.rotation.x += Math.random() * 0.5;
-            dice1.rotation.y += Math.random() * 0.5;
-            dice1.rotation.z += Math.random() * 0.5;
-            dice2.rotation.x += Math.random() * 0.5;
-            dice2.rotation.y += Math.random() * 0.5;
-            dice2.rotation.z += Math.random() * 0.5;
-            rotations += 0.3; // Faster increment
-            requestAnimationFrame(animate);
-        } else {
-            // Final rotation to show numbers on top
-            dice1.rotation.set(0, 0, Math.PI / 2);
-            dice2.rotation.set(0, 0, Math.PI / 2);
+	const animate = () => {
+		if (rotations < maxRotations) {
+			// Random rotations during animation
+			dice1.rotation.x += Math.random() * 0.3;
+			dice1.rotation.y += Math.random() * 0.3;
+			dice1.rotation.z += Math.random() * 0.3;
+			dice2.rotation.x += Math.random() * 0.3;
+			dice2.rotation.y += Math.random() * 0.3;
+			dice2.rotation.z += Math.random() * 0.3;
+			rotations += 0.1;
+			requestAnimationFrame(animate);
+		} else {
+			// Final rotation to show numbers on top
+			dice1.rotation.set(0, 0, Math.PI / 2);
+			dice2.rotation.set(0, 0, Math.PI / 2);
 
-            // Show the dice result
-            showDiceResult(total, roll1, roll2);
+			// Show the dice result
+			showDiceResult(total, roll1, roll2);
 
-            setTimeout(() => {
-                // Remove dice from the scene
-                scene.remove(dice1);
-                scene.remove(dice2);
+			setTimeout(() => {
+				// Remove dice from the scene
+				scene.remove(dice1);
+				scene.remove(dice2);
 
-                // Move the token to the new position
-                moveTokenToNewPosition(total, () => {
-                    isTurnInProgress = false; // Reset the flag after movement is complete
-                });
-            }, 1000); // Show result for 1 second instead of 3
-        }
-    };
+				// Move the token to the new position
+				moveTokenToNewPosition(total, () => {
+					isTurnInProgress = false; // Reset the flag after movement is complete
+				});
+			}, 3000);
+		}
+	};
 
     animate();
 }
@@ -5926,42 +5821,45 @@ function moveTokenToNewPosition(spaces, callback) {
     const newPosition = (oldPosition + spaces + propertiesCount) % propertiesCount;
 
     const token = currentPlayer.selectedToken;
+    const tokenName = token.userData.tokenName;
 
-    // --- SPEED BOAT: animate along path in one go ---
-    console.log("Token name:", token.userData.tokenName);
-    if (token.userData.tokenName === "speed boat") {
-        isTokenMoving = true;
-        isFollowingToken = true;
-        selectedToken = token;
+    let isWoman = tokenName === "woman";
+    if (isWoman) playWalkAnimation(token);
 
-        let path = [];
-        let current = oldPosition;
-        while (current !== newPosition) {
-            const next = (current + 1) % propertiesCount;
-            path.push(positions[next]);
-            current = next;
-        }
-        driveSpeedboatAlongPath([positions[oldPosition], ...path], token, () => {
-            // Find the player that owns this token at the moment the animation finishes
-            const player = players.find(p => p.selectedToken === token);
-            if (player) {
-                finishMove(player, newPosition, oldPosition + spaces >= propertiesCount);
-            }
+    // --- FOOTBALL: throw directly to destination ---
+    if (tokenName === "football") {
+        const startPos = positions[oldPosition];
+        const endPos = positions[newPosition];
+        const finalHeight = getTokenHeight(tokenName, endPos.y) + 1.0;
+        throwFootballAnimation(token, endPos, finalHeight, () => {
+            finishMove(currentPlayer, newPosition, oldPosition + spaces >= propertiesCount);
             if (callback) callback();
         });
         return;
     }
 
-    // --- START WALK SOUND/ANIMATION ONCE ---
-    let isWoman = token.userData.tokenName === "woman";
-    if (isWoman) playWalkAnimation(token);
+    // --- ROLLS ROYCE: drive directly to destination ---
+	if (tokenName === "rolls royce") {
+		const path = [];
+		let current = oldPosition;
+		while (current !== newPosition) {
+			const next = (current + 1) % positions.length;
+			path.push(positions[next]);
+			current = next;
+		}
+		driveRollsRoyceAlongPath(token, [positions[oldPosition], ...path], () => {
+			finishMove(currentPlayer, newPosition, oldPosition + spaces >= propertiesCount);
+			if (callback) callback();
+		});
+		return;
+	}
 
+    // --- All other tokens: move square by square ---
     let currentSpace = oldPosition;
 
     function moveOneSpace() {
         if (currentSpace === newPosition) {
             finishMove(currentPlayer, newPosition, oldPosition + spaces >= propertiesCount);
-            // --- STOP WALK SOUND/ANIMATION ONCE ---
             if (isWoman) stopWalkAnimation(token);
             if (callback) callback();
             return;
@@ -5977,19 +5875,7 @@ function moveTokenToNewPosition(spaces, callback) {
         });
     }
 
-    if (token.userData.tokenName === "football") {
-        isTokenMoving = true;
-        isFollowingToken = true;
-        selectedToken = token;
-
-        // Just throw from oldPosition to newPosition, not square-to-square
-        throwFootballAlongPath([positions[oldPosition], positions[newPosition]], token, () => {
-            finishMove(currentPlayer, newPosition, oldPosition + spaces >= propertiesCount);
-            if (callback) callback();
-        });
-        return;
-    }
-
+    // Only call moveOneSpace for non-football and non-rolls royce tokens
     moveOneSpace();
 }
 
