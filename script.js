@@ -1012,19 +1012,6 @@ function toggleAI(token, button) {
                 selectedTokenObject.position.set(22.5, 2.5, 22.5);
                 selectedTokenObject.userData.playerIndex = aiPlayerIndex;
                 currentPlayer.selectedToken = selectedTokenObject;
-
-                // Add highlight effect
-                const highlightMaterial = new THREE.MeshPhongMaterial({
-                    color: getPlayerColor(aiPlayerIndex),
-                    transparent: true,
-                    opacity: 0.3
-                });
-
-                const highlightGeometry = new THREE.CylinderGeometry(1, 1, 0.1, 32);
-                const highlight = new THREE.Mesh(highlightGeometry, highlightMaterial);
-                highlight.position.y = -0.5;
-                highlight.userData.isHighlight = true;
-                selectedTokenObject.add(highlight);
             }
 
             aiPlayers.add(token.name);
@@ -3452,17 +3439,6 @@ function finalizePlayerSelection() {
                 child => !child.userData.isHighlight && !child.userData.isPlayerIndicator
             );
 
-            // Add new highlight
-            const highlightMaterial = new THREE.MeshPhongMaterial({
-                color: getPlayerColor(idx),
-                transparent: true,
-                opacity: 0.3
-            });
-            const highlightGeometry = new THREE.CylinderGeometry(1, 1, 0.1, 32);
-            const highlight = new THREE.Mesh(highlightGeometry, highlightMaterial);
-            highlight.position.y = -0.5;
-            highlight.userData.isHighlight = true;
-            tokenObject.add(highlight);
         }
 
         return {
@@ -4122,24 +4098,6 @@ function createTokenButton(token, index) {
                 selectedTokenObject.visible = true;
                 selectedTokenObject.position.set(22.5, 2.5, 22.5);
                 selectedTokenObject.userData.playerIndex = humanPlayerCount;
-
-                // Add highlight effect
-                const highlightMaterial = new THREE.MeshPhongMaterial({
-                    color: getPlayerColor(humanPlayerCount),
-                    transparent: true,
-                    opacity: 0.3
-                });
-
-                const highlightGeometry = new THREE.CylinderGeometry(1, 1, 0.1, 32);
-                const highlight = new THREE.Mesh(highlightGeometry, highlightMaterial);
-                highlight.position.y = -0.5;
-                highlight.userData.isHighlight = true;
-
-                // Remove any existing highlights
-                selectedTokenObject.children = selectedTokenObject.children.filter(
-                    child => !child.userData.isHighlight
-                );
-                selectedTokenObject.add(highlight);
 
                 humanPlayerCount++;
 
