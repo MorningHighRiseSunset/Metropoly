@@ -613,3 +613,9 @@ button:hover,
 .property-popup img[src*="waterworks"] {
   object-position: center 35% !important;
 }
+
+.ai-action-popup {
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+}

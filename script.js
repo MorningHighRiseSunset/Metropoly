@@ -1075,76 +1075,61 @@ function validatePlayerTokens() {
 }
 
 function handleAIPropertyDecision(property, callback = () => {}) {
-    console.log("handleAIPropertyDecision called for property:", property);
-
     if (!property) {
-        console.error("No property found for AI to handle.");
         callback();
         return;
     }
-
     const currentPlayer = players[currentPlayerIndex];
-    console.log(`Current AI Player: ${currentPlayer.name}, Money: $${currentPlayer.money}`);
 
-    // Check if the property has already been handled this turn
     if (property.hasBeenHandled) {
-        console.log(`Property ${property.name} already handled this turn. Skipping.`);
         callback();
         return;
     }
-
-    property.hasBeenHandled = true; // Mark the property as handled
-    console.log(`Handling property: ${property.name}`);
+    property.hasBeenHandled = true;
 
     if (property.type === "special") {
-        // Handle special properties
         switch (property.name) {
             case "Chance":
             case "Community Cards":
                 if (hasDrawnCard) {
-                    console.log("A card has already been drawn this turn. Skipping.");
                     callback();
                     return;
                 }
-                console.log(`AI drawing card from ${property.name}`);
+                showAIPopup(`${currentPlayer.name} draws a ${property.name} card`);
                 drawCard(property.name);
-                hasDrawnCard = true; // Set the flag to prevent multiple draws
+                hasDrawnCard = true;
                 setTimeout(callback, 1000);
                 break;
             default:
-                console.log(`AI landed on special space: ${property.name}`);
                 setTimeout(callback, 1000);
         }
     } else if (!property.owner) {
-        // Handle unowned properties
         const shouldBuy = makeAIBuyDecision(currentPlayer, property);
-        console.log(`AI decision to buy ${property.name}: ${shouldBuy ? "Yes" : "No"}`);
-
         if (shouldBuy && currentPlayer.money >= property.price) {
-            console.log(`AI decided to buy ${property.name}`);
+            showAIPopup(`${currentPlayer.name} buys ${property.name} for $${property.price}`);
             buyProperty(currentPlayer, property, callback);
         } else {
-            console.log(`AI decided not to buy ${property.name}`);
+            showAIPopup(`${currentPlayer.name} skips buying ${property.name}`);
             setTimeout(callback, 1000);
         }
     } else if (property.owner !== currentPlayer) {
-        // Handle rent payment, but skip for ticket properties
         if (!ticketProperties.includes(property.name)) {
             const rentAmount = calculateRent(property);
             if (currentPlayer.money >= rentAmount) {
+                showAIPopup(`${currentPlayer.name} pays $${rentAmount} rent to ${property.owner.name}`);
                 currentPlayer.money -= rentAmount;
                 property.owner.money += rentAmount;
             } else {
+                showAIPopup(`${currentPlayer.name} cannot afford rent and is bankrupt!`);
                 handleBankruptcy(currentPlayer, property.owner);
             }
         }
         setTimeout(callback, 1000);
     } else {
-        // Property is owned by the AI itself
-        console.log(`AI landed on its own property: ${property.name}`);
         setTimeout(callback, 1000);
     }
 }
+
 
 function handleRentPayment(player, property) {
     if (!property || !property.owner) {
@@ -1188,46 +1173,40 @@ function executeAITurn() {
 
     console.log(`Executing AI turn for Player ${currentPlayerIndex + 1} (${currentPlayer.name})`);
 
-    isTurnInProgress = true; // Mark the turn as in progress
-    hasRolledDice = false; // Reset the flag for the new turn
+    isTurnInProgress = true;
+    hasRolledDice = false;
     hasMovedToken = false;
     hasHandledProperty = false;
     isAIProcessing = true;
 
     // Check if AI is in jail first
     if (currentPlayer.inJail) {
+        showAIPopup(`${currentPlayer.name} is in Jail and will attempt to get out.`);
         handleAIJailTurn(currentPlayer);
         return;
     }
 
-    // Step 1: Roll the dice
     setTimeout(() => {
-        console.log("AI rolling dice...");
         const roll1 = Math.ceil(Math.random() * 6);
         const roll2 = Math.ceil(Math.random() * 6);
         const diceRoll = roll1 + roll2;
 
-        console.log(`AI rolled ${roll1} and ${roll2} (total: ${diceRoll})`);
+        showAIPopup(`${currentPlayer.name} rolled ${roll1} and ${roll2} (total: ${diceRoll})`);
         showDiceResult(diceRoll, roll1, roll2);
         hasRolledDice = true;
 
-        // Step 2: Move the token
         moveTokenToNewPosition(diceRoll, () => {
-            console.log(`AI finished moving to position ${currentPlayer.currentPosition}`);
             hasMovedToken = true;
-
-            // Step 3: Handle the property or special space
             const propertyName = placeNames[currentPlayer.currentPosition];
             const property = properties.find(p => p.name === propertyName);
 
             if (property) {
+                showAIPopup(`${currentPlayer.name} landed on ${property.name}`);
                 handleAIPropertyLanding(currentPlayer, property, () => {
-                    console.log(`AI finished handling property: ${property.name}`);
                     hasHandledProperty = true;
                     checkAITurnCompletion();
                 });
             } else {
-                console.log(`AI landed on an unhandled space: ${propertyName}`);
                 hasHandledProperty = true;
                 checkAITurnCompletion();
             }
@@ -1310,14 +1289,15 @@ function checkAITurnCompletion() {
 function handleAIIncomeTax(player) {
     const totalWorth = calculatePlayerWorth(player);
     const tenPercent = Math.floor(totalWorth * 0.1);
-    
+
     if (tenPercent < 200 && player.money >= tenPercent) {
+        showAIPopup(`${player.name} pays $${tenPercent} (10%) in Income Tax`);
         player.money -= tenPercent;
-        showFeedback(`${player.name} paid $${tenPercent} (10%) in Income Tax`);
     } else if (player.money >= 200) {
+        showAIPopup(`${player.name} pays $200 in Income Tax`);
         player.money -= 200;
-        showFeedback(`${player.name} paid $200 in Income Tax`);
     } else {
+        showAIPopup(`${player.name} cannot afford Income Tax and is bankrupt!`);
         handleBankruptcy(player, null);
     }
     updateMoneyDisplay();
@@ -1325,9 +1305,10 @@ function handleAIIncomeTax(player) {
 
 function handleAILuxuryTax(player) {
     if (player.money >= 75) {
+        showAIPopup(`${player.name} pays $75 in Luxury Tax`);
         player.money -= 75;
-        showFeedback(`${player.name} paid $75 in Luxury Tax`);
     } else {
+        showAIPopup(`${player.name} cannot afford Luxury Tax and is bankrupt!`);
         handleBankruptcy(player, null);
     }
     updateMoneyDisplay();
@@ -5132,43 +5113,35 @@ function showAIDecision(message) {
 }
 
 function handleAIJailTurn(player) {
-    console.log(`${player.name} is in Jail. AI is deciding how to proceed.`);
-
     if (player.jailTurns > 0) {
-        // AI decides how to get out of jail
         if (player.money >= 50) {
-            // Pay fine if AI has enough money
+            showAIPopup(`${player.name} pays $50 to get out of Jail`);
             player.money -= 50;
             player.inJail = false;
             player.jailTurns = 0;
-            showFeedback(`${player.name} paid $50 to get out of Jail.`);
         } else if (player.cards.includes("Get Out of Jail Free")) {
-            // Use "Get Out of Jail Free" card if available
+            showAIPopup(`${player.name} uses a Get Out of Jail Free card`);
             player.cards.splice(player.cards.indexOf("Get Out of Jail Free"), 1);
             player.inJail = false;
             player.jailTurns = 0;
-            showFeedback(`${player.name} used a Get Out of Jail Free card.`);
         } else {
-            // Roll for doubles
             const roll1 = Math.ceil(Math.random() * 6);
             const roll2 = Math.ceil(Math.random() * 6);
+            showAIPopup(`${player.name} rolls for doubles: ${roll1} & ${roll2}`);
             if (roll1 === roll2) {
+                showAIPopup(`${player.name} rolled doubles and gets out of Jail!`);
                 player.inJail = false;
                 player.jailTurns = 0;
-                showFeedback(`${player.name} rolled doubles and got out of Jail!`);
             } else {
                 player.jailTurns -= 1;
-                showFeedback(`${player.name} failed to roll doubles. ${player.jailTurns} turn(s) left in Jail.`);
+                showAIPopup(`${player.name} failed to roll doubles. ${player.jailTurns} turn(s) left.`);
             }
         }
     }
-
     if (player.jailTurns === 0) {
         player.inJail = false;
-        console.log(`${player.name} is released from Jail.`);
     }
-
-    endTurn(); // End the turn after handling jail logic
+    endTurn();
 }
 
 function isCurrentPlayerAI() {
@@ -5279,6 +5252,37 @@ function getPlayerColor(playerIndex) {
         0xffff00 // Yellow
     ];
     return colors[playerIndex] || colors[0];
+}
+
+function showAIPopup(message, duration = 1800) {
+    const popup = document.createElement('div');
+    popup.className = 'ai-action-popup';
+    popup.textContent = message;
+    popup.style.position = 'fixed';
+    popup.style.top = '60px';
+    popup.style.right = '40px';
+    popup.style.background = 'rgba(30,30,30,0.93)';
+    popup.style.color = '#fff';
+    popup.style.padding = '16px 28px';
+    popup.style.borderRadius = '10px';
+    popup.style.fontSize = '17px';
+    popup.style.zIndex = 9999;
+    popup.style.boxShadow = '0 4px 16px rgba(0,0,0,0.25)';
+    popup.style.opacity = '0';
+    popup.style.transition = 'opacity 0.3s, transform 0.3s';
+    popup.style.transform = 'translateY(-20px)';
+    document.body.appendChild(popup);
+
+    setTimeout(() => {
+        popup.style.opacity = '1';
+        popup.style.transform = 'translateY(0)';
+    }, 50);
+
+    setTimeout(() => {
+        popup.style.opacity = '0';
+        popup.style.transform = 'translateY(-20px)';
+        setTimeout(() => popup.remove(), 300);
+    }, duration);
 }
 
 
