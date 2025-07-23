@@ -5748,37 +5748,31 @@ function rollDice() {
     scene.add(dice2);
 
 	let rotations = 0;
-	const maxRotations = 5;
+	const maxRotations = 2.5; // Faster
 
 	const animate = () => {
 		if (rotations < maxRotations) {
-			// Random rotations during animation
-			dice1.rotation.x += Math.random() * 0.3;
-			dice1.rotation.y += Math.random() * 0.3;
-			dice1.rotation.z += Math.random() * 0.3;
-			dice2.rotation.x += Math.random() * 0.3;
-			dice2.rotation.y += Math.random() * 0.3;
-			dice2.rotation.z += Math.random() * 0.3;
-			rotations += 0.1;
+			dice1.rotation.x += Math.random() * 0.4;
+			dice1.rotation.y += Math.random() * 0.4;
+			dice1.rotation.z += Math.random() * 0.4;
+			dice2.rotation.x += Math.random() * 0.4;
+			dice2.rotation.y += Math.random() * 0.4;
+			dice2.rotation.z += Math.random() * 0.4;
+			rotations += 0.2; // Faster increment
 			requestAnimationFrame(animate);
 		} else {
-			// Final rotation to show numbers on top
 			dice1.rotation.set(0, 0, Math.PI / 2);
 			dice2.rotation.set(0, 0, Math.PI / 2);
 
-			// Show the dice result
 			showDiceResult(total, roll1, roll2);
 
 			setTimeout(() => {
-				// Remove dice from the scene
 				scene.remove(dice1);
 				scene.remove(dice2);
-
-				// Move the token to the new position
 				moveTokenToNewPosition(total, () => {
-					isTurnInProgress = false; // Reset the flag after movement is complete
+					isTurnInProgress = false;
 				});
-			}, 3000);
+			}, 1500); // Shorter delay
 		}
 	};
 
