@@ -2423,6 +2423,15 @@ function showJailUI(player) {
     // Add video container on the left
     const videoContainer = document.createElement('div');
     videoContainer.className = 'jail-video-container';
+    // --- FIX: Set fixed size for video container and video ---
+    videoContainer.style.width = "220px";
+    videoContainer.style.height = "140px";
+    videoContainer.style.flex = "0 0 220px";
+    videoContainer.style.overflow = "hidden";
+    videoContainer.style.borderRadius = "8px";
+    videoContainer.style.display = "flex";
+    videoContainer.style.alignItems = "center";
+    videoContainer.style.justifyContent = "center";
 
     // Add a single randomized Jail video
     const jailVideos = [
@@ -2443,6 +2452,7 @@ function showJailUI(player) {
     video.style.width = '100%';
     video.style.height = '100%';
     video.style.objectFit = 'cover';
+    video.style.borderRadius = '8px';
 
     // Unmute the video when it is loaded
     video.addEventListener('loadeddata', () => {
@@ -4409,6 +4419,11 @@ function throwFootballAnimation(token, endPos, finalHeight, callback) {
     // Store initial rotation for Y/Z
     const initialY = token.rotation.y;
     const initialZ = token.rotation.z;
+
+    // --- Play new woosh sound for football throw ---
+    const wooshSound = new Audio('Sounds/woosh-260275.mp3');
+    wooshSound.volume = 0.7;
+    wooshSound.play().catch(() => {});
 
     function animate() {
         const elapsed = Date.now() - startTime;
@@ -6844,9 +6859,9 @@ function flyWithHelicopterEffectPath(path, token, callback) {
     }
 
     isFollowingToken = true;
-    let previousSelectedToken = selectedToken; // Save previous camera target
+    let previousSelectedToken = selectedToken;
 
-    // --- Helicopter sound setup ---
+    // Helicopter sound setup
     let heliSound = new Audio('Sounds/helicopter-rotor-sound-effectpart-2-95798.mp3');
     heliSound.loop = true;
     heliSound.volume = 0.7;
@@ -6867,14 +6882,14 @@ function flyWithHelicopterEffectPath(path, token, callback) {
             action.reset();
             action.play();
         }
-        selectedToken = animatedModel; // Camera follows animated model
+        selectedToken = animatedModel;
     } else {
         selectedToken = token;
     }
 
     // Create a smooth curve above the board
-    const flightHeight = 7;
-    const takeoffHeight = 2;
+    const flightHeight = 8;
+    const takeoffHeight = 2.5;
     const landHeight = 1.5;
     const points = path.map((p, i) => {
         if (i === 0) return new THREE.Vector3(p.x, takeoffHeight, p.z);
@@ -6882,27 +6897,45 @@ function flyWithHelicopterEffectPath(path, token, callback) {
         return new THREE.Vector3(p.x, flightHeight, p.z);
     });
     const curve = new CatmullRomCurve3(points);
-    const duration = 2200 + path.length * 320; // Slower: increase both base and per-segment time
+
+    // --- SLOWER: Increase duration ---
+    const duration = 4200 + path.length * 600;
     const startTime = Date.now();
     const modelOffsetAngle = Math.PI + Math.PI / 2;
 
     function animate() {
         const elapsed = Date.now() - startTime;
         const t = Math.min(elapsed / duration, 1);
+
+        // Main position along the curve
         const pos = curve.getPoint(t);
         const nextPos = curve.getPoint(Math.min(t + 0.01, 1));
         const direction = new THREE.Vector3().subVectors(nextPos, pos).normalize();
         const angle = Math.atan2(direction.x, direction.z);
-        const tilt = Math.sin(t * Math.PI) * 0.4;
 
+        // --- Add vertical bobbing (gentle up/down) ---
+        const bobbingY = Math.sin(t * Math.PI * 4) * 0.45; // 4 cycles, 0.45 units amplitude
+
+        // --- Add subtle yaw oscillation (side-to-side) ---
+        const yawOscillation = Math.sin(t * Math.PI * 2) * 0.13; // 2 cycles, 0.13 radians
+
+        // No left/right tilt: rotation.x = 0
         if (animatedModel) {
-            animatedModel.position.copy(pos);
-            animatedModel.rotation.set(tilt, angle + modelOffsetAngle, 0);
+            animatedModel.position.set(pos.x, pos.y + bobbingY, pos.z);
+            animatedModel.rotation.set(
+                0, // No tilt
+                angle + modelOffsetAngle + yawOscillation,
+                0
+            );
             if (mixer) mixer.update(1/60);
             if (isFollowingToken) updateFollowCamera(animatedModel);
         } else {
-            token.position.copy(pos);
-            token.rotation.set(tilt, angle + modelOffsetAngle, 0);
+            token.position.set(pos.x, pos.y + bobbingY, pos.z);
+            token.rotation.set(
+                0,
+                angle + modelOffsetAngle + yawOscillation,
+                0
+            );
             if (isFollowingToken) updateFollowCamera(token);
         }
 
@@ -6922,7 +6955,6 @@ function flyWithHelicopterEffectPath(path, token, callback) {
                 token.position.copy(points[points.length - 1]);
                 token.rotation.set(0, angle + modelOffsetAngle, 0);
             }
-            // --- Stop helicopter sound ---
             heliSound.pause();
             heliSound.currentTime = 0;
             selectedToken = previousSelectedToken;
