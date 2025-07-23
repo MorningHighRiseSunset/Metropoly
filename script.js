@@ -4317,14 +4317,15 @@ function driveRollsRoyceAlongPath(token, path, callback) {
 
 function throwFootballAnimation(token, endPos, finalHeight, callback) {
     const startPos = token.position.clone();
-    const duration = 1200; // Faster throw for a tight spiral
-    const arcHeight = 5; // Height of the arc for the throw
+    const duration = 1200; // Duration for the throw
+    const arcHeight = 5;   // Height of the arc
 
-    // Remove sound effect
-
-    // Switch to the follow camera
     isFollowingToken = true;
     selectedToken = token;
+
+    // Store initial rotation for Y/Z
+    const initialY = token.rotation.y;
+    const initialZ = token.rotation.z;
 
     function animate() {
         const elapsed = Date.now() - startTime;
@@ -4342,11 +4343,11 @@ function throwFootballAnimation(token, endPos, finalHeight, callback) {
 
         token.position.set(currentX, currentY, currentZ);
 
-        // Tight spiral: rapid spin around X, slight wobble on Y
+        // Tight spiral: spin only around X, keep Y/Z locked
         token.rotation.x += 0.45;
-        token.rotation.y += 0.08;
+        token.rotation.y = initialY;
+        token.rotation.z = initialZ;
 
-        // Update follow camera
         if (isFollowingToken) updateFollowCamera(token);
 
         if (progress < 1) {
