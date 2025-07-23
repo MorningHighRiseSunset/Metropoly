@@ -11,6 +11,7 @@ import {
 import {
     FontLoader
 } from '../libs/FontLoader.js';
+import { CatmullRomCurve3 } from '../libs/three.module.js';
 
 // Initialize the GLTFLoader
 const loader = new GLTFLoader();
@@ -364,6 +365,8 @@ const properties = [{
         rentWithRailroads: [25, 50, 100, 200],
         videoUrls: [ "Videos/Monorail.mp4",
         ],
+        customBuyLabel: "Buy a ticket",
+        noRent: true
     },
     {
         name: "Speed Vegas Off Roading",
@@ -377,9 +380,9 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [70, 200, 550, 750],
         rentWithHotel: 950,
-        videoUrls: [ "Videos/Offroading 1.mp4",
-
-        ],
+        videoUrls: [ "Videos/Offroading 1.mp4" ],
+        customBuyLabel: "Rent a dune buggy",
+        noRent: true
     },
     {
         name: "Chance",
@@ -438,8 +441,8 @@ const properties = [{
     },
     {
         name: "Brothel",
-        price: 150,
-        rent: 15,
+        price: 1500,
+        rent: 300,
         owner: null,
         address: "",
         color: "pink",
@@ -448,10 +451,10 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [75, 225, 675, 900],
         rentWithHotel: 1100,
-        videoUrls: [ 
-            "Videos/tapDancingWomen.mp4",
-            "Videos/BrothelVid.mp4",
-        ],
+        videoUrls: [ "Videos/tapDancingWomen.mp4", "Videos/BrothelVid.mp4" ],
+        customBuyLabel: "Buy 1 night for 1500",
+        customRentLabel: "Rent a room for 300",
+        noRent: true
     },
     {
         name: "Electric Company",
@@ -570,7 +573,7 @@ const properties = [{
     {
         name: "Sphere",
         price: 480,
-        rent: 48,
+        rent: 0,
         owner: null,
         address: "",
         color: "yellow",
@@ -579,8 +582,9 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [280, 850, 2000, 2200],
         rentWithHotel: 2400,
-        videoUrls: [ "Videos/Sphere.mp4",
-        ],
+        videoUrls: [ "Videos/Sphere.mp4" ],
+        customBuyLabel: "Buy a ticket",
+        noRent: true
     },
     {
         name: "GO TO JAIL",
@@ -704,8 +708,8 @@ const properties = [{
     },
     {
         name: "Resorts World Theatre",
-        price: 360,
-        rent: 36,
+        price: 300,
+        rent: 0,
         owner: null,
         address: "",
         color: "red",
@@ -714,9 +718,9 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [230, 700, 1500, 1850],
         rentWithHotel: 2100,
-        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
-
-        ],
+        videoUrls: [],
+        customBuyLabel: "Buy a ticket for 300",
+        noRent: true
     },
     {
         name: "Wynn Las Vegas",
@@ -1124,19 +1128,16 @@ function handleAIPropertyDecision(property, callback = () => {}) {
             setTimeout(callback, 1000);
         }
     } else if (property.owner !== currentPlayer) {
-        // Handle rent payment
-        const rentAmount = calculateRent(property);
-        console.log(`Property is owned by ${property.owner.name}. Rent is $${rentAmount}.`);
-
-        if (currentPlayer.money >= rentAmount) {
-            currentPlayer.money -= rentAmount;
-            property.owner.money += rentAmount;
-            console.log(`AI paid $${rentAmount} rent to ${property.owner.name}.`);
-        } else {
-            console.log(`AI cannot afford rent of $${rentAmount}.`);
-            handleBankruptcy(currentPlayer, property.owner);
+        // Handle rent payment, but skip for ticket properties
+        if (!ticketProperties.includes(property.name)) {
+            const rentAmount = calculateRent(property);
+            if (currentPlayer.money >= rentAmount) {
+                currentPlayer.money -= rentAmount;
+                property.owner.money += rentAmount;
+            } else {
+                handleBankruptcy(currentPlayer, property.owner);
+            }
         }
-
         setTimeout(callback, 1000);
     } else {
         // Property is owned by the AI itself
@@ -1150,29 +1151,28 @@ function handleRentPayment(player, property) {
         console.error("Invalid property or owner for rent payment");
         return;
     }
-
+    // Suppress rent for ticket/concert properties
+    if (ticketProperties.includes(property.name)) {
+        showFeedback("No rent is due for this property.");
+        closePropertyUI();
+        setTimeout(() => {
+            isTurnInProgress = false;
+            endTurn();
+        }, 1000);
+        return;
+    }
     const rentAmount = calculateRent(property);
-    
     if (player.money >= rentAmount) {
         player.money -= rentAmount;
         property.owner.money += rentAmount;
-        
-        // Log the rent payment
-        console.log(`${player.name} paid $${rentAmount} rent to ${property.owner.name}`);
         showFeedback(`${player.name} paid $${rentAmount} rent to ${property.owner.name}`);
-        
         updateMoneyDisplay();
-
-        // Close any open property UI
         closePropertyUI();
-
-        // End the turn after a short delay
         setTimeout(() => {
             isTurnInProgress = false;
             endTurn();
         }, 1500);
     } else {
-        console.log(`${player.name} cannot afford rent of $${rentAmount}`);
         showFeedback(`${player.name} cannot afford rent of $${rentAmount}!`);
         handleBankruptcy(player, property.owner);
     }
@@ -1560,7 +1560,24 @@ function createTokens() {
     loadTokenModel('Models/speed_boat_05/speedeboatscene.gltf', 'speed boat', [1.2, 1.2, 1.2], 3.0);
     loadTokenModel('Models/top_hat__free_download/tophat.gltf', 'hat', [0.5, 0.5, 0.5], 3.0);
     loadTokenModel('Models/wilson_football/football.gltf', 'football', [0.1, 0.1, 0.1], 3.0);
-    loadTokenModel('Models/helicopter/scene.gltf', 'helicopter', [0.01, 0.01, 0.01], 3.0);
+    loadTokenModel('Models/Helicopter/helicopter.glb', 'helicopter', [0.01, 0.01, 0.01], 3.0, (staticModel) => {
+        // After loading the static model, load the animated model and store it in userData
+        loader.load('Models/Helicopter/blueHelicopter.glb', (gltf) => {
+            const animatedModel = gltf.scene;
+            animatedModel.scale.set(0.01, 0.01, 0.01);
+            animatedModel.visible = false;
+            animatedModel.position.copy(staticModel.position);
+            animatedModel.userData.tokenName = 'helicopter';
+            scene.add(animatedModel);
+            staticModel.userData.animatedModel = animatedModel;
+            // Store animation mixer if present
+            if (gltf.animations && gltf.animations.length > 0) {
+                animatedModel.userData.mixer = new THREE.AnimationMixer(animatedModel);
+                animatedModel.userData.action = animatedModel.userData.mixer.clipAction(gltf.animations[0]);
+            }
+        });
+    });
+
 
     // Woman token (with animation)
     showTokenSpinner('woman');
@@ -2160,7 +2177,7 @@ if (property.videoUrls && property.videoUrls.length > 0) {
     video.setAttribute('autoplay', '');
     video.controls = true;
     video.preload = 'metadata';
-    video.poster = 'Images/video-placeholder.jpg';
+    video.poster = '';
     video.src = selectedUrl;
 
     videoContainer.appendChild(video);
@@ -2264,26 +2281,80 @@ if (!mediaShown) {
     detailsContainer.style.alignItems = 'flex-start';
     detailsContainer.style.height = '100%';
     detailsContainer.style.minWidth = '0';
-    detailsContainer.innerHTML = `
-    <div class="property-details" style="display: flex; flex-direction: row; gap: 6px; height: 100%;">
-        <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
-            <span class="detail-label">Price:</span>
-            <span class="detail-value">$${property.price || 'N/A'}</span>
+
+	const ticketProperties = [
+    "Las Vegas Grand Prix",
+    "Las Vegas Golden Knights",
+    "Las Vegas Raiders",
+    "Las Vegas Aces",
+    "Horseback Riding",
+    "Maverick Helicopter Rides",
+    "Sphere",
+    "Shriners Children's Open",
+    "Resorts World Theatre",
+    "House of Blues"
+];
+
+    // Custom UI for Brothel, Monorail, Speed Vegas Off Roading, Resorts World Theatre, Sphere
+    if (property.name === 'Brothel') {
+        detailsContainer.innerHTML = `
+        <div class="property-details" style="display: flex; flex-direction: column; gap: 6px; height: 100%;">
+            <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span class="detail-label">${property.customBuyLabel || 'Buy 1 night for 1500'}</span>
+            </div>
+            <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span class="detail-label">${property.customRentLabel || 'Rent a room for 300'}</span>
+            </div>
+            <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span class="detail-label">Owner:</span>
+                <span class="detail-value">${property.owner ? property.owner.name : 'None'}</span>
+            </div>
+            <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span class="detail-label">Address:</span>
+                <span class="detail-value">${property.address || 'No address available'}</span>
+            </div>
         </div>
-        <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
-            <span class="detail-label">Rent:</span>
-            <span class="detail-value">$${property.rent || 'N/A'}</span>
+        `;
+    } else if (property.customBuyLabel) {
+        detailsContainer.innerHTML = `
+        <div class="property-details" style="display: flex; flex-direction: column; gap: 6px; height: 100%;">
+            <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span class="detail-label">${property.customBuyLabel}</span>
+            </div>
+            <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span class="detail-label">Owner:</span>
+                <span class="detail-value">${property.owner ? property.owner.name : 'None'}</span>
+            </div>
+            <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span class="detail-label">Address:</span>
+                <span class="detail-value">${property.address || 'No address available'}</span>
+            </div>
         </div>
-        <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
-            <span class="detail-label">Owner:</span>
-            <span class="detail-value">${property.owner ? property.owner.name : 'None'}</span>
+        `;
+    } else {
+        detailsContainer.innerHTML = `
+        <div class="property-details" style="display: flex; flex-direction: row; gap: 6px; height: 100%;">
+            <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span class="detail-label">Price:</span>
+                <span class="detail-value">$${property.price || 'N/A'}</span>
+            </div>
+            ${!ticketProperties.includes(property.name) ? `
+            <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span class="detail-label">Rent:</span>
+                <span class="detail-value">$${property.rent || 'N/A'}</span>
+            </div>
+            ` : ''}
+            <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span class="detail-label">Owner:</span>
+                <span class="detail-value">${property.owner ? property.owner.name : 'None'}</span>
+            </div>
+            <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span class="detail-label">Address:</span>
+                <span class="detail-value">${property.address || 'No address available'}</span>
+            </div>
         </div>
-        <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
-            <span class="detail-label">Address:</span>
-            <span class="detail-value">${property.address || 'No address available'}</span>
-        </div>
-    </div>
-    `;
+        `;
+    }
 
     // Buttons (vertical stack, right of details)
     const buttonContainer = createButtonContainer(property);
@@ -2505,52 +2576,123 @@ function createButtonContainer(property) {
 
     const currentPlayer = players[currentPlayerIndex];
 
-    // Top buttons wrapper
-    const topButtons = document.createElement('div');
-    topButtons.style.display = 'flex';
-    topButtons.style.flexDirection = 'column';
-    topButtons.style.gap = '6px';
-    topButtons.style.flex = '0 0 auto'; // Prevent growing/shrinking
-
-    if (property.owner && property.owner !== currentPlayer) {
-        // Pay Rent button
-        const payRentButton = document.createElement('button');
-        payRentButton.className = 'action-button pay-rent';
-        const rentAmount = calculateRent(property);
-        payRentButton.textContent = `Pay Rent ($${rentAmount})`;
-        payRentButton.onclick = () => {
-            handleRentPayment(currentPlayer, property);
-        };
-        topButtons.appendChild(payRentButton);
-    } else if (!property.owner) {
-        // Buy Property or Penthouse button
+    // Custom logic for Brothel, Monorail, Speed Vegas Off Roading, Resorts World Theatre, Sphere
+    if (property.name === 'Brothel') {
+        // Show both buy and rent as separate buttons
         const buyButton = document.createElement('button');
         buyButton.className = 'action-button buy';
-        // Always say "Buy Penthouse" for penthouse properties
-        if (property.isPenthouse) {
-            buyButton.textContent = 'Buy Penthouse';
-        } else {
-            buyButton.textContent = 'Buy Property';
-        }
+        buyButton.textContent = property.customBuyLabel || 'Buy 1 night for 1500';
         buyButton.onclick = () => {
-            if (currentPlayer.money >= property.price) {
-                buyProperty(currentPlayer, property);
+            if (currentPlayer.money >= 1500) {
+                currentPlayer.money -= 1500;
+                showFeedback(`${currentPlayer.name} bought 1 night at the Brothel for $1500`);
+                updateMoneyDisplay();
                 closePropertyUI();
+                setTimeout(() => endTurn(), 1000);
             } else {
-                showFeedback(
-                    property.isPenthouse
-                        ? "Not enough money to buy this penthouse!"
-                        : "Not enough money to buy this property!"
-                );
+                showFeedback("Not enough money to buy 1 night!");
             }
         };
-        topButtons.appendChild(buyButton);
-    } else if (property.owner === currentPlayer) {
-        // Property management buttons
-        addPropertyManagementButtons(topButtons, property);
-    }
+        buttonContainer.appendChild(buyButton);
+        const rentButton = document.createElement('button');
+        rentButton.className = 'action-button rent';
+        rentButton.textContent = property.customRentLabel || 'Rent a room for 300';
+        rentButton.onclick = () => {
+            if (currentPlayer.money >= 300) {
+                currentPlayer.money -= 300;
+                showFeedback(`${currentPlayer.name} rented a room at the Brothel for $300`);
+                updateMoneyDisplay();
+                closePropertyUI();
+                setTimeout(() => endTurn(), 1000);
+            } else {
+                showFeedback("Not enough money to rent a room!");
+            }
+        };
+        buttonContainer.appendChild(rentButton);
+    } else if (property.customBuyLabel) {
+        // For Monorail, Speed Vegas Off Roading, Resorts World Theatre, Sphere
+        const buyButton = document.createElement('button');
+        buyButton.className = 'action-button buy';
+        buyButton.textContent = property.customBuyLabel;
+        buyButton.onclick = () => {
+            if (currentPlayer.money >= property.price) {
+                currentPlayer.money -= property.price;
+                showFeedback(`${currentPlayer.name} ${property.customBuyLabel.toLowerCase()} for $${property.price}`);
+                updateMoneyDisplay();
+                closePropertyUI();
+                setTimeout(() => endTurn(), 1000);
+            } else {
+                showFeedback("Not enough money!");
+            }
+        };
+        buttonContainer.appendChild(buyButton);
+    } else {
+        // List of properties that should use "Buy a Ticket" and have no rent
+        const ticketProperties = [
+            "Las Vegas Grand Prix",
+            "Las Vegas Golden Knights",
+            "Las Vegas Raiders",
+            "Las Vegas Aces",
+            "Horseback Riding",
+            "Maverick Helicopter Rides",
+            "Sphere",
+            "Shriners Children's Open",
+            "Resorts World Theatre",
+            "House of Blues"
+        ];
 
-    buttonContainer.appendChild(topButtons);
+        // Top buttons wrapper
+        const topButtons = document.createElement('div');
+        topButtons.style.display = 'flex';
+        topButtons.style.flexDirection = 'column';
+        topButtons.style.gap = '6px';
+        topButtons.style.flex = '0 0 auto'; // Prevent growing/shrinking
+
+        if (property.owner && property.owner !== currentPlayer) {
+            // Only show rent button if NOT a ticket property
+            if (!ticketProperties.includes(property.name)) {
+                const payRentButton = document.createElement('button');
+                payRentButton.className = 'action-button pay-rent';
+                const rentAmount = calculateRent(property);
+                payRentButton.textContent = `Pay Rent ($${rentAmount})`;
+                payRentButton.onclick = () => {
+                    handleRentPayment(currentPlayer, property);
+                };
+                topButtons.appendChild(payRentButton);
+            }
+        } else if (!property.owner) {
+            // Buy Property, Penthouse, or Ticket button
+            const buyButton = document.createElement('button');
+            buyButton.className = 'action-button buy';
+            if (property.isPenthouse) {
+                buyButton.textContent = 'Buy Penthouse';
+            } else if (ticketProperties.includes(property.name)) {
+                buyButton.textContent = 'Buy a Ticket';
+            } else {
+                buyButton.textContent = 'Buy Property';
+            }
+            buyButton.onclick = () => {
+                if (currentPlayer.money >= property.price) {
+                    buyProperty(currentPlayer, property);
+                    closePropertyUI();
+                } else {
+                    showFeedback(
+                        property.isPenthouse
+                            ? "Not enough money to buy this penthouse!"
+                            : ticketProperties.includes(property.name)
+                                ? "Not enough money to buy a ticket!"
+                                : "Not enough money to buy this property!"
+                    );
+                }
+            };
+            topButtons.appendChild(buyButton);
+        } else if (property.owner === currentPlayer) {
+            // Property management buttons
+            addPropertyManagementButtons(topButtons, property);
+        }
+
+        buttonContainer.appendChild(topButtons);
+    }
 
     // Spacer to push close button to the bottom
     const spacer = document.createElement('div');
@@ -2564,7 +2706,7 @@ function createButtonContainer(property) {
     closeButton.textContent = 'Close';
     closeButton.onclick = () => {
         closePropertyUI();
-        endTurn();
+        // Do NOT call endTurn() here for human players
     };
     closeButton.style.marginTop = '0';
     closeButton.style.marginBottom = '20px'; // Move the button up from the bottom
@@ -2839,7 +2981,8 @@ function createPropertyPopup(position) {
         yPos += lineHeight;
     }
 
-    if (property.rent) {
+    // Only show rent if not a ticket/concert property
+    if (property.rent && !ticketProperties.includes(property.name)) {
         context.fillText(`Rent: $${property.rent}`, canvas.width / 2, yPos);
         yPos += lineHeight;
     }
@@ -3900,7 +4043,8 @@ function moveToken(startPos, endPos, token, callback) {
 			finalizeMove(token, endPos, callback);
 		});
 	} else if (tokenName === "helicopter") {
-        flyWithHelicopterEffect(startPos, endPos, token, () => {
+        // Use the new path-based helicopter animation for all moves
+        flyWithHelicopterEffectPath([startPos, endPos], token, () => {
             finalizeMove(token, endPos, callback);
         });
     } else if (tokenName === "football") {
@@ -4453,12 +4597,28 @@ function flyWithHelicopterEffect(startPos, endPos, token, callback) {
         return;
     }
 
+    // Swap to animated model if available
+    const animatedModel = token.userData.animatedModel;
+    let mixer, action;
+    if (animatedModel) {
+        // Hide static, show animated
+        token.visible = false;
+        animatedModel.visible = true;
+        animatedModel.position.copy(token.position);
+        animatedModel.rotation.copy(token.rotation);
+        mixer = animatedModel.userData.mixer;
+        action = animatedModel.userData.action;
+        if (action) {
+            action.reset();
+            action.play();
+        }
+    }
+
     const duration = 1000;
     const flightHeight = 5;
     const startTime = Date.now();
     const modelOffsetAngle = Math.PI + Math.PI / 2;
 
-    // Helper for smooth arc
     function easeInOutSine(t) {
         return -(Math.cos(Math.PI * t) - 1) / 2;
     }
@@ -4467,7 +4627,6 @@ function flyWithHelicopterEffect(startPos, endPos, token, callback) {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
 
-        // Arc up at start, arc down at end
         let y;
         if (progress < 0.18) {
             y = startPos.y + easeInOutSine(progress / 0.18) * flightHeight;
@@ -4477,66 +4636,43 @@ function flyWithHelicopterEffect(startPos, endPos, token, callback) {
             y = startPos.y + flightHeight;
         }
 
-        // Interpolate position
         const currentX = startPos.x + (endPos.x - startPos.x) * progress;
         const currentZ = startPos.z + (endPos.z - startPos.z) * progress;
-
-        // Calculate direction and angle
         const directionVector = new THREE.Vector3(endPos.x - startPos.x, 0, endPos.z - startPos.z).normalize();
         const angle = Math.atan2(directionVector.x, directionVector.z);
+        let tilt = Math.sin(progress * Math.PI) * 0.4;
 
-        // Tilt/bank when turning
-        let tilt = Math.sin(progress * Math.PI) * 0.4; // Bank right/left in the middle of the move
-
-        token.position.set(currentX, y, currentZ);
-        token.rotation.set(tilt, angle + modelOffsetAngle, 0);
+        // Move the animated model if present, else the static
+        if (animatedModel) {
+            animatedModel.position.set(currentX, y, currentZ);
+            animatedModel.rotation.set(tilt, angle + modelOffsetAngle, 0);
+            if (mixer) mixer.update(1/60); // Advance animation
+        } else {
+            token.position.set(currentX, y, currentZ);
+            token.rotation.set(tilt, angle + modelOffsetAngle, 0);
+        }
 
         if (progress < 1) {
             requestAnimationFrame(animate);
         } else {
             // Land at correct board height
-            token.position.set(endPos.x, 1.5, endPos.z);
-            token.rotation.set(0, angle + modelOffsetAngle, 0);
+            if (animatedModel) {
+                animatedModel.position.set(endPos.x, 1.5, endPos.z);
+                animatedModel.rotation.set(0, angle + modelOffsetAngle, 0);
+                if (action) action.stop();
+                animatedModel.visible = false;
+                token.position.copy(animatedModel.position);
+                token.rotation.copy(animatedModel.rotation);
+                token.visible = true;
+            } else {
+                token.position.set(endPos.x, 1.5, endPos.z);
+                token.rotation.set(0, angle + modelOffsetAngle, 0);
+            }
             if (callback) callback();
         }
     }
 
     animate();
-}
-
-// Example usage for moving the helicopter token
-function moveHelicopterToNewPosition(spaces) {
-    const currentPlayer = players[currentPlayerIndex];
-
-    if (!currentPlayer.selectedToken || currentPlayer.selectedToken.userData.tokenName !== "helicopter") {
-        console.error("No helicopter token assigned to the current player.");
-        return;
-    }
-
-    const oldPosition = currentPlayer.currentPosition;
-    const propertiesCount = positions.length;
-    const newPosition = (oldPosition + spaces) % propertiesCount;
-
-    const token = currentPlayer.selectedToken;
-    let currentSpace = oldPosition;
-
-    function moveOneSpace() {
-        if (currentSpace === newPosition) {
-            finishMove(currentPlayer, newPosition, oldPosition + spaces >= propertiesCount);
-            return;
-        }
-
-        const nextSpace = (currentSpace + 1) % propertiesCount;
-        const startPos = positions[currentSpace];
-        const endPos = positions[nextSpace];
-
-        flyWithHelicopterEffect(startPos, endPos, token, () => {
-            currentSpace = nextSpace;
-            moveOneSpace();
-        });
-    }
-
-    moveOneSpace();
 }
 
 
@@ -4776,15 +4912,16 @@ function handlePropertyLanding(player, position) {
             return;
         }
 
+        // Handle ticket/concert properties: do NOT pay rent
+        if (ticketProperties.includes(property.name)) {
+            showPropertyUI(position);
+            return;
+        }
         // Handle regular properties
         const rentAmount = calculateRent(property);
-        console.log(`Rent amount calculated: $${rentAmount}`);
-        
         if (isCurrentPlayerAI()) {
-            // AI automatically pays rent
             handleRentPayment(player, property);
         } else {
-            // Show property UI for human players
             showPropertyUI(position);
         }
     } else if (!property.owner) {
@@ -5152,7 +5289,8 @@ function getTokenImageUrl(tokenName) {
         "rolls royce": "Images/image-removebg-preview.png",
         "speed boat": "Images/image-removebg-preview (3).png",
         "football": "Models/wilson_football/image-removebg-preview (7).png",
-        "helicopter": "Models/helicopter/image-removebg-preview (1).png",
+        // FIXED: Use correct folder and image name for helicopter
+        "helicopter": "Images/image-removebg-preview (1).png",
         "burger": "Images/image-removebg-preview (9).png",
         "nike": "Images/image-removebg-preview (10).png"
     };
@@ -5792,20 +5930,36 @@ function moveTokenToNewPosition(spaces, callback) {
     }
 
     // --- ROLLS ROYCE: drive directly to destination ---
-	if (tokenName === "rolls royce") {
-		const path = [];
-		let current = oldPosition;
-		while (current !== newPosition) {
-			const next = (current + 1) % positions.length;
-			path.push(positions[next]);
-			current = next;
-		}
-		driveRollsRoyceAlongPath(token, [positions[oldPosition], ...path], () => {
-			finishMove(currentPlayer, newPosition, oldPosition + spaces >= propertiesCount);
-			if (callback) callback();
-		});
-		return;
-	}
+    if (tokenName === "rolls royce") {
+        const path = [];
+        let current = oldPosition;
+        while (current !== newPosition) {
+            const next = (current + 1) % positions.length;
+            path.push(positions[next]);
+            current = next;
+        }
+        driveRollsRoyceAlongPath(token, [positions[oldPosition], ...path], () => {
+            finishMove(currentPlayer, newPosition, oldPosition + spaces >= propertiesCount);
+            if (callback) callback();
+        });
+        return;
+    }
+
+    // --- HELICOPTER: fly smoothly along the whole path ---
+    if (tokenName === "helicopter") {
+        let path = [];
+        let current = oldPosition;
+        while (current !== newPosition) {
+            path.push(positions[current]);
+            current = (current + 1) % propertiesCount;
+        }
+        path.push(positions[newPosition]);
+        flyWithHelicopterEffectPath(path, token, () => {
+            finishMove(currentPlayer, newPosition, oldPosition + spaces >= propertiesCount);
+            if (callback) callback();
+        });
+        return;
+    }
 
     // --- All other tokens: move square by square ---
     let currentSpace = oldPosition;
@@ -5828,7 +5982,7 @@ function moveTokenToNewPosition(spaces, callback) {
         });
     }
 
-    // Only call moveOneSpace for non-football and non-rolls royce tokens
+    // Only call moveOneSpace for non-football, non-rolls royce, non-helicopter tokens
     moveOneSpace();
 }
 
@@ -6044,8 +6198,13 @@ function upgradeProperty(player, property) {
 }
 
 function handleIncomeTax(player) {
-    // Calculate 10% of the player's total worth
-    const totalWorth = player.money + player.properties.reduce((sum, property) => sum + (property.price || 0), 0);
+    // Calculate 10% of the player's total worth (money + property prices + houses/hotels)
+    let totalWorth = player.money;
+    player.properties.forEach(property => {
+        totalWorth += property.price || 0;
+        totalWorth += (property.houses || 0) * (property.housePrice || 0);
+        totalWorth += (property.hotel ? property.hotelPrice : 0);
+    });
     const tenPercentTax = Math.floor(totalWorth * 0.1);
 
     if (isCurrentPlayerAI()) {
@@ -6671,3 +6830,125 @@ createTestingModeUI();
 
 init();
 setupPropertiesToggleButton();
+
+// Replace flyWithHelicopterEffect with a path-based version
+function flyWithHelicopterEffectPath(path, token, callback) {
+    if (!token || !path || path.length < 2) {
+        console.error("Invalid parameters passed to flyWithHelicopterEffectPath");
+        if (callback) callback();
+        return;
+    }
+
+    isFollowingToken = true;
+    let previousSelectedToken = selectedToken; // Save previous camera target
+
+    // --- Helicopter sound setup ---
+    let heliSound = new Audio('Sounds/helicopter-rotor-sound-effectpart-2-95798.mp3');
+    heliSound.loop = true;
+    heliSound.volume = 0.7;
+    heliSound.currentTime = 0;
+    heliSound.play().catch(() => {});
+
+    // Swap to animated model if available
+    const animatedModel = token.userData.animatedModel;
+    let mixer, action;
+    if (animatedModel) {
+        token.visible = false;
+        animatedModel.visible = true;
+        animatedModel.position.copy(token.position);
+        animatedModel.rotation.copy(token.rotation);
+        mixer = animatedModel.userData.mixer;
+        action = animatedModel.userData.action;
+        if (action) {
+            action.reset();
+            action.play();
+        }
+        selectedToken = animatedModel; // Camera follows animated model
+    } else {
+        selectedToken = token;
+    }
+
+    // Create a smooth curve above the board
+    const flightHeight = 7;
+    const takeoffHeight = 2;
+    const landHeight = 1.5;
+    const points = path.map((p, i) => {
+        if (i === 0) return new THREE.Vector3(p.x, takeoffHeight, p.z);
+        if (i === path.length - 1) return new THREE.Vector3(p.x, landHeight, p.z);
+        return new THREE.Vector3(p.x, flightHeight, p.z);
+    });
+    const curve = new CatmullRomCurve3(points);
+    const duration = 2200 + path.length * 320; // Slower: increase both base and per-segment time
+    const startTime = Date.now();
+    const modelOffsetAngle = Math.PI + Math.PI / 2;
+
+    function animate() {
+        const elapsed = Date.now() - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        const pos = curve.getPoint(t);
+        const nextPos = curve.getPoint(Math.min(t + 0.01, 1));
+        const direction = new THREE.Vector3().subVectors(nextPos, pos).normalize();
+        const angle = Math.atan2(direction.x, direction.z);
+        const tilt = Math.sin(t * Math.PI) * 0.4;
+
+        if (animatedModel) {
+            animatedModel.position.copy(pos);
+            animatedModel.rotation.set(tilt, angle + modelOffsetAngle, 0);
+            if (mixer) mixer.update(1/60);
+            if (isFollowingToken) updateFollowCamera(animatedModel);
+        } else {
+            token.position.copy(pos);
+            token.rotation.set(tilt, angle + modelOffsetAngle, 0);
+            if (isFollowingToken) updateFollowCamera(token);
+        }
+
+        if (t < 1) {
+            requestAnimationFrame(animate);
+        } else {
+            // Land at correct board height
+            if (animatedModel) {
+                animatedModel.position.copy(points[points.length - 1]);
+                animatedModel.rotation.set(0, angle + modelOffsetAngle, 0);
+                if (action) action.stop();
+                animatedModel.visible = false;
+                token.position.copy(animatedModel.position);
+                token.rotation.copy(animatedModel.rotation);
+                token.visible = true;
+            } else {
+                token.position.copy(points[points.length - 1]);
+                token.rotation.set(0, angle + modelOffsetAngle, 0);
+            }
+            // --- Stop helicopter sound ---
+            heliSound.pause();
+            heliSound.currentTime = 0;
+            selectedToken = previousSelectedToken;
+            isFollowingToken = false;
+            if (callback) callback();
+        }
+    }
+    animate();
+}
+
+// Update moveHelicopterToNewPosition to use the new effect
+function moveHelicopterToNewPosition(spaces) {
+    const currentPlayer = players[currentPlayerIndex];
+    if (!currentPlayer.selectedToken || currentPlayer.selectedToken.userData.tokenName !== "helicopter") {
+        console.error("No helicopter token assigned to the current player.");
+        return;
+    }
+    const oldPosition = currentPlayer.currentPosition;
+    const propertiesCount = positions.length;
+    const newPosition = (oldPosition + spaces) % propertiesCount;
+    const token = currentPlayer.selectedToken;
+    // Collect the path of positions (including start and end)
+    let path = [];
+    let current = oldPosition;
+    while (current !== newPosition) {
+        path.push(positions[current]);
+        current = (current + 1) % propertiesCount;
+    }
+    path.push(positions[newPosition]);
+    flyWithHelicopterEffectPath(path, token, () => {
+        finishMove(currentPlayer, newPosition, oldPosition + spaces >= propertiesCount);
+    });
+}
