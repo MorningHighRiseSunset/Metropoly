@@ -90,7 +90,7 @@ const images = [
     "Images/702-helicopters.webp", // Maverick Helicopter Rides
     // Brothel
     "Images/693695_050215-ap-mayweather-img.jpg",
-    "Images/Screenshot 2024-12-12 033702.png", 
+    //"Images/Screenshot 2024-12-12 033702.png", 
     "",// Brothel
     "Images/1.png", // Luxury Tax
     // Bellagio
@@ -410,8 +410,11 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [80, 220, 600, 800],
         rentWithHotel: 1000,
-        videoUrls: [ "",
-
+        videoUrls: 
+        [ 
+            "Videos/LV GKnights 1.mp4",
+            "Videos/LV GKnights 2.mp4",
+            "Videos/LV GKnights 3.mp4",
         ],
     },
     {
@@ -1512,6 +1515,10 @@ function hideTokenSpinner(tokenName) {
 // 2. Replace your createTokens function with this:
 function createTokens() {
     const loader = new GLTFLoader();
+    // Track loaded models by tokenName
+    window.loadedTokenModels = {};
+    // Store callbacks for when a model loads and is needed
+    window.tokenModelReadyCallbacks = {};
 
     const tokenSetup = (model, tokenName, heightOffset = 2.5) => {
         model.traverse((object) => {
@@ -1525,19 +1532,24 @@ function createTokens() {
         model.userData.tokenName = tokenName;
         model.position.set(22.5, heightOffset, 22.5);
         scene.add(model);
+        // Mark as loaded
+        loadedTokenModels[tokenName] = model;
+        // If a player has already selected this token, assign it now
+        if (window.tokenModelReadyCallbacks[tokenName]) {
+            window.tokenModelReadyCallbacks[tokenName](model);
+            delete window.tokenModelReadyCallbacks[tokenName];
+        }
+        // Update start button state if needed
+        if (typeof updateStartButtonVisibility === 'function') updateStartButtonVisibility();
     };
 
-    // Helper for each token
     function loadTokenModel(path, tokenName, scale, heightOffset, onLoaded) {
-        showTokenSpinner(tokenName);
         loader.load(path, (gltf) => {
             const model = gltf.scene;
             model.scale.set(...scale);
             tokenSetup(model, tokenName, heightOffset);
-            hideTokenSpinner(tokenName);
             if (onLoaded) onLoaded(model, gltf);
         }, undefined, (error) => {
-            hideTokenSpinner(tokenName);
             console.error(`Error loading the ${tokenName} model:`, error);
         });
     }
@@ -1549,7 +1561,6 @@ function createTokens() {
     loadTokenModel('Models/top_hat__free_download/tophat.gltf', 'hat', [0.5, 0.5, 0.5], 3.0);
     loadTokenModel('Models/wilson_football/football.gltf', 'football', [0.1, 0.1, 0.1], 3.0);
     loadTokenModel('Models/Helicopter/helicopter.glb', 'helicopter', [0.01, 0.01, 0.01], 3.0, (staticModel) => {
-        // After loading the static model, load the animated model and store it in userData
         loader.load('Models/Helicopter/blueHelicopter.glb', (gltf) => {
             const animatedModel = gltf.scene;
             animatedModel.scale.set(0.01, 0.01, 0.01);
@@ -1558,7 +1569,6 @@ function createTokens() {
             animatedModel.userData.tokenName = 'helicopter';
             scene.add(animatedModel);
             staticModel.userData.animatedModel = animatedModel;
-            // Store animation mixer if present
             if (gltf.animations && gltf.animations.length > 0) {
                 animatedModel.userData.mixer = new THREE.AnimationMixer(animatedModel);
                 animatedModel.userData.actions = [];
@@ -1571,9 +1581,7 @@ function createTokens() {
         });
     });
 
-
     // Woman token (with animation)
-    showTokenSpinner('woman');
     loader.load('../Models/ModelIdleAnim/WhiteGirlBlackandRedOutfit.gltf', function (gltf) {
         const whiteGirlModel = gltf.scene;
         whiteGirlModel.traverse((child) => {
@@ -1602,13 +1610,10 @@ function createTokens() {
 
             whiteGirlModel.userData.walkMixer = walkMixer;
             whiteGirlModel.userData.walkAction = walkAction;
-            hideTokenSpinner('woman');
         }, undefined, function (error) {
-            hideTokenSpinner('woman');
             console.error(error);
         });
     }, undefined, function (error) {
-        hideTokenSpinner('woman');
         console.error(error);
     });
 }
@@ -3541,7 +3546,15 @@ function createPlayerTokenSelectionUI(playerIndex) {
     // Overwrite updateStartButtonVisibility to handle flashing and arrows
     window.updateStartButtonVisibility = function () {
         const count = humanPlayerCount + aiPlayers.size;
-        if (count >= 2 && count <= 4) {
+        // Check if all selected tokens are loaded
+        let allTokensLoaded = true;
+        for (const player of players) {
+            if (player.tokenName && (!window.loadedTokenModels || !window.loadedTokenModels[player.tokenName])) {
+                allTokensLoaded = false;
+                break;
+            }
+        }
+        if (count >= 2 && count <= 4 && allTokensLoaded) {
             startButton.disabled = false;
             startButton.style.opacity = "1";
             startButton.classList.add("flash-active");
@@ -4217,57 +4230,48 @@ function createTokenButton(token, index) {
 
     // Handle token selection
     tokenButton.addEventListener("click", () => {
-        if (!initialSelectionComplete && !owner) { 
+        if (!initialSelectionComplete && !owner) {
             if (humanPlayerCount >= 4) {
                 alert("Maximum 4 players allowed!");
                 return;
             }
-
             if (aiPlayers.has(token.name)) {
                 alert("This token is set as AI player!");
                 return;
             }
-
             const currentPlayer = players[humanPlayerCount];
             if (!currentPlayer) {
                 console.error("Invalid player index:", humanPlayerCount);
                 return;
             }
-
             currentPlayer.tokenName = token.name;
-            const selectedTokenObject = scene.children.find(obj =>
-                obj.userData.isToken &&
-                obj.userData.tokenName === token.name
-            );
-
-            if (selectedTokenObject) {
-                currentPlayer.selectedToken = selectedTokenObject;
-                selectedTokenObject.visible = true;
-                selectedTokenObject.position.set(22.5, 2.5, 22.5);
-                selectedTokenObject.userData.playerIndex = humanPlayerCount;
-
-                humanPlayerCount++;
-
-                // Update button appearance
-                tokenImg.style.filter = "grayscale(100%) blur(1px)";
-                tokenButton.style.backgroundColor = "#555";
-                tokenButton.style.pointerEvents = "none";
-                tokenName.style.color = "#888";
-
-                // Disable AI button
-                aiButton.disabled = true;
-                aiButton.style.opacity = "0.5";
-                aiButton.style.cursor = "not-allowed";
-
-                // Update start button visibility
-                updateStartButtonVisibility();
-
-                console.log(`Token ${token.name} selected for Player ${humanPlayerCount}`);
+            // If model is loaded, assign immediately
+            if (window.loadedTokenModels && window.loadedTokenModels[token.name]) {
+                currentPlayer.selectedToken = window.loadedTokenModels[token.name];
+                window.loadedTokenModels[token.name].visible = true;
+                window.loadedTokenModels[token.name].position.set(22.5, 2.5, 22.5);
+                window.loadedTokenModels[token.name].userData.playerIndex = humanPlayerCount;
             } else {
-                console.error(`Token object not found for ${token.name}`);
-                alert("Error selecting token. Please try again.");
-                return;
+                // Queue assignment for when model loads
+                window.tokenModelReadyCallbacks = window.tokenModelReadyCallbacks || {};
+                window.tokenModelReadyCallbacks[token.name] = (model) => {
+                    currentPlayer.selectedToken = model;
+                    model.visible = true;
+                    model.position.set(22.5, 2.5, 22.5);
+                    model.userData.playerIndex = humanPlayerCount;
+                };
             }
+            humanPlayerCount++;
+            // Update button appearance
+            tokenImg.style.filter = "grayscale(100%) blur(1px)";
+            tokenButton.style.backgroundColor = "#555";
+            tokenButton.style.pointerEvents = "none";
+            tokenName.style.color = "#888";
+            aiButton.disabled = true;
+            aiButton.style.opacity = "0.5";
+            aiButton.style.cursor = "not-allowed";
+            updateStartButtonVisibility();
+            console.log(`Token ${token.name} selected for Player ${humanPlayerCount}`);
         }
     });
 
