@@ -1,4 +1,3 @@
-const DEBUG = false;
 import * as THREE from '../libs/three.module.js';
 import {
     GLTFLoader
@@ -23,6 +22,34 @@ loader.register((parser) => new GLTFMaterialsPbrSpecularGlossinessExtension(pars
 let camera, scene, renderer, controls;
 const clock = new THREE.Clock();
 
+function animate() {
+    requestAnimationFrame(animate);
+
+    const delta = clock.getDelta(); // Use a clock to get the time delta
+
+    // Update all animation mixers
+    scene.traverse((object) => {
+        if (object.userData.idleMixer) {
+            object.userData.idleMixer.update(delta);
+        }
+        if (object.userData.walkMixer) {
+            object.userData.walkMixer.update(delta);
+        }
+        // Add this for helicopter animations
+        if (object.userData.mixer) {
+            object.userData.mixer.update(delta);
+        }
+    });
+
+    // Update the follow camera if active
+    if (isFollowingToken && selectedToken) {
+        updateFollowCamera(selectedToken);
+    }
+
+    controls.update();
+    renderer.render(scene, isFollowingToken ? followCamera : camera); // Render with the active camera
+}
+
 let editMode = false;
 let aiPlayers = new Set();
 let initialSelectionComplete = false;
@@ -36,7 +63,8 @@ let idleModel, walkModel;
 let idleMixer, walkMixer;
 let currentAnimation = null;
 let isTurnInProgress = false;
-let followCamera; // Secondary camera for following tokens// Flag to track if the follow camera is active
+let followCamera; // Secondary camera for following tokens
+let isFollowingToken = false; // Flag to track if the follow camera is active
 let hasTakenAction = false; // Tracks if the player has taken an action
 let hasDrawnCard = false; // Global flag to track card drawing
 let hasRolledDice = false; // Tracks if the dice have been rolled
@@ -44,15 +72,6 @@ let hasMovedToken = false; // Tracks if the token has been moved
 let hasHandledProperty = false; // Tracks if the property has been handled
 let isAIProcessing = false;
 let turnCounter = 0;
-let idleCameraAngle = 0;
-let idleCameraRadius = 38;
-let idleCameraHeight = 18;
-let idleCameraTarget = new THREE.Vector3(0, 0, 0);
-let lastCameraMode = null;
-
-// 1. Set cutscene cam OFF by default
-let isCenteringOnToken = false; // Start with camera NOT following token
-let centerOnTokenBtn = null;
 
 // Initialize audio with proper settings
 let accelerationSound = new Audio('');
@@ -71,7 +90,7 @@ const images = [
     "Images/702-helicopters.webp", // Maverick Helicopter Rides
     // Brothel
     "Images/693695_050215-ap-mayweather-img.jpg",
-    //"Images/Screenshot 2024-12-12 033702.png", 
+    "Images/Screenshot 2024-12-12 033702.png", 
     "",// Brothel
     "Images/1.png", // Luxury Tax
     // Bellagio
@@ -91,19 +110,6 @@ const images = [
     // Santa Fe Hotel and Casino
     // House of Blues
     // Cosmopolitan
-];
-
-const ticketProperties = [
-    "Las Vegas Grand Prix",
-    "Las Vegas Golden Knights",
-    "Las Vegas Raiders",
-    "Las Vegas Aces",
-    "Horseback Riding",
-    "Maverick Helicopter Rides",
-    "Sphere",
-    "Shriners Children's Open",
-    "Resorts World Theatre",
-    "House of Blues"
 ];
 
 const positions = [{
@@ -332,7 +338,7 @@ const properties = [{
         price: 120,
         rent: 12,
         owner: null,
-        address: "7000 Las Vegas Blvd N, Las Vegas, NV 89115 (Las Vegas Motor Speedway)",
+        address: "7000 Las Vegas Blvd N, Las Vegas, NV 89115 (Las Vegas Motor Speedway)", // Added real address
         color: "brown",
         mortgageValue: 60,
         housePrice: 50,
@@ -340,10 +346,10 @@ const properties = [{
         rentWithHouse: [60, 180, 500, 700],
         rentWithHotel: 900,
         videoUrls: [ 
-            "Videos/LV Grand Prix.mp4",
-            "Videos/LV Grand Prix End.mp4",
+        "Videos/LV Grand Prix.mp4",
+        "Videos/LV Grand Prix End.mp4",
         ],
-        customBuyLabel: "Buy ticket",
+        customBuyLabel: "Buy ticket", // Add ticket label for Grand Prix if desired
     },
     {
         name: "Income Tax",
@@ -362,7 +368,8 @@ const properties = [{
         address: "",
         mortgageValue: 100,
         rentWithRailroads: [25, 50, 100, 200],
-        videoUrls: [ "Videos/Monorail.mp4" ],
+        videoUrls: [ "Videos/Monorail.mp4",
+        ],
         customBuyLabel: "Buy a ticket",
         noRent: true
     },
@@ -403,10 +410,9 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [80, 220, 600, 800],
         rentWithHotel: 1000,
-        videoUrls: [
-            // Add video URLs here if available
+        videoUrls: [ "",
+
         ],
-        customBuyLabel: "Buy a ticket",
     },
     {
         name: "JAIL",
@@ -433,11 +439,10 @@ const properties = [{
         rentWithHouse: [110, 330, 800, 975],
         rentWithHotel: 1150,
         videoUrls: [ 
-            "Videos/MavHeli-1.mp4",
-            "Videos/MavHeli-2.mp4",
-            "Videos/MavHeli-3.mp4",
+            "Videos/MavHeli 1.mp4",
+            "Videos/MavHeli 2.mp4",
+            "Videos/MavHeli 3.mp4",
         ],
-        customBuyLabel: "Buy a helicopter ride",
     },
     {
         name: "Brothel",
@@ -531,8 +536,9 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [220, 650, 1500, 1850],
         rentWithHotel: 2100,
-        videoUrls: [ "Videos/horse6.mp4" ],
-        customBuyLabel: "Buy a ticket",
+        videoUrls: [ "Videos/horse6.mp4",
+
+        ],
     },
     {
         name: "Chance",
@@ -659,8 +665,10 @@ const properties = [{
         rentWithHouse: [330, 1000, 2400, 2600],
         rentWithHotel: 2800,
         isPenthouse: true,
-        videoUrls: [ ],
-        customBuyLabel: "Buy a ticket",
+        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
+
+        ],
+        customBuyLabel: "Buy ticket", // Added/updated label
     },
     {
         name: "The Cosmopolitan",
@@ -926,14 +934,14 @@ let availableTokens = [
         name: "woman",
         displayName: "Woman"
     },
-    //{
-       // name: "rolls royce",
-        //displayName: "Rolls Royce"
-    //},
-    //{
-        //name: "speed boat",
-        //displayName: "Speed Boat"
-    //},
+    {
+        name: "rolls royce",
+        displayName: "Rolls Royce"
+    },
+    {
+        name: "speed boat",
+        displayName: "Speed Boat"
+    },
     {
         name: "football",
         displayName: "Football"
@@ -1504,10 +1512,6 @@ function hideTokenSpinner(tokenName) {
 // 2. Replace your createTokens function with this:
 function createTokens() {
     const loader = new GLTFLoader();
-    // Track loaded models by tokenName
-    window.loadedTokenModels = {};
-    // Store callbacks for when a model loads and is needed
-    window.tokenModelReadyCallbacks = {};
 
     const tokenSetup = (model, tokenName, heightOffset = 2.5) => {
         model.traverse((object) => {
@@ -1521,24 +1525,19 @@ function createTokens() {
         model.userData.tokenName = tokenName;
         model.position.set(22.5, heightOffset, 22.5);
         scene.add(model);
-        // Mark as loaded
-        loadedTokenModels[tokenName] = model;
-        // If a player has already selected this token, assign it now
-        if (window.tokenModelReadyCallbacks[tokenName]) {
-            window.tokenModelReadyCallbacks[tokenName](model);
-            delete window.tokenModelReadyCallbacks[tokenName];
-        }
-        // Update start button state if needed
-        if (typeof updateStartButtonVisibility === 'function') updateStartButtonVisibility();
     };
 
+    // Helper for each token
     function loadTokenModel(path, tokenName, scale, heightOffset, onLoaded) {
+        showTokenSpinner(tokenName);
         loader.load(path, (gltf) => {
             const model = gltf.scene;
             model.scale.set(...scale);
             tokenSetup(model, tokenName, heightOffset);
+            hideTokenSpinner(tokenName);
             if (onLoaded) onLoaded(model, gltf);
         }, undefined, (error) => {
+            hideTokenSpinner(tokenName);
             console.error(`Error loading the ${tokenName} model:`, error);
         });
     }
@@ -1550,6 +1549,7 @@ function createTokens() {
     loadTokenModel('Models/top_hat__free_download/tophat.gltf', 'hat', [0.5, 0.5, 0.5], 3.0);
     loadTokenModel('Models/wilson_football/football.gltf', 'football', [0.1, 0.1, 0.1], 3.0);
     loadTokenModel('Models/Helicopter/helicopter.glb', 'helicopter', [0.01, 0.01, 0.01], 3.0, (staticModel) => {
+        // After loading the static model, load the animated model and store it in userData
         loader.load('Models/Helicopter/blueHelicopter.glb', (gltf) => {
             const animatedModel = gltf.scene;
             animatedModel.scale.set(0.01, 0.01, 0.01);
@@ -1558,6 +1558,7 @@ function createTokens() {
             animatedModel.userData.tokenName = 'helicopter';
             scene.add(animatedModel);
             staticModel.userData.animatedModel = animatedModel;
+            // Store animation mixer if present
             if (gltf.animations && gltf.animations.length > 0) {
                 animatedModel.userData.mixer = new THREE.AnimationMixer(animatedModel);
                 animatedModel.userData.actions = [];
@@ -1570,7 +1571,9 @@ function createTokens() {
         });
     });
 
+
     // Woman token (with animation)
+    showTokenSpinner('woman');
     loader.load('../Models/ModelIdleAnim/WhiteGirlBlackandRedOutfit.gltf', function (gltf) {
         const whiteGirlModel = gltf.scene;
         whiteGirlModel.traverse((child) => {
@@ -1599,10 +1602,13 @@ function createTokens() {
 
             whiteGirlModel.userData.walkMixer = walkMixer;
             whiteGirlModel.userData.walkAction = walkAction;
+            hideTokenSpinner('woman');
         }, undefined, function (error) {
+            hideTokenSpinner('woman');
             console.error(error);
         });
     }, undefined, function (error) {
+        hideTokenSpinner('woman');
         console.error(error);
     });
 }
@@ -2080,33 +2086,34 @@ function showPropertyUI(position) {
 
     if (!property) {
         console.error(`No property found for position ${position}`);
-        hasHandledProperty = true;
         return;
     }
 
-    // Handle special spaces
+    // Handle "GO" separately
     if (property.name === "GO") {
         showFeedback("You landed on GO! Collect $200 if you passed it.");
-        hasHandledProperty = true;
-        endTurn();
+        endTurn(); // Automatically end the turn
         return;
     }
+
+    // Handle "JAIL" separately
     if (property.name === "JAIL") {
         const currentPlayer = players[currentPlayerIndex];
-        showJailUI(currentPlayer);
-        hasHandledProperty = true;
+        showJailUI(currentPlayer); // Call the Jail UI
         return;
     }
+
+    // Handle "GO TO JAIL" separately
     if (property.name === "GO TO JAIL") {
         const currentPlayer = players[currentPlayerIndex];
-        goToJail(currentPlayer);
-        hasHandledProperty = true;
+        goToJail(currentPlayer); // Send the player to jail
         return;
     }
+
+    // Handle "FREE PARKING" separately
     if (property.name === "FREE PARKING") {
         const currentPlayer = players[currentPlayerIndex];
-        showFreeParkingUI(currentPlayer);
-        hasHandledProperty = true;
+        showFreeParkingUI(currentPlayer); // Show Free Parking UI
         return;
     }
 
@@ -2118,7 +2125,7 @@ function showPropertyUI(position) {
     popup.className = 'property-popup';
     popup.style.width = '340px';
     popup.style.maxWidth = '95vw';
-    popup.style.margin = '0 auto';
+    popup.style.margin = '0 auto'; // Center horizontally
 
     const content = document.createElement('div');
     content.className = 'property-content';
@@ -2129,110 +2136,112 @@ function showPropertyUI(position) {
     content.style.fontSize = '13px';
 
     // --- Video on top ---
-    let mediaShown = false;
-    function showImageFallback() {
-        let imageUrl = null;
-        if (Array.isArray(property.imageUrls) && property.imageUrls.length > 0) {
-            imageUrl = property.imageUrls[0];
-        } else if (typeof property.imageUrls === 'string' && property.imageUrls.length > 0) {
-            imageUrl = property.imageUrls;
-        }
-        if (imageUrl) {
-            const imageContainer = document.createElement('div');
-            imageContainer.className = 'property-image-container';
-            imageContainer.style.width = '160px';
-            imageContainer.style.height = '90px';
-            imageContainer.style.overflow = 'hidden';
-            imageContainer.style.borderRadius = '8px';
-            imageContainer.style.margin = '0 auto 4px auto';
-            imageContainer.style.position = 'relative';
-            imageContainer.style.display = 'flex';
-            imageContainer.style.justifyContent = 'center';
-            imageContainer.style.alignItems = 'center';
+let mediaShown = false;
 
-            const img = document.createElement('img');
-            img.src = imageUrl;
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.objectFit = 'cover';
-            img.style.borderRadius = '8px';
-            imageContainer.appendChild(img);
-            content.appendChild(imageContainer);
-            mediaShown = true;
-        } else {
-            // No image, show a placeholder
-            const placeholder = document.createElement('div');
-            placeholder.style.width = '160px';
-            placeholder.style.height = '90px';
-            placeholder.style.background = '#333';
-            placeholder.style.display = 'flex';
-            placeholder.style.justifyContent = 'center';
-            placeholder.style.alignItems = 'center';
-            placeholder.style.color = '#fff';
-            placeholder.style.borderRadius = '8px';
-            placeholder.textContent = 'No preview available';
-            content.appendChild(placeholder);
-            mediaShown = true;
-        }
+if (property.videoUrls && property.videoUrls.length > 0) {
+    const videoContainer = document.createElement('div');
+    videoContainer.className = 'property-video-container';
+    videoContainer.style.width = '160px';
+    videoContainer.style.height = '90px';
+    videoContainer.style.overflow = 'hidden';
+    videoContainer.style.borderRadius = '8px';
+    videoContainer.style.margin = '0 auto 4px auto';
+    videoContainer.style.position = 'relative';
+    videoContainer.style.display = 'flex';
+    videoContainer.style.justifyContent = 'center';
+    videoContainer.style.alignItems = 'center';
+
+    // Improved randomization: avoid immediate repeats
+    if (!property._lastVideoIndex) property._lastVideoIndex = -1;
+    let randomIndex;
+    do {
+        randomIndex = Math.floor(Math.random() * property.videoUrls.length);
+    } while (property.videoUrls.length > 1 && randomIndex === property._lastVideoIndex);
+    property._lastVideoIndex = randomIndex;
+    const selectedUrl = property.videoUrls[randomIndex];
+
+    const video = document.createElement('video');
+    video.muted = true; // Start muted for autoplay
+    video.setAttribute('muted', '');
+    video.playsInline = true;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
+    video.autoplay = true;
+    video.setAttribute('autoplay', '');
+    video.controls = true;
+    video.preload = 'metadata';
+    video.poster = '';
+    video.src = selectedUrl;
+
+    videoContainer.appendChild(video);
+
+    // Try to play and then unmute after play starts (loophole: user gesture)
+    video.play().then(() => {
+        setTimeout(() => {
+            video.muted = false;
+        }, 200); // Small delay to ensure play started
+    }).catch(() => {});
+
+    video.onerror = () => {
+        video.style.display = 'none';
+        showImageFallback();
+    };
+
+    content.appendChild(videoContainer);
+    mediaShown = true;
+}
+
+// Fallback: show image if no video or if video fails
+function showImageFallback() {
+    let imageUrl = null;
+    if (Array.isArray(property.imageUrls) && property.imageUrls.length > 0) {
+        imageUrl = property.imageUrls[0];
+    } else if (typeof property.imageUrls === 'string' && property.imageUrls.length > 0) {
+        imageUrl = property.imageUrls;
     }
+    if (imageUrl) {
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'property-image-container';
+        imageContainer.style.width = '160px';
+        imageContainer.style.height = '90px';
+        imageContainer.style.overflow = 'hidden';
+        imageContainer.style.borderRadius = '8px';
+        imageContainer.style.margin = '0 auto 4px auto';
+        imageContainer.style.position = 'relative';
+        imageContainer.style.display = 'flex';
+        imageContainer.style.justifyContent = 'center';
+        imageContainer.style.alignItems = 'center';
 
-    if (property.videoUrls && property.videoUrls.length > 0) {
-        const videoContainer = document.createElement('div');
-        videoContainer.className = 'property-video-container';
-        videoContainer.style.width = '160px';
-        videoContainer.style.height = '90px';
-        videoContainer.style.overflow = 'hidden';
-        videoContainer.style.borderRadius = '8px';
-        videoContainer.style.margin = '0 auto 4px auto';
-        videoContainer.style.position = 'relative';
-        videoContainer.style.display = 'flex';
-        videoContainer.style.justifyContent = 'center';
-        videoContainer.style.alignItems = 'center';
-
-        // Improved randomization: avoid immediate repeats
-        if (!property._lastVideoIndex) property._lastVideoIndex = -1;
-        let randomIndex;
-        do {
-            randomIndex = Math.floor(Math.random() * property.videoUrls.length);
-        } while (property.videoUrls.length > 1 && randomIndex === property._lastVideoIndex);
-        property._lastVideoIndex = randomIndex;
-        const selectedUrl = property.videoUrls[randomIndex];
-
-        const video = document.createElement('video');
-        video.muted = true;
-        video.setAttribute('muted', '');
-        video.playsInline = true;
-        video.setAttribute('playsinline', '');
-        video.setAttribute('webkit-playsinline', '');
-        video.autoplay = true;
-        video.setAttribute('autoplay', '');
-        video.controls = true;
-        video.preload = 'metadata';
-        video.poster = '';
-        video.src = selectedUrl;
-
-        videoContainer.appendChild(video);
-
-        // Try to play and then unmute after play starts (loophole: user gesture)
-        video.play().then(() => {
-            setTimeout(() => {
-                video.muted = false;
-            }, 200);
-        }).catch(() => {});
-
-        video.onerror = () => {
-            video.style.display = 'none';
-            showImageFallback();
-        };
-
-        content.appendChild(videoContainer);
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+        img.style.borderRadius = '8px';
+        imageContainer.appendChild(img);
+        content.appendChild(imageContainer);
+        mediaShown = true;
+    } else {
+        // No image, show a placeholder
+        const placeholder = document.createElement('div');
+        placeholder.style.width = '160px';
+        placeholder.style.height = '90px';
+        placeholder.style.background = '#333';
+        placeholder.style.display = 'flex';
+        placeholder.style.justifyContent = 'center';
+        placeholder.style.alignItems = 'center';
+        placeholder.style.color = '#fff';
+        placeholder.style.borderRadius = '8px';
+        placeholder.textContent = 'No preview available';
+        content.appendChild(placeholder);
         mediaShown = true;
     }
+}
 
-    // If no video, show image immediately
-    if (!mediaShown) {
-        showImageFallback();
-    }
+// If no video, show image immediately
+if (!mediaShown) {
+    showImageFallback();
+}
 
     // --- Title under video ---
     const titleDiv = document.createElement('div');
@@ -2251,7 +2260,7 @@ function showPropertyUI(position) {
     rowContainer.style.display = 'flex';
     rowContainer.style.flexDirection = 'row';
     rowContainer.style.justifyContent = 'flex-start';
-    rowContainer.style.alignItems = 'stretch';
+    rowContainer.style.alignItems = 'stretch'; // Make both columns stretch to same height
     rowContainer.style.gap = '8px';
     rowContainer.style.width = '100%';
     rowContainer.style.marginLeft = '0';
@@ -2266,84 +2275,137 @@ function showPropertyUI(position) {
     detailsContainer.style.height = '100%';
     detailsContainer.style.minWidth = '0';
 
-    // Ticket/concert properties
-    const ticketProperties = [
-        "Las Vegas Grand Prix",
-        "Las Vegas Golden Knights",
-        "Las Vegas Raiders",
-        "Las Vegas Aces",
-        "Horseback Riding",
-        "Maverick Helicopter Rides",
-        "Sphere",
-        "Shriners Children's Open",
-        "Resorts World Theatre",
-        "House of Blues"
-    ];
+	const ticketProperties = [
+    "Las Vegas Grand Prix",
+    "Las Vegas Golden Knights",
+    "Las Vegas Raiders",
+    "Las Vegas Aces",
+    "Horseback Riding",
+    "Maverick Helicopter Rides",
+    "Sphere",
+    "Shriners Children's Open",
+    "Resorts World Theatre",
+    "House of Blues"
+];
 
-    // Details content
-    let detailsHTML = `<div class='property-details' style='display: flex; flex-direction: column; gap: 6px; height: 100%;'>`;
-    detailsHTML += `<div><strong>Price:</strong> $${property.price || 'N/A'}</div>`;
-    if (property.rent && !ticketProperties.includes(property.name)) {
-        detailsHTML += `<div><strong>Rent:</strong> $${property.rent}</div>`;
-    }
-    if (property.owner) {
-        detailsHTML += `<div><strong>Owner:</strong> ${property.owner.name}</div>`;
-    }
-    if (property.description) {
-        detailsHTML += `<div style='margin-top:8px;'>${property.description}</div>`;
-    }
-    detailsHTML += `</div>`;
-    detailsContainer.innerHTML = detailsHTML;
-
-    // Buttons (side by side)
-    const buttonsContainer = document.createElement('div');
-    buttonsContainer.style.flex = '0 0 110px';
-    buttonsContainer.style.display = 'flex';
-    buttonsContainer.style.flexDirection = 'column';
-    buttonsContainer.style.gap = '8px';
-    buttonsContainer.style.alignItems = 'stretch';
-    buttonsContainer.style.justifyContent = 'flex-start';
-    buttonsContainer.style.height = '100%';
-
-    // Add Buy/Rent/Close buttons
-    if (!property.owner) {
-        const buyButton = document.createElement('button');
-        buyButton.className = 'action-button buy';
-        buyButton.textContent = property.customBuyLabel || `Buy for $${property.price}`;
-        buyButton.onclick = () => {
-            buyProperty(players[currentPlayerIndex], property);
-            hasHandledProperty = true;
-            document.body.removeChild(overlay);
-        };
-        buttonsContainer.appendChild(buyButton);
-    } else if (property.owner !== players[currentPlayerIndex]) {
-        const payRentButton = document.createElement('button');
-        payRentButton.className = 'action-button pay-rent';
-        payRentButton.textContent = property.customRentLabel || `Pay Rent ($${calculateRent(property)})`;
-        payRentButton.onclick = () => {
-            handleRentPayment(players[currentPlayerIndex], property);
-            hasHandledProperty = true;
-            document.body.removeChild(overlay);
-        };
-        buttonsContainer.appendChild(payRentButton);
+    // Custom UI for Brothel, Monorail, Speed Vegas Off Roading, Resorts World Theatre, Sphere
+    if (property.name === 'Brothel') {
+        detailsContainer.innerHTML = `
+        <div class="property-details" style="display: flex; flex-direction: column; gap: 6px; height: 100%;">
+            <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span class="detail-label">${property.customBuyLabel || 'Buy 1 night for 1500'}</span>
+            </div>
+            <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span class="detail-label">${property.customRentLabel || 'Rent a room for 300'}</span>
+            </div>
+            <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span class="detail-label">Owner:</span>
+                <span class="detail-value">${property.owner ? property.owner.name : 'None'}</span>
+            </div>
+            <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span class="detail-label">Address:</span>
+                <span class="detail-value">${property.address || 'No address available'}</span>
+            </div>
+        </div>
+        `;
+    } else if (property.customBuyLabel) {
+        detailsContainer.innerHTML = `
+        <div class="property-details" style="display: flex; flex-direction: column; gap: 6px; height: 100%;">
+            <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span class="detail-label">${property.customBuyLabel}</span>
+            </div>
+            <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span class="detail-label">Owner:</span>
+                <span class="detail-value">${property.owner ? property.owner.name : 'None'}</span>
+            </div>
+            <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span class="detail-label">Address:</span>
+                <span class="detail-value">${property.address || 'No address available'}</span>
+            </div>
+        </div>
+        `;
     } else {
-        const closeButton = document.createElement('button');
-        closeButton.className = 'action-button close';
-        closeButton.textContent = "Close";
-        closeButton.onclick = () => {
-            hasHandledProperty = true;
-            document.body.removeChild(overlay);
-        };
-        buttonsContainer.appendChild(closeButton);
+        detailsContainer.innerHTML = `
+        <div class="property-details" style="display: flex; flex-direction: row; gap: 6px; height: 100%;">
+            <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span class="detail-label">Price:</span>
+                <span class="detail-value">$${property.price || 'N/A'}</span>
+            </div>
+            ${!ticketProperties.includes(property.name) ? `
+            <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span class="detail-label">Rent:</span>
+                <span class="detail-value">$${property.rent || 'N/A'}</span>
+            </div>
+            ` : ''}
+            <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span class="detail-label">Owner:</span>
+                <span class="detail-value">${property.owner ? property.owner.name : 'None'}</span>
+            </div>
+            <div class="detail-col" style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span class="detail-label">Address:</span>
+                <span class="detail-value">${property.address || 'No address available'}</span>
+            </div>
+        </div>
+        `;
     }
+
+    // Buttons (vertical stack, right of details)
+    const buttonContainer = createButtonContainer(property);
+    buttonContainer.style.display = 'flex';
+    buttonContainer.style.flexDirection = 'column';
+    buttonContainer.style.gap = '6px';
+    buttonContainer.style.alignItems = 'stretch';
+    buttonContainer.style.justifyContent = 'flex-end'; // Push close button to the bottom
+    buttonContainer.style.alignSelf = 'stretch'; // Stretch to match details height
+    buttonContainer.style.height = '100%';
+    buttonContainer.style.marginTop = '0';
+    buttonContainer.style.minWidth = '70px';
+    buttonContainer.style.maxWidth = '90px';
+
+    // Make the buttons themselves smaller
+    Array.from(buttonContainer.querySelectorAll('button')).forEach(btn => {
+        btn.style.padding = '6px 8px';
+        btn.style.fontSize = '12px';
+        btn.style.borderRadius = '4px';
+    });
+
+    // Make button container the same height as details for alignment (optional)
+    setTimeout(() => {
+        const detailsHeight = detailsContainer.offsetHeight;
+        buttonContainer.style.minHeight = detailsHeight + 'px';
+    }, 0);
 
     rowContainer.appendChild(detailsContainer);
-    rowContainer.appendChild(buttonsContainer);
+    rowContainer.appendChild(buttonContainer);
+
     content.appendChild(rowContainer);
 
     popup.appendChild(content);
     overlay.appendChild(popup);
     document.body.appendChild(overlay);
+
+    requestAnimationFrame(() => {
+        popup.classList.add('show');
+    });
+
+    // Prevent countdown until a decision is made
+    const buyButton = buttonContainer.querySelector('.action-button.buy');
+    const closeButton = buttonContainer.querySelector('.action-button.close');
+
+    const startCountdown = () => {
+        closePropertyUI();
+        setTimeout(() => {
+            endTurn(); // Start the countdown after decision
+        }, 5000);
+    };
+
+    if (buyButton) {
+        buyButton.addEventListener('click', startCountdown);
+    }
+
+    if (closeButton) {
+        closeButton.addEventListener('click', startCountdown);
+    }
 }
 
 function showJailUI(player) {
@@ -2781,7 +2843,6 @@ function buyProperty(player, property, callback) {
 
 // Add token selection
 function onTokenClick(event) {
-    if (initialSelectionComplete) return;
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
@@ -3300,7 +3361,6 @@ function endTurn() {
 }
 
 function startPlayerTurn(player) {
-    isTokenMoving = false;
     console.log(`Starting turn for Player ${currentPlayerIndex + 1} (${player.name})`);
 
     // Reset turn-related flags
@@ -3481,15 +3541,7 @@ function createPlayerTokenSelectionUI(playerIndex) {
     // Overwrite updateStartButtonVisibility to handle flashing and arrows
     window.updateStartButtonVisibility = function () {
         const count = humanPlayerCount + aiPlayers.size;
-        // Check if all selected tokens are loaded
-        let allTokensLoaded = true;
-        for (const player of players) {
-            if (player.tokenName && (!window.loadedTokenModels || !window.loadedTokenModels[player.tokenName])) {
-                allTokensLoaded = false;
-                break;
-            }
-        }
-        if (count >= 2 && count <= 4 && allTokensLoaded) {
+        if (count >= 2 && count <= 4) {
             startButton.disabled = false;
             startButton.style.opacity = "1";
             startButton.classList.add("flash-active");
@@ -3582,7 +3634,6 @@ function finalizePlayerSelection() {
         position: p.currentPosition,
         hasToken: !!p.selectedToken
     })));
-    selectedToken = null;
 }
 
 function isJailCorner(startPos, endPos) {
@@ -3916,15 +3967,15 @@ function moveToken(startPos, endPos, token, callback) {
         return;
     }
 
-    isTokenMoving = true;
-    selectedToken = token;
+    isTokenMoving = true; // Set the flag to true when movement starts
+    isFollowingToken = true; // Activate the follow camera
+    selectedToken = token; // Set the token for the follow camera
 
-    // No more setTimeout! Start movement immediately.
     // Determine the animation based on the token type
     const tokenName = token.userData.tokenName;
 
     if (tokenName === "nike") {
-        const nikeHeight = 0.7;
+        const nikeHeight = 0.7; // Adjusted height for the Nike shoe
         const adjustedStartPos = { ...startPos, y: startPos.y + nikeHeight };
         const adjustedEndPos = { ...endPos, y: endPos.y + nikeHeight };
 
@@ -3936,38 +3987,47 @@ function moveToken(startPos, endPos, token, callback) {
             finalizeMove(token, endPos, callback);
         });
     } else if (tokenName === "hat") {
-        const hatRestingHeight = getTokenHeight('hat', endPos.y !== undefined ? endPos.y : 2);
+        const hatHeight = 1.8; // Adjusted height for the hat
         jumpWithHatEffect(
-            { ...startPos, y: hatRestingHeight },
-            { ...endPos, y: hatRestingHeight },
+            { ...startPos, y: startPos.y + hatHeight },
+            { ...endPos, y: endPos.y + hatHeight },
             token,
             () => {
                 finalizeMove(token, endPos, callback);
             }
         );
     } else if (tokenName === "woman") {
-        const womanHeight = 0.5;
+        const womanHeight = 0.5; // Adjusted height for the woman token
         const adjustedStartPos = { ...startPos, y: startPos.y + womanHeight };
         const adjustedEndPos = { ...endPos, y: endPos.y + womanHeight };
 
-        const duration = 1000;
+        // Use default movement logic with height adjustment
+        const duration = 1000; // Duration for moving between two spaces
         const startTime = Date.now();
 
         function animate() {
             const elapsed = Date.now() - startTime;
             const progress = Math.min(elapsed / duration, 1);
 
+            // Linear interpolation for smooth movement
             const currentX = adjustedStartPos.x + (adjustedEndPos.x - adjustedStartPos.x) * progress;
             const currentZ = adjustedStartPos.z + (adjustedEndPos.z - adjustedStartPos.z) * progress;
 
+            // Update token position
             token.position.set(currentX, adjustedStartPos.y, currentZ);
 
+            // Rotate token to face movement direction
             const directionVector = new THREE.Vector3(
                 adjustedEndPos.x - adjustedStartPos.x,
                 0,
                 adjustedEndPos.z - adjustedStartPos.z
             ).normalize();
             token.rotation.set(0, Math.atan2(directionVector.x, directionVector.z), 0);
+
+            // Update the follow camera position
+            if (isFollowingToken) {
+                updateFollowCamera(token);
+            }
 
             if (progress < 1) {
                 requestAnimationFrame(animate);
@@ -3982,38 +4042,47 @@ function moveToken(startPos, endPos, token, callback) {
             finalizeMove(token, endPos, callback);
         });
     } else if (tokenName === "rolls royce") {
-        driveWithRollsRoyceEffect(startPos, endPos, token, () => {
-            finalizeMove(token, endPos, callback);
-        });
-    } else if (tokenName === "helicopter") {
+		driveWithRollsRoyceEffect(startPos, endPos, token, () => {
+			finalizeMove(token, endPos, callback);
+		});
+	} else if (tokenName === "helicopter") {
+        // Use the new path-based helicopter animation for all moves
         flyWithHelicopterEffectPath([startPos, endPos], token, () => {
             finalizeMove(token, endPos, callback);
         });
     } else if (tokenName === "football") {
-        const finalHeight = getTokenHeight(tokenName, endPos.y) + 1.0;
+        const finalHeight = getTokenHeight(tokenName, endPos.y) + 1.0; // Add height for the throw
         throwFootballAnimation(token, endPos, finalHeight, () => {
             finalizeMove(token, endPos, callback);
         });
     } else {
         // Default movement for other tokens
-        const duration = 1000;
+        const duration = 1000; // Duration for moving between two spaces
         const startTime = Date.now();
 
         function animate() {
             const elapsed = Date.now() - startTime;
             const progress = Math.min(elapsed / duration, 1);
 
+            // Linear interpolation for smooth movement
             const currentX = startPos.x + (endPos.x - startPos.x) * progress;
             const currentZ = startPos.z + (endPos.z - startPos.z) * progress;
 
+            // Update token position
             token.position.set(currentX, startPos.y, currentZ);
 
+            // Rotate token to face movement direction
             const directionVector = new THREE.Vector3(
                 endPos.x - startPos.x,
                 0,
                 endPos.z - startPos.z
             ).normalize();
             token.rotation.set(0, Math.atan2(directionVector.x, directionVector.z), 0);
+
+            // Update the follow camera position
+            if (isFollowingToken) {
+                updateFollowCamera(token);
+            }
 
             if (progress < 1) {
                 requestAnimationFrame(animate);
@@ -4052,7 +4121,8 @@ function finalizeMove(token, endPos, callback) {
     // --- DO NOT stopWalkAnimation(token) here for "woman"! ---
 
     isTokenMoving = false;
-    if (typeof centerOnTokenBtn !== 'undefined' && centerOnTokenBtn) centerOnTokenBtn.innerText = 'Center on Token';
+    isFollowingToken = false;
+
     if (callback) callback();
 }
 
@@ -4147,48 +4217,57 @@ function createTokenButton(token, index) {
 
     // Handle token selection
     tokenButton.addEventListener("click", () => {
-        if (!initialSelectionComplete && !owner) {
+        if (!initialSelectionComplete && !owner) { 
             if (humanPlayerCount >= 4) {
                 alert("Maximum 4 players allowed!");
                 return;
             }
+
             if (aiPlayers.has(token.name)) {
                 alert("This token is set as AI player!");
                 return;
             }
+
             const currentPlayer = players[humanPlayerCount];
             if (!currentPlayer) {
                 console.error("Invalid player index:", humanPlayerCount);
                 return;
             }
+
             currentPlayer.tokenName = token.name;
-            // If model is loaded, assign immediately
-            if (window.loadedTokenModels && window.loadedTokenModels[token.name]) {
-                currentPlayer.selectedToken = window.loadedTokenModels[token.name];
-                window.loadedTokenModels[token.name].visible = true;
-                window.loadedTokenModels[token.name].position.set(22.5, 2.5, 22.5);
-                window.loadedTokenModels[token.name].userData.playerIndex = humanPlayerCount;
+            const selectedTokenObject = scene.children.find(obj =>
+                obj.userData.isToken &&
+                obj.userData.tokenName === token.name
+            );
+
+            if (selectedTokenObject) {
+                currentPlayer.selectedToken = selectedTokenObject;
+                selectedTokenObject.visible = true;
+                selectedTokenObject.position.set(22.5, 2.5, 22.5);
+                selectedTokenObject.userData.playerIndex = humanPlayerCount;
+
+                humanPlayerCount++;
+
+                // Update button appearance
+                tokenImg.style.filter = "grayscale(100%) blur(1px)";
+                tokenButton.style.backgroundColor = "#555";
+                tokenButton.style.pointerEvents = "none";
+                tokenName.style.color = "#888";
+
+                // Disable AI button
+                aiButton.disabled = true;
+                aiButton.style.opacity = "0.5";
+                aiButton.style.cursor = "not-allowed";
+
+                // Update start button visibility
+                updateStartButtonVisibility();
+
+                console.log(`Token ${token.name} selected for Player ${humanPlayerCount}`);
             } else {
-                // Queue assignment for when model loads
-                window.tokenModelReadyCallbacks = window.tokenModelReadyCallbacks || {};
-                window.tokenModelReadyCallbacks[token.name] = (model) => {
-                    currentPlayer.selectedToken = model;
-                    model.visible = true;
-                    model.position.set(22.5, 2.5, 22.5);
-                    model.userData.playerIndex = humanPlayerCount;
-                };
+                console.error(`Token object not found for ${token.name}`);
+                alert("Error selecting token. Please try again.");
+                return;
             }
-            humanPlayerCount++;
-            // Update button appearance
-            tokenImg.style.filter = "grayscale(100%) blur(1px)";
-            tokenButton.style.backgroundColor = "#555";
-            tokenButton.style.pointerEvents = "none";
-            tokenName.style.color = "#888";
-            aiButton.disabled = true;
-            aiButton.style.opacity = "0.5";
-            aiButton.style.cursor = "not-allowed";
-            updateStartButtonVisibility();
-            console.log(`Token ${token.name} selected for Player ${humanPlayerCount}`);
         }
     });
 
@@ -4244,6 +4323,7 @@ function driveWithRollsRoyceEffect(startPos, endPos, token, callback) {
         return;
     }
 
+    isFollowingToken = true;
     selectedToken = token;
 
     const distance = Math.sqrt(
@@ -4271,10 +4351,13 @@ function driveWithRollsRoyceEffect(startPos, endPos, token, callback) {
         token.position.set(currentX, currentY, currentZ);
         token.rotation.set(0, angle, 0);
 
+        // Update follow camera during animation
+        if (isFollowingToken) updateFollowCamera(token);
+
         if (progress < 1) {
             requestAnimationFrame(animate);
         } else {
-            if (typeof centerOnTokenBtn !== 'undefined' && centerOnTokenBtn) centerOnTokenBtn.innerText = 'Center on Token';
+            isFollowingToken = false;
             if (callback) callback();
         }
     }
@@ -4288,6 +4371,7 @@ function driveRollsRoyceAlongPath(token, path, callback) {
         return;
     }
 
+    isFollowingToken = true;
     selectedToken = token;
 
     const duration = 400 + path.length * 180; // Duration scales with path length
@@ -4322,10 +4406,13 @@ function driveRollsRoyceAlongPath(token, path, callback) {
         token.position.set(currentX, currentY, currentZ);
         token.rotation.set(0, angle, 0);
 
+        // Update follow camera
+        if (isFollowingToken) updateFollowCamera(token);
+
         if (progress < 1) {
             requestAnimationFrame(animate);
         } else {
-            if (typeof centerOnTokenBtn !== 'undefined' && centerOnTokenBtn) centerOnTokenBtn.innerText = 'Center on Token';
+            isFollowingToken = false;
             if (callback) callback();
         }
     }
@@ -4334,110 +4421,56 @@ function driveRollsRoyceAlongPath(token, path, callback) {
 }
 
 function throwFootballAnimation(token, endPos, finalHeight, callback) {
-    selectedToken = token;
     const startPos = token.position.clone();
-    let endVec = (endPos instanceof THREE.Vector3) ? endPos : new THREE.Vector3(endPos.x, endPos.y, endPos.z);
     const duration = 1200; // Duration for the throw
     const arcHeight = 5;   // Height of the arc
+
+    isFollowingToken = true;
+    selectedToken = token;
+
+    // Store initial rotation for Y/Z
+    const initialY = token.rotation.y;
+    const initialZ = token.rotation.z;
 
     // --- Play new woosh sound for football throw ---
     const wooshSound = new Audio('Sounds/woosh-260275.mp3');
     wooshSound.volume = 0.7;
     wooshSound.play().catch(() => {});
 
-    const startTime = Date.now();
-    function getArcPoint(t) {
-        // Parabolic arc for Y
-        const x = startPos.x + (endVec.x - startPos.x) * t;
-        const z = startPos.z + (endVec.z - startPos.z) * t;
-        // Parabola: peak at t=0.5
-        const y = startPos.y + (endVec.y - startPos.y) * t + arcHeight * 4 * t * (1 - t);
-        return new THREE.Vector3(x, y, z);
-    }
-
     function animate() {
-        const now = Date.now();
-        let t = (now - startTime) / duration;
-        if (t > 1) t = 1;
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
 
-        // Position
-        const pos = getArcPoint(t);
-        token.position.copy(pos);
+        // Easing for smooth throw
+        const easeProgress = progress < 0.5
+            ? 2 * progress * progress
+            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
 
-        // Velocity (for facing direction)
-        const deltaT = 0.001;
-        const nextT = Math.min(t + deltaT, 1);
-        const prevT = Math.max(t - deltaT, 0);
-        const nextPos = getArcPoint(nextT);
-        const prevPos = getArcPoint(prevT);
-        const velocity = nextPos.clone().sub(prevPos).normalize();
+        // Parabolic arc for Y
+        const currentX = startPos.x + (endPos.x - startPos.x) * easeProgress;
+        const currentZ = startPos.z + (endPos.z - startPos.z) * easeProgress;
+        const currentY = startPos.y + Math.sin(progress * Math.PI) * arcHeight;
 
-        // Orient the football to face the direction of movement
-        const forward = new THREE.Vector3(0, 0, 1);
-        const quaternion = new THREE.Quaternion().setFromUnitVectors(forward, velocity);
+        token.position.set(currentX, currentY, currentZ);
 
-        // Add spiral: rotate around the local Z axis (forward axis)
-        const spiralSpeed = 18 * Math.PI; // radians/sec
-        const spiralAngle = spiralSpeed * (now - startTime) / 1000;
-        const spiralQuat = new THREE.Quaternion().setFromAxisAngle(forward, spiralAngle);
+        // Tight spiral: spin only around X, keep Y/Z locked
+        token.rotation.x += 0.45;
+        token.rotation.y = initialY;
+        token.rotation.z = initialZ;
 
-        // Combine: first face the velocity, then spiral around forward
-        token.quaternion.copy(quaternion).multiply(spiralQuat);
+        if (isFollowingToken) updateFollowCamera(token);
 
-        if (t < 1) {
+        if (progress < 1) {
             requestAnimationFrame(animate);
         } else {
-            // Snap to final position and orientation
-            const restingY = (typeof getTokenHeight === 'function') ? getTokenHeight('football', endVec.y) : (endVec.y + 1.0);
-            token.position.set(endVec.x, restingY, endVec.z);
-            // Face the direction from start to end
-            const finalDir = endVec.clone().sub(startPos).normalize();
-            const finalQuat = new THREE.Quaternion().setFromUnitVectors(forward, finalDir);
-            token.quaternion.copy(finalQuat);
-            if (typeof centerOnTokenBtn !== 'undefined' && centerOnTokenBtn) centerOnTokenBtn.innerText = 'Center on Token';
-            startFootballIdleAnimation(token);
+            token.position.set(endPos.x, finalHeight, endPos.z);
+            isFollowingToken = false;
             if (callback) callback();
         }
     }
+
+    const startTime = Date.now();
     animate();
-}
-
-function startFootballIdleAnimation(token) {
-    // Make the football hover just above the square, spin, and gently wobble in the air
-    let idleStart = Date.now();
-    let running = true;
-    // Always use a fixed board Y height for the football
-    const boardBaseY = 2.0; // Board height for all squares
-    const hoverOffset = 0.3; // How high above the board the football floats
-    const spinSpeed = 1.5 * Math.PI; // radians/sec
-    const wobbleSpeed = 1.1; // Hz
-    const wobbleAmount = 0.18; // radians
-    const bobSpeed = 1.2; // Hz
-    const bobAmount = 0.18; // units
-
-    // Optionally, align the football upright (pointing forward)
-    token.rotation.set(0, 0, 0);
-
-    function idleAnim() {
-        if (!running) return;
-        const t = (Date.now() - idleStart) / 1000;
-
-        // Hover up and down (gentle bob)
-        const y = boardBaseY + hoverOffset + Math.sin(t * bobSpeed * Math.PI * 2) * bobAmount;
-        token.position.set(token.position.x, y, token.position.z);
-
-        // Spin around the Y axis (vertical spin)
-        token.rotation.y = t * spinSpeed;
-
-        // Gentle wobble (tilt X and Z)
-        token.rotation.x = Math.sin(t * wobbleSpeed * Math.PI * 2) * wobbleAmount;
-        token.rotation.z = Math.cos(t * (wobbleSpeed * 0.8) * Math.PI * 2) * (wobbleAmount * 0.7);
-
-        requestAnimationFrame(idleAnim);
-    }
-    idleAnim();
-    // Store a reference to stop the animation later if needed
-    token.userData.footballIdleAnim = () => { running = false; };
 }
 
 function jumpWithHatEffect(startPos, endPos, token, callback) {
@@ -4446,39 +4479,37 @@ function jumpWithHatEffect(startPos, endPos, token, callback) {
         return;
     }
 
-    const duration = 1000;
+    const duration = 1000; // Duration for the entire jump
     const startTime = Date.now();
-    const jumpHeight = 2.5;
-
-    // Always land upright: alternate between top and bottom, never on side
-    // We'll use a boolean to track which side to land on (top or bottom)
-    token.userData.hatUpright = !token.userData.hatUpright; // flip each jump
-
-    function getArcPoint(t) {
-        const x = startPos.x + (endPos.x - startPos.x) * t;
-        const z = startPos.z + (endPos.z - startPos.z) * t;
-        const y = startPos.y + Math.sin(t * Math.PI) * jumpHeight;
-        return { x, y, z };
-    }
+    const jumpHeight = 5; // Height of the jump
+    const landingOffset = 0.4; // Small offset to prevent glitching into the property space
 
     function animate() {
         const elapsed = Date.now() - startTime;
-        const t = Math.min(elapsed / duration, 1);
+        const progress = Math.min(elapsed / duration, 1);
 
-        const { x, y, z } = getArcPoint(t);
-        token.position.set(x, y, z);
+        // Easing function for smooth animation
+        const easeProgress = progress < 0.5 ?
+            2 * progress * progress :
+            1 - Math.pow(-2 * progress + 2, 2) / 2;
 
-        // Always keep hat upright: rotate only around Y, not X/Z
-        // Optionally, flip 180deg on Y to alternate between top/bottom
-        let uprightAngle = token.userData.hatUpright ? 0 : Math.PI;
-        token.rotation.set(0, uprightAngle, 0);
+        // Calculate the current position
+        const currentX = startPos.x + (endPos.x - startPos.x) * easeProgress;
+        const currentZ = startPos.z + (endPos.z - startPos.z) * easeProgress;
+        const currentY = startPos.y + Math.sin(progress * Math.PI) * jumpHeight;
 
-        if (t < 1) {
+        // Update the token's position
+        token.position.set(currentX, currentY, currentZ);
+
+        // Rotate the token to face the movement direction
+        const directionVector = new THREE.Vector3(endPos.x - startPos.x, 0, endPos.z - startPos.z).normalize();
+        token.rotation.set(0, Math.atan2(directionVector.x, directionVector.z), 0);
+
+        if (progress < 1) {
             requestAnimationFrame(animate);
         } else {
-            // Snap to final position and orientation
-            token.position.set(endPos.x, endPos.y, endPos.z);
-            token.rotation.set(0, uprightAngle, 0);
+            // Ensure the token lands slightly above the property space
+            token.position.set(endPos.x, startPos.y + landingOffset, endPos.z);
             if (callback) callback();
         }
     }
@@ -4668,6 +4699,7 @@ function finishMove(player, newPosition, passedGo) {
     const landingSpace = placeNames[newPosition];
     const property = properties.find(p => p.name === landingSpace);
 
+    // Determine actions based on player type
     if (isCurrentPlayerAI()) {
         // AI action handling
         setTimeout(() => {
@@ -4686,15 +4718,15 @@ function finishMove(player, newPosition, passedGo) {
                 case "GO TO JAIL":
                     console.log("AI landed on GO TO JAIL. Sending to Jail.");
                     goToJail(player);
-                    setTimeout(() => endTurn(), 1500);
+                    setTimeout(() => endTurn(), 1500); // End AI's turn
                     return;
                 case "JAIL":
                     console.log("AI landed on Jail. Just visiting.");
-                    setTimeout(() => endTurn(), 1500);
+                    setTimeout(() => endTurn(), 1500); // AI does nothing and ends turn
                     break;
                 case "FREE PARKING":
                     console.log("AI landed on Free Parking. Taking a break.");
-                    setTimeout(() => endTurn(), 1500);
+                    setTimeout(() => endTurn(), 1500); // AI does nothing and ends turn
                     break;
                 default:
                     if (property) {
@@ -4704,7 +4736,6 @@ function finishMove(player, newPosition, passedGo) {
         }, 1500);
     } else {
         // Human player action handling
-        hasMovedToken = true; // <-- Fix: set for human players
         switch (landingSpace) {
             case "Chance":
                 drawCard("Chance");
@@ -4721,7 +4752,7 @@ function finishMove(player, newPosition, passedGo) {
             case "GO TO JAIL":
                 console.log("Player landed on GO TO JAIL.");
                 showGoToJailUI(player);
-                return;
+                return; // Return early as showGoToJailUI will handle the rest
             case "JAIL":
                 showJailUI(player);
                 return;
@@ -4731,8 +4762,6 @@ function finishMove(player, newPosition, passedGo) {
             default:
                 if (property && !player.inJail) {
                     showPropertyUI(newPosition);
-                } else {
-                    hasHandledProperty = true; // If no property or in jail, mark as handled
                 }
         }
     }
@@ -4933,6 +4962,14 @@ function handlePropertyLanding(player, position) {
         handleBankruptcy(player, property.owner);
         return;
     }
+
+    // If no other return conditions met, ensure turn eventually ends
+    setTimeout(() => {
+        if (isTurnInProgress) {
+            console.log(`Ending turn for ${player.name} after property handling`);
+            endTurn();
+        }
+    }, 2000);
 }
 
 function calculateRailroadRent(property) {
@@ -5304,15 +5341,6 @@ function selectToken(tokenName) {
                     child.material.needsUpdate = true;
                 }
             });
-            // --- Camera zoom in on token selection ---
-            if (camera && controls && selectedToken) {
-                camera.position.set(
-                    selectedToken.position.x + 3,
-                    selectedToken.position.y + 5,
-                    selectedToken.position.z + 3
-                );
-                controls.update();
-            }
         }
     });
 
@@ -5334,8 +5362,7 @@ function init() {
 
     // Main camera
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1500);
-    // Default zoomed-out camera position
-    camera.position.set(0, 40, 0);
+    camera.position.set(0, 48, 0);
     camera.rotation.x = -Math.PI / 2;
 
     // Follow camera
@@ -5380,16 +5407,6 @@ function init() {
     createDiceButton();
     startGameTimer();
     updatePropertyManagementBoard(players[currentPlayerIndex]);
-    addCenterOnTokenButton();
-    // If selectedToken exists, zoom in on it
-    if (selectedToken) {
-        camera.position.set(
-            selectedToken.position.x + 3,
-            selectedToken.position.y + 5,
-            selectedToken.position.z + 3
-        );
-        controls.update();
-    }
 }
 
 function createImageCarousel(images, position) {
@@ -6022,6 +6039,13 @@ initPlayerTokenSelection = function() {
     createDiceButton();
 };
 
+// Modify endTurn to reset dice rolling permission
+const originalEndTurn = endTurn;
+endTurn = function() {
+    allowedToRoll = true;
+    originalEndTurn();
+};
+
 function showFeedback(message, duration = 2000) {
     const feedbackElement = document.createElement('div');
     feedbackElement.className = 'feedback-message';
@@ -6376,6 +6400,9 @@ function showFreeParkingUI(player) {
     img.style.objectFit = 'cover';
     img.style.borderRadius = '8px';
     // Move Water Works image down to show more of the top
+    if (property.name === "Water Works") {
+        img.style.objectPosition = 'center 30%'; // Show more of the top (adjust 30% as needed)
+    }
     imageContainer.appendChild(img);
 
     // Responsive adjustment for small screens
@@ -6835,198 +6862,128 @@ createTestingModeUI();
 init();
 setupPropertiesToggleButton();
 
-// --- Helicopter Hover Animation State ---
-let helicopterHoverAnim = null;
-
-function startHelicopterHover(animatedModel, position) {
-
-    if (!animatedModel.userData.heliIdleSound) {
-        const heliIdleSound = new Audio('Sounds/helicopter-rotor-sound-effectpart-2-95798.mp3');
-        heliIdleSound.loop = true;
-        heliIdleSound.volume = 0.08; // Start low
-        heliIdleSound.currentTime = 0;
-        animatedModel.userData.heliIdleSound = heliIdleSound;
-    }
-    const heliIdleSound = animatedModel.userData.heliIdleSound;
-    if (heliIdleSound.paused) {
-        heliIdleSound.currentTime = 0;
-        heliIdleSound.play().catch(() => {});
-    }
-
-    if (!animatedModel) return;
-    stopHelicopterHover();
-    animatedModel.visible = true;
-    // Keep all actions playing
-    if (animatedModel.userData.actions) {
-        animatedModel.userData.actions.forEach(action => {
-            action.play();
-        });
-    }
-    let t = 0;
-    const hoverRadius = 1.1 + Math.random() * 0.5; // Small circle
-    const hoverSpeed = 0.7 + Math.random() * 0.3; // Slightly random speed
-    const hoverHeight = 3.5;
-    const baseY = hoverHeight;
-    const baseX = position.x;
-    const baseZ = position.z;
-    function animate() {
-        t += 1/60;
-        // Circle or figure-eight path
-        const angle = t * hoverSpeed;
-        const x = baseX + Math.cos(angle) * hoverRadius * 0.7;
-        const z = baseZ + Math.sin(angle * 1.2) * hoverRadius * 0.5;
-        const y = baseY + Math.sin(angle * 2.1) * 0.35 + Math.cos(angle * 1.3) * 0.18;
-        animatedModel.position.set(x, y, z);
-
-        if (typeof camera !== 'undefined') {
-            const camPos = camera.position;
-            const heliPos = animatedModel.position;
-            const dist = camPos.distanceTo(heliPos);
-            let vol = 0.08;
-            if (dist < 18) vol = 0.08 + (0.25 - 0.08) * (1 - Math.min(dist, 18) / 18);
-            heliIdleSound.volume = Math.min(0.25, Math.max(0.01, vol));
-        }
-
-        // Gentle yaw oscillation
-        const yaw = Math.sin(angle * 1.1) * 0.18;
-        animatedModel.rotation.set(
-            Math.sin(angle * 0.7) * 0.08, // Subtle banking
-            Math.PI + Math.PI/2 + yaw,
-            0
-        );
-        if (animatedModel.userData.mixer) animatedModel.userData.mixer.update(1/60); // Advance animation
-        helicopterHoverAnim = requestAnimationFrame(animate);
-    }
-    helicopterHoverAnim = requestAnimationFrame(animate);
-}
-
-function stopHelicopterHover() {
-    if (helicopterHoverAnim) {
-        cancelAnimationFrame(helicopterHoverAnim);
-        helicopterHoverAnim = null;
-    }
-    // Fix: get animatedModel from loadedTokenModels
-    if (window.loadedTokenModels && window.loadedTokenModels['helicopter'] && window.loadedTokenModels['helicopter'].userData.animatedModel) {
-        const anim = window.loadedTokenModels['helicopter'].userData.animatedModel;
-        if (anim.userData.heliIdleSound) {
-            anim.userData.heliIdleSound.pause();
-            anim.userData.heliIdleSound.currentTime = 0;
-        }
-    }
-}
-
+// Replace flyWithHelicopterEffect with a path-based version
 function flyWithHelicopterEffectPath(path, token, callback) {
     if (!token || !path || path.length < 2) {
         console.error("Invalid parameters passed to flyWithHelicopterEffectPath");
         if (callback) callback();
         return;
     }
-    stopHelicopterHover(); // Stop any idle hover
+
+    isFollowingToken = true;
     let previousSelectedToken = selectedToken;
+
     // Helicopter sound setup
     let heliSound = new Audio('Sounds/helicopter-rotor-sound-effectpart-2-95798.mp3');
     heliSound.loop = true;
     heliSound.volume = 0.7;
     heliSound.currentTime = 0;
     heliSound.play().catch(() => {});
-    // Always use animated model
+
+    // Swap to animated model if available
     const animatedModel = token.userData.animatedModel;
-    let mixer, actions;
+    let mixer, action;
     if (animatedModel) {
         token.visible = false;
         animatedModel.visible = true;
         animatedModel.position.copy(token.position);
         animatedModel.rotation.copy(token.rotation);
         mixer = animatedModel.userData.mixer;
-        actions = animatedModel.userData.actions;
-        if (actions) actions.forEach(action => action.play());
+        action = animatedModel.userData.action;
+        if (action) {
+            action.reset();
+            action.play();
+        }
         selectedToken = animatedModel;
     } else {
         selectedToken = token;
     }
-    // --- Dynamic arc height based on path length ---
-    const minFlightHeight = 7;
-    const maxFlightHeight = 16;
-    const flightHeight = Math.min(maxFlightHeight, minFlightHeight + path.length * 1.5);
+
+    // Create a smooth curve above the board
+    const flightHeight = 8;
     const takeoffHeight = 2.5;
-    const hoverHeight = 3.5;
+    const landHeight = 1.5;
     const points = path.map((p, i) => {
         if (i === 0) return new THREE.Vector3(p.x, takeoffHeight, p.z);
-        if (i === path.length - 1) return new THREE.Vector3(p.x, hoverHeight, p.z);
+        if (i === path.length - 1) return new THREE.Vector3(p.x, landHeight, p.z);
         return new THREE.Vector3(p.x, flightHeight, p.z);
     });
     const curve = new CatmullRomCurve3(points);
+
+    // --- SLOWER: Increase duration ---
     const duration = 4200 + path.length * 600;
     const startTime = Date.now();
     const modelOffsetAngle = Math.PI + Math.PI / 2;
-    let lastDirection = null;
-    let flareTimer = 0;
-    const flareDuration = 0.18;
+
     function animate() {
         const elapsed = Date.now() - startTime;
         const t = Math.min(elapsed / duration, 1);
-        let pos = curve.getPoint(t);
+
+        // Main position along the curve
+        const pos = curve.getPoint(t);
         const nextPos = curve.getPoint(Math.min(t + 0.01, 1));
         const prevPos = curve.getPoint(Math.max(t - 0.01, 0));
         const direction = new THREE.Vector3().subVectors(nextPos, pos).normalize();
         const angle = Math.atan2(direction.x, direction.z);
-        const bobbingY = Math.sin(t * Math.PI * 4) * 0.45;
-        const yawOscillation = Math.sin(t * Math.PI * 2) * 0.13;
+
+        // --- Add vertical bobbing (gentle up/down) ---
+        const bobbingY = Math.sin(t * Math.PI * 4) * 0.45; // 4 cycles, 0.45 units amplitude
+
+        // --- Add subtle yaw oscillation (side-to-side) ---
+        const yawOscillation = Math.sin(t * Math.PI * 2) * 0.13; // 2 cycles, 0.13 radians
+
+        // --- Add banking effect based on curve ---
         const curveDelta = new THREE.Vector3().subVectors(nextPos, prevPos).normalize();
         const turnAmount = curveDelta.x * direction.z - curveDelta.z * direction.x;
-        let bank = THREE.MathUtils.clamp(turnAmount * 2.2, -0.65, 0.65);
-        if (lastDirection && direction.angleTo(lastDirection) > 0.18) {
-            flareTimer = flareDuration;
-        }
-        if (flareTimer > 0) {
-            bank += Math.sin((flareDuration - flareTimer) * Math.PI / flareDuration) * 0.35;
-            flareTimer -= 1/60;
-        }
-        lastDirection = direction.clone();
-        let y = pos.y + bobbingY;
-        // Never go below hoverHeight
-        y = Math.max(y, hoverHeight);
+        const bank = THREE.MathUtils.clamp(turnAmount * 1.8, -0.45, 0.45); // Bank left/right
+
+        // No left/right tilt: rotation.x = 0
         if (animatedModel) {
-            animatedModel.position.set(pos.x, y, pos.z);
+            animatedModel.position.set(pos.x, pos.y + bobbingY, pos.z);
             animatedModel.rotation.set(
-                bank,
+                bank, // Banking tilt
                 angle + modelOffsetAngle + yawOscillation,
                 0
             );
             if (mixer) mixer.update(1/60);
+            if (isFollowingToken) updateFollowCamera(animatedModel);
         } else {
-            token.position.set(pos.x, y, pos.z);
+            token.position.set(pos.x, pos.y + bobbingY, pos.z);
             token.rotation.set(
                 bank,
                 angle + modelOffsetAngle + yawOscillation,
                 0
             );
+            if (isFollowingToken) updateFollowCamera(token);
         }
+
         if (t < 1) {
             requestAnimationFrame(animate);
         } else {
-            // Stay hovering at the new position
+            // Land at correct board height
             if (animatedModel) {
-                animatedModel.position.set(pos.x, hoverHeight, pos.z);
+                animatedModel.position.copy(points[points.length - 1]);
                 animatedModel.rotation.set(0, angle + modelOffsetAngle, 0);
-                if (actions) actions.forEach(action => action.play());
-                animatedModel.visible = true;
-                // Start idle hover at new position
-                startHelicopterHover(animatedModel, {x: pos.x, z: pos.z});
+                if (action) action.stop();
+                animatedModel.visible = false;
+                token.position.copy(animatedModel.position);
+                token.rotation.copy(animatedModel.rotation);
+                token.visible = true;
             } else {
-                token.position.set(pos.x, hoverHeight, pos.z);
+                token.position.copy(points[points.length - 1]);
                 token.rotation.set(0, angle + modelOffsetAngle, 0);
             }
             heliSound.pause();
             heliSound.currentTime = 0;
             selectedToken = previousSelectedToken;
-            if (typeof centerOnTokenBtn !== 'undefined' && centerOnTokenBtn) centerOnTokenBtn.innerText = 'Center on Token';
+            isFollowingToken = false;
             if (callback) callback();
         }
     }
     animate();
 }
 
+// Update moveHelicopterToNewPosition to use the new effect
 function moveHelicopterToNewPosition(spaces) {
     const currentPlayer = players[currentPlayerIndex];
     if (!currentPlayer.selectedToken || currentPlayer.selectedToken.userData.tokenName !== "helicopter") {
@@ -7045,143 +7002,7 @@ function moveHelicopterToNewPosition(spaces) {
         current = (current + 1) % propertiesCount;
     }
     path.push(positions[newPosition]);
-    // Always use animated model for helicopter
-    const animatedModel = token.userData.animatedModel;
-    if (animatedModel) {
-        stopHelicopterHover();
-        animatedModel.visible = true;
-        if (animatedModel.userData.actions) animatedModel.userData.actions.forEach(action => action.play());
-        flyWithHelicopterEffectPath(path, token, () => {
-            finishMove(currentPlayer, newPosition, oldPosition + spaces >= propertiesCount);
-        });
-    } else {
-        flyWithHelicopterEffectPath(path, token, () => {
-            finishMove(currentPlayer, newPosition, oldPosition + spaces >= propertiesCount);
-        });
-    }
-}
-
-function animate() {
-    requestAnimationFrame(animate);
-    const delta = clock.getDelta();
-    scene.traverse((object) => {
-        if (object.userData.idleMixer) object.userData.idleMixer.update(delta);
-        if (object.userData.walkMixer) object.userData.walkMixer.update(delta);
-        if (object.userData.mixer) object.userData.mixer.update(delta);
+    flyWithHelicopterEffectPath(path, token, () => {
+        finishMove(currentPlayer, newPosition, oldPosition + spaces >= propertiesCount);
     });
-
-    if (isCenteringOnToken) {
-        if (isTokenMoving && selectedToken) {
-            // --- Follow token as before ---
-            controls.target.copy(selectedToken.position);
-            if (!userIsMovingCamera) {
-                const desiredPos = new THREE.Vector3(
-                    selectedToken.position.x + 2.5,
-                    selectedToken.position.y + 5,
-                    selectedToken.position.z + 2.5
-                );
-                camera.position.lerp(desiredPos, 0.18);
-            }
-            controls.update();
-            lastCameraMode = 'follow';
-        } else {
-            // --- Idle/orbit camera effect ---
-            idleCameraAngle += delta * 0.18; // Slow orbit
-            const x = idleCameraRadius * Math.cos(idleCameraAngle);
-            const z = idleCameraRadius * Math.sin(idleCameraAngle);
-            const y = idleCameraHeight;
-            const desiredPos = new THREE.Vector3(x, y, z);
-            // Smooth transition from follow to idle
-            if (lastCameraMode !== 'idle') {
-                camera.position.lerp(desiredPos, 0.12);
-            } else {
-                camera.position.copy(desiredPos);
-            }
-            controls.target.copy(idleCameraTarget);
-            controls.update();
-            lastCameraMode = 'idle';
-        }
-    }
-
-    renderer.render(scene, camera);
-}
-// ... existing code ...
-
-// Add this near your OrbitControls setup (in init or after controls is created):
-let userIsMovingCamera = false;
-controls.addEventListener('start', () => { userIsMovingCamera = true; });
-controls.addEventListener('end', () => { userIsMovingCamera = false; });
-
-// In your main animate loop, change the auto-centering block to:
-if (isCenteringOnToken && selectedToken && !window.userIsMovingCamera) {
-    // Less zoomed in: move camera further back and higher
-    const desiredPos = new THREE.Vector3(
-        selectedToken.position.x + 4, // was +2
-        selectedToken.position.y + 7, // was +3.5
-        selectedToken.position.z + 4  // was +2
-    );
-    camera.position.lerp(desiredPos, 0.18);
-    controls.update();
-}
-
-// After changing currentPlayerIndex (e.g., in endTurn, startPlayerTurn, etc.), always set selectedToken to the new current player's token if isCenteringOnToken is true
-function focusCameraOnCurrentPlayerToken() {
-    const currentPlayer = players[currentPlayerIndex];
-    if (currentPlayer.selectedToken) {
-        selectedToken = currentPlayer.selectedToken;
-        if (isCenteringOnToken && centerOnTokenBtn) {
-            centerOnTokenBtn.innerText = 'Uncenter on Token';
-        }
-    }
-}
-
-const originalStartPlayerTurn = startPlayerTurn;
-startPlayerTurn = function(player, ...args) {
-    const result = originalStartPlayerTurn.apply(this, [player, ...args]);
-    focusCameraOnCurrentPlayerToken();
-    return result;
-};
-
-// When user clicks the centerOnTokenBtn, update selectedToken to current player's token if enabling centering
-function addCenterOnTokenButton() {
-    if (centerOnTokenBtn) return;
-    centerOnTokenBtn = document.createElement('button');
-    centerOnTokenBtn.innerText = isCenteringOnToken ? 'Uncenter on Token' : 'Center on Token';
-    centerOnTokenBtn.style.position = 'fixed';
-    centerOnTokenBtn.style.bottom = '70px';
-    centerOnTokenBtn.style.right = '20px';
-    centerOnTokenBtn.style.zIndex = 1000;
-    centerOnTokenBtn.style.padding = '10px 18px';
-    centerOnTokenBtn.style.borderRadius = '8px';
-    centerOnTokenBtn.style.background = '#222';
-    centerOnTokenBtn.style.color = '#fff';
-    centerOnTokenBtn.style.border = 'none';
-    centerOnTokenBtn.style.fontSize = '16px';
-    centerOnTokenBtn.style.cursor = 'pointer';
-    centerOnTokenBtn.onclick = () => {
-        isCenteringOnToken = !isCenteringOnToken;
-        centerOnTokenBtn.innerText = isCenteringOnToken ? 'Uncenter on Token' : 'Center on Token';
-        if (isCenteringOnToken) {
-            focusCameraOnCurrentPlayerToken();
-        }
-    };
-    document.body.appendChild(centerOnTokenBtn);
-}
-
-if (!window._cameraPatchApplied) {
-    const originalEndTurn = endTurn;
-    endTurn = function(...args) {
-        allowedToRoll = true; // Reset dice rolling permission
-        const result = originalEndTurn.apply(this, args);
-        focusCameraOnCurrentPlayerToken();
-        return result;
-    };
-
-    const originalStartPlayerTurn = startPlayerTurn;
-    startPlayerTurn = function(player, ...args) {
-        const result = originalStartPlayerTurn.apply(this, [player, ...args]);
-        focusCameraOnCurrentPlayerToken();
-        return result;
-    };
-    window._cameraPatchApplied = true;
 }

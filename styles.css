@@ -615,7 +615,34 @@ button:hover,
 }
 
 .ai-action-popup {
+    position: fixed;
+    top: 320px;
+    right: 24px;
+    z-index: 2001;
+    background: #232a36;
+    color: #fff;
+    padding: 14px 22px;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 500;
+    box-shadow: 0 2px 12px #0003;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.3s, transform 0.3s;
+    max-width: 320px;
+    width: max-content;
+    min-width: 180px;
+    text-align: center;
+}
+
+@media (max-width: 900px) {
+  .ai-action-popup {
+    top: 250px;
+    right: 8px;
+    left: auto;
+    max-width: 95vw;
+    font-size: 15px;
+    padding: 10px 8px;
+    border-radius: 7px;
+  }
 }
