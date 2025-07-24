@@ -1,3 +1,4 @@
+const DEBUG = false;
 import * as THREE from '../libs/three.module.js';
 import {
     GLTFLoader
@@ -41,13 +42,22 @@ function animate() {
         }
     });
 
-    // Update the follow camera if active
-    if (isFollowingToken && selectedToken) {
-        updateFollowCamera(selectedToken);
+    // If centering, follow the token every frame
+    if (isCenteringOnToken && selectedToken) {
+        controls.target.copy(selectedToken.position);
+        camera.position.lerp(
+            new THREE.Vector3(
+                selectedToken.position.x + 10,
+                selectedToken.position.y + 10,
+                selectedToken.position.z + 10
+            ),
+            0.18 // Smooth follow
+        );
+        controls.update();
     }
 
     controls.update();
-    renderer.render(scene, isFollowingToken ? followCamera : camera); // Render with the active camera
+    renderer.render(scene, camera); // Always use main camera
 }
 
 let editMode = false;
@@ -2280,19 +2290,6 @@ if (!mediaShown) {
     detailsContainer.style.height = '100%';
     detailsContainer.style.minWidth = '0';
 
-	const ticketProperties = [
-    "Las Vegas Grand Prix",
-    "Las Vegas Golden Knights",
-    "Las Vegas Raiders",
-    "Las Vegas Aces",
-    "Horseback Riding",
-    "Maverick Helicopter Rides",
-    "Sphere",
-    "Shriners Children's Open",
-    "Resorts World Theatre",
-    "House of Blues"
-];
-
     // Custom UI for Brothel, Monorail, Speed Vegas Off Roading, Resorts World Theatre, Sphere
     if (property.name === 'Brothel') {
         detailsContainer.innerHTML = `
@@ -4429,17 +4426,19 @@ function throwFootballAnimation(token, endPos, finalHeight, callback) {
     const duration = 1200; // Duration for the throw
     const arcHeight = 5;   // Height of the arc
 
-    isFollowingToken = true;
-    selectedToken = token;
-
-    // Store initial rotation for Y/Z
-    const initialY = token.rotation.y;
-    const initialZ = token.rotation.z;
-
     // --- Play new woosh sound for football throw ---
     const wooshSound = new Audio('Sounds/woosh-260275.mp3');
     wooshSound.volume = 0.7;
     wooshSound.play().catch(() => {});
+
+    const startTime = Date.now();
+    function getArcPoint(t) {
+        // Parabolic arc for Y
+        const x = startPos.x + (endPos.x - startPos.x) * t;
+        const z = startPos.z + (endPos.z - startPos.z) * t;
+        const y = startPos.y + Math.sin(t * Math.PI) * arcHeight;
+        return new THREE.Vector3(x, y, z);
+    }
 
     function animate() {
         const elapsed = Date.now() - startTime;
@@ -4450,30 +4449,38 @@ function throwFootballAnimation(token, endPos, finalHeight, callback) {
             ? 2 * progress * progress
             : 1 - Math.pow(-2 * progress + 2, 2) / 2;
 
-        // Parabolic arc for Y
-        const currentX = startPos.x + (endPos.x - startPos.x) * easeProgress;
-        const currentZ = startPos.z + (endPos.z - startPos.z) * easeProgress;
-        const currentY = startPos.y + Math.sin(progress * Math.PI) * arcHeight;
+        // Current and next position for velocity
+        const pos = getArcPoint(easeProgress);
+        const nextPos = getArcPoint(Math.min(easeProgress + 0.01, 1));
+        token.position.copy(pos);
 
-        token.position.set(currentX, currentY, currentZ);
+        // Calculate velocity vector and orientation
+        const velocity = new THREE.Vector3().subVectors(nextPos, pos).normalize();
+        // Create a quaternion that points the football's +Z axis along the velocity
+        const up = new THREE.Vector3(0, 1, 0);
+        const forward = velocity.clone();
+        // Avoid gimbal lock: if moving straight up/down, use X axis as up
+        if (Math.abs(forward.y) > 0.99) up.set(1, 0, 0);
+        const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), forward);
 
-        // Tight spiral: spin only around X, keep Y/Z locked
-        token.rotation.x += 0.45;
-        token.rotation.y = initialY;
-        token.rotation.z = initialZ;
-
-        if (isFollowingToken) updateFollowCamera(token);
+        // Add tight spiral: spin around the forward axis
+        const spiralAngle = elapsed * 0.025 * Math.PI * 2 * 6; // 6 full spins per second
+        const spiralQuat = new THREE.Quaternion().setFromAxisAngle(forward, spiralAngle);
+        quat.multiply(spiralQuat);
+        token.quaternion.copy(quat);
 
         if (progress < 1) {
             requestAnimationFrame(animate);
         } else {
+            // Land at the final position and face forward
             token.position.set(endPos.x, finalHeight, endPos.z);
-            isFollowingToken = false;
+            // Final orientation: point from start to end
+            const finalDir = new THREE.Vector3().subVectors(endPos, startPos).normalize();
+            const finalQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), finalDir);
+            token.quaternion.copy(finalQuat);
             if (callback) callback();
         }
     }
-
-    const startTime = Date.now();
     animate();
 }
 
@@ -6866,93 +6873,137 @@ createTestingModeUI();
 init();
 setupPropertiesToggleButton();
 
-// Replace flyWithHelicopterEffect with a path-based version
+// --- Helicopter Hover Animation State ---
+let helicopterHoverAnim = null;
+
+function startHelicopterHover(animatedModel, position) {
+    if (!animatedModel) return;
+    stopHelicopterHover();
+    animatedModel.visible = true;
+    // Keep all actions playing
+    if (animatedModel.userData.actions) {
+        animatedModel.userData.actions.forEach(action => {
+            action.play();
+        });
+    }
+    let t = 0;
+    const hoverRadius = 1.1 + Math.random() * 0.5; // Small circle
+    const hoverSpeed = 0.7 + Math.random() * 0.3; // Slightly random speed
+    const hoverHeight = 3.5;
+    const baseY = hoverHeight;
+    const baseX = position.x;
+    const baseZ = position.z;
+    function animate() {
+        t += 1/60;
+        // Circle or figure-eight path
+        const angle = t * hoverSpeed;
+        const x = baseX + Math.cos(angle) * hoverRadius * 0.7;
+        const z = baseZ + Math.sin(angle * 1.2) * hoverRadius * 0.5;
+        const y = baseY + Math.sin(angle * 2.1) * 0.35 + Math.cos(angle * 1.3) * 0.18;
+        animatedModel.position.set(x, y, z);
+        // Gentle yaw oscillation
+        const yaw = Math.sin(angle * 1.1) * 0.18;
+        animatedModel.rotation.set(
+            Math.sin(angle * 0.7) * 0.08, // Subtle banking
+            Math.PI + Math.PI/2 + yaw,
+            0
+        );
+        if (animatedModel.userData.mixer) animatedModel.userData.mixer.update(1/60);
+        helicopterHoverAnim = requestAnimationFrame(animate);
+    }
+    helicopterHoverAnim = requestAnimationFrame(animate);
+}
+
+function stopHelicopterHover() {
+    if (helicopterHoverAnim) {
+        cancelAnimationFrame(helicopterHoverAnim);
+        helicopterHoverAnim = null;
+    }
+}
+
 function flyWithHelicopterEffectPath(path, token, callback) {
     if (!token || !path || path.length < 2) {
         console.error("Invalid parameters passed to flyWithHelicopterEffectPath");
         if (callback) callback();
         return;
     }
-
+    stopHelicopterHover(); // Stop any idle hover
     isFollowingToken = true;
     let previousSelectedToken = selectedToken;
-
     // Helicopter sound setup
     let heliSound = new Audio('Sounds/helicopter-rotor-sound-effectpart-2-95798.mp3');
     heliSound.loop = true;
     heliSound.volume = 0.7;
     heliSound.currentTime = 0;
     heliSound.play().catch(() => {});
-
-    // Swap to animated model if available
+    // Always use animated model
     const animatedModel = token.userData.animatedModel;
-    let mixer, action;
+    let mixer, actions;
     if (animatedModel) {
         token.visible = false;
         animatedModel.visible = true;
         animatedModel.position.copy(token.position);
         animatedModel.rotation.copy(token.rotation);
         mixer = animatedModel.userData.mixer;
-        action = animatedModel.userData.action;
-        if (action) {
-            action.reset();
-            action.play();
-        }
+        actions = animatedModel.userData.actions;
+        if (actions) actions.forEach(action => action.play());
         selectedToken = animatedModel;
     } else {
         selectedToken = token;
     }
-
-    // Create a smooth curve above the board
-    const flightHeight = 8;
+    // --- Dynamic arc height based on path length ---
+    const minFlightHeight = 7;
+    const maxFlightHeight = 16;
+    const flightHeight = Math.min(maxFlightHeight, minFlightHeight + path.length * 1.5);
     const takeoffHeight = 2.5;
-    const landHeight = 1.5;
+    const hoverHeight = 3.5;
     const points = path.map((p, i) => {
         if (i === 0) return new THREE.Vector3(p.x, takeoffHeight, p.z);
-        if (i === path.length - 1) return new THREE.Vector3(p.x, landHeight, p.z);
+        if (i === path.length - 1) return new THREE.Vector3(p.x, hoverHeight, p.z);
         return new THREE.Vector3(p.x, flightHeight, p.z);
     });
     const curve = new CatmullRomCurve3(points);
-
-    // --- SLOWER: Increase duration ---
     const duration = 4200 + path.length * 600;
     const startTime = Date.now();
     const modelOffsetAngle = Math.PI + Math.PI / 2;
-
+    let lastDirection = null;
+    let flareTimer = 0;
+    const flareDuration = 0.18;
     function animate() {
         const elapsed = Date.now() - startTime;
         const t = Math.min(elapsed / duration, 1);
-
-        // Main position along the curve
-        const pos = curve.getPoint(t);
+        let pos = curve.getPoint(t);
         const nextPos = curve.getPoint(Math.min(t + 0.01, 1));
         const prevPos = curve.getPoint(Math.max(t - 0.01, 0));
         const direction = new THREE.Vector3().subVectors(nextPos, pos).normalize();
         const angle = Math.atan2(direction.x, direction.z);
-
-        // --- Add vertical bobbing (gentle up/down) ---
-        const bobbingY = Math.sin(t * Math.PI * 4) * 0.45; // 4 cycles, 0.45 units amplitude
-
-        // --- Add subtle yaw oscillation (side-to-side) ---
-        const yawOscillation = Math.sin(t * Math.PI * 2) * 0.13; // 2 cycles, 0.13 radians
-
-        // --- Add banking effect based on curve ---
+        const bobbingY = Math.sin(t * Math.PI * 4) * 0.45;
+        const yawOscillation = Math.sin(t * Math.PI * 2) * 0.13;
         const curveDelta = new THREE.Vector3().subVectors(nextPos, prevPos).normalize();
         const turnAmount = curveDelta.x * direction.z - curveDelta.z * direction.x;
-        const bank = THREE.MathUtils.clamp(turnAmount * 1.8, -0.45, 0.45); // Bank left/right
-
-        // No left/right tilt: rotation.x = 0
+        let bank = THREE.MathUtils.clamp(turnAmount * 2.2, -0.65, 0.65);
+        if (lastDirection && direction.angleTo(lastDirection) > 0.18) {
+            flareTimer = flareDuration;
+        }
+        if (flareTimer > 0) {
+            bank += Math.sin((flareDuration - flareTimer) * Math.PI / flareDuration) * 0.35;
+            flareTimer -= 1/60;
+        }
+        lastDirection = direction.clone();
+        let y = pos.y + bobbingY;
+        // Never go below hoverHeight
+        y = Math.max(y, hoverHeight);
         if (animatedModel) {
-            animatedModel.position.set(pos.x, pos.y + bobbingY, pos.z);
+            animatedModel.position.set(pos.x, y, pos.z);
             animatedModel.rotation.set(
-                bank, // Banking tilt
+                bank,
                 angle + modelOffsetAngle + yawOscillation,
                 0
             );
             if (mixer) mixer.update(1/60);
             if (isFollowingToken) updateFollowCamera(animatedModel);
         } else {
-            token.position.set(pos.x, pos.y + bobbingY, pos.z);
+            token.position.set(pos.x, y, pos.z);
             token.rotation.set(
                 bank,
                 angle + modelOffsetAngle + yawOscillation,
@@ -6960,21 +7011,19 @@ function flyWithHelicopterEffectPath(path, token, callback) {
             );
             if (isFollowingToken) updateFollowCamera(token);
         }
-
         if (t < 1) {
             requestAnimationFrame(animate);
         } else {
-            // Land at correct board height
+            // Stay hovering at the new position
             if (animatedModel) {
-                animatedModel.position.copy(points[points.length - 1]);
+                animatedModel.position.set(pos.x, hoverHeight, pos.z);
                 animatedModel.rotation.set(0, angle + modelOffsetAngle, 0);
-                if (action) action.stop();
-                animatedModel.visible = false;
-                token.position.copy(animatedModel.position);
-                token.rotation.copy(animatedModel.rotation);
-                token.visible = true;
+                if (actions) actions.forEach(action => action.play());
+                animatedModel.visible = true;
+                // Start idle hover at new position
+                startHelicopterHover(animatedModel, {x: pos.x, z: pos.z});
             } else {
-                token.position.copy(points[points.length - 1]);
+                token.position.set(pos.x, hoverHeight, pos.z);
                 token.rotation.set(0, angle + modelOffsetAngle, 0);
             }
             heliSound.pause();
@@ -6987,7 +7036,6 @@ function flyWithHelicopterEffectPath(path, token, callback) {
     animate();
 }
 
-// Update moveHelicopterToNewPosition to use the new effect
 function moveHelicopterToNewPosition(spaces) {
     const currentPlayer = players[currentPlayerIndex];
     if (!currentPlayer.selectedToken || currentPlayer.selectedToken.userData.tokenName !== "helicopter") {
@@ -7006,7 +7054,123 @@ function moveHelicopterToNewPosition(spaces) {
         current = (current + 1) % propertiesCount;
     }
     path.push(positions[newPosition]);
-    flyWithHelicopterEffectPath(path, token, () => {
-        finishMove(currentPlayer, newPosition, oldPosition + spaces >= propertiesCount);
+    // Always use animated model for helicopter
+    const animatedModel = token.userData.animatedModel;
+    if (animatedModel) {
+        stopHelicopterHover();
+        animatedModel.visible = true;
+        if (animatedModel.userData.actions) animatedModel.userData.actions.forEach(action => action.play());
+        flyWithHelicopterEffectPath(path, token, () => {
+            finishMove(currentPlayer, newPosition, oldPosition + spaces >= propertiesCount);
+        });
+    } else {
+        flyWithHelicopterEffectPath(path, token, () => {
+            finishMove(currentPlayer, newPosition, oldPosition + spaces >= propertiesCount);
+        });
+    }
+}
+
+// Add a 'Center on Token' button to the UI
+function addCenterOnTokenButton() {
+    const btn = document.createElement('button');
+    btn.innerText = 'Center on Token';
+    btn.style.position = 'fixed';
+    btn.style.bottom = '70px'; // Move up to avoid overlap
+    btn.style.right = '20px';
+    btn.style.zIndex = 1000;
+    btn.style.padding = '10px 18px';
+    btn.style.borderRadius = '8px';
+    btn.style.background = '#222';
+    btn.style.color = '#fff';
+    btn.style.border = 'none';
+    btn.style.fontSize = '16px';
+    btn.style.cursor = 'pointer';
+    btn.onclick = () => {
+        if (selectedToken) {
+            controls.target.copy(selectedToken.position);
+            camera.position.set(
+                selectedToken.position.x + 10,
+                selectedToken.position.y + 10,
+                selectedToken.position.z + 10
+            );
+            controls.update();
+        }
+    };
+    document.body.appendChild(btn);
+}
+
+// Call this after scene/camera/controls are initialized
+addCenterOnTokenButton();
+
+let isCenteringOnToken = false;
+let centerOnTokenBtn = null;
+
+function animate() {
+    requestAnimationFrame(animate);
+
+    const delta = clock.getDelta();
+
+    // Update all animation mixers
+    scene.traverse((object) => {
+        if (object.userData.idleMixer) {
+            object.userData.idleMixer.update(delta);
+        }
+        if (object.userData.walkMixer) {
+            object.userData.walkMixer.update(delta);
+        }
+        if (object.userData.mixer) {
+            object.userData.mixer.update(delta);
+        }
     });
+
+    // If centering, follow the token every frame
+    if (isCenteringOnToken && selectedToken) {
+        controls.target.copy(selectedToken.position);
+        camera.position.lerp(
+            new THREE.Vector3(
+                selectedToken.position.x + 10,
+                selectedToken.position.y + 10,
+                selectedToken.position.z + 10
+            ),
+            0.18 // Smooth follow
+        );
+        controls.update();
+    }
+
+    controls.update();
+    renderer.render(scene, camera);
+}
+
+function addCenterOnTokenButton() {
+    if (centerOnTokenBtn) return; // Prevent duplicates
+    centerOnTokenBtn = document.createElement('button');
+    centerOnTokenBtn.innerText = 'Center on Token';
+    centerOnTokenBtn.style.position = 'fixed';
+    centerOnTokenBtn.style.bottom = '70px';
+    centerOnTokenBtn.style.right = '20px';
+    centerOnTokenBtn.style.zIndex = 1000;
+    centerOnTokenBtn.style.padding = '10px 18px';
+    centerOnTokenBtn.style.borderRadius = '8px';
+    centerOnTokenBtn.style.background = '#222';
+    centerOnTokenBtn.style.color = '#fff';
+    centerOnTokenBtn.style.border = 'none';
+    centerOnTokenBtn.style.fontSize = '16px';
+    centerOnTokenBtn.style.cursor = 'pointer';
+    centerOnTokenBtn.onclick = () => {
+        isCenteringOnToken = !isCenteringOnToken;
+        if (isCenteringOnToken && selectedToken) {
+            // Snap immediately, then follow
+            controls.target.copy(selectedToken.position);
+            camera.position.set(
+                selectedToken.position.x + 10,
+                selectedToken.position.y + 10,
+                selectedToken.position.z + 10
+            );
+            controls.update();
+            centerOnTokenBtn.innerText = 'Uncenter on Token';
+        } else {
+            centerOnTokenBtn.innerText = 'Center on Token';
+        }
+    };
+    document.body.appendChild(centerOnTokenBtn);
 }
