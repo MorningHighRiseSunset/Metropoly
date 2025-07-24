@@ -35,6 +35,10 @@ function animate() {
         if (object.userData.walkMixer) {
             object.userData.walkMixer.update(delta);
         }
+        // Add this for helicopter animations
+        if (object.userData.mixer) {
+            object.userData.mixer.update(delta);
+        }
     });
 
     // Update the follow camera if active
@@ -334,7 +338,7 @@ const properties = [{
         price: 120,
         rent: 12,
         owner: null,
-        address: "",
+        address: "7000 Las Vegas Blvd N, Las Vegas, NV 89115 (Las Vegas Motor Speedway)", // Added real address
         color: "brown",
         mortgageValue: 60,
         housePrice: 50,
@@ -345,6 +349,7 @@ const properties = [{
         "Videos/LV Grand Prix.mp4",
         "Videos/LV Grand Prix End.mp4",
         ],
+        customBuyLabel: "Buy ticket", // Add ticket label for Grand Prix if desired
     },
     {
         name: "Income Tax",
@@ -405,7 +410,7 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [80, 220, 600, 800],
         rentWithHotel: 1000,
-        videoUrls: [ "Videos/LV Golden Knights.mp4",
+        videoUrls: [ "",
 
         ],
     },
@@ -484,6 +489,7 @@ const properties = [{
             "Videos/MGMBoxing 2.mp4",
             "Videos/MGMBoxing 3.mp4",
         ],
+        customBuyLabel: "Buy ticket", // Added/updated label
     },
     {
         name: "Bellagio",
@@ -662,6 +668,7 @@ const properties = [{
         videoUrls: [ // Changed from imageUrls to videoUrls for clarity
 
         ],
+        customBuyLabel: "Buy ticket", // Added/updated label
     },
     {
         name: "The Cosmopolitan",
@@ -1554,7 +1561,12 @@ function createTokens() {
             // Store animation mixer if present
             if (gltf.animations && gltf.animations.length > 0) {
                 animatedModel.userData.mixer = new THREE.AnimationMixer(animatedModel);
-                animatedModel.userData.action = animatedModel.userData.mixer.clipAction(gltf.animations[0]);
+                animatedModel.userData.actions = [];
+                gltf.animations.forEach(anim => {
+                    const action = animatedModel.userData.mixer.clipAction(anim);
+                    action.play();
+                    animatedModel.userData.actions.push(action);
+                });
             }
         });
     });
@@ -6910,6 +6922,7 @@ function flyWithHelicopterEffectPath(path, token, callback) {
         // Main position along the curve
         const pos = curve.getPoint(t);
         const nextPos = curve.getPoint(Math.min(t + 0.01, 1));
+        const prevPos = curve.getPoint(Math.max(t - 0.01, 0));
         const direction = new THREE.Vector3().subVectors(nextPos, pos).normalize();
         const angle = Math.atan2(direction.x, direction.z);
 
@@ -6919,11 +6932,16 @@ function flyWithHelicopterEffectPath(path, token, callback) {
         // --- Add subtle yaw oscillation (side-to-side) ---
         const yawOscillation = Math.sin(t * Math.PI * 2) * 0.13; // 2 cycles, 0.13 radians
 
+        // --- Add banking effect based on curve ---
+        const curveDelta = new THREE.Vector3().subVectors(nextPos, prevPos).normalize();
+        const turnAmount = curveDelta.x * direction.z - curveDelta.z * direction.x;
+        const bank = THREE.MathUtils.clamp(turnAmount * 1.8, -0.45, 0.45); // Bank left/right
+
         // No left/right tilt: rotation.x = 0
         if (animatedModel) {
             animatedModel.position.set(pos.x, pos.y + bobbingY, pos.z);
             animatedModel.rotation.set(
-                0, // No tilt
+                bank, // Banking tilt
                 angle + modelOffsetAngle + yawOscillation,
                 0
             );
@@ -6932,7 +6950,7 @@ function flyWithHelicopterEffectPath(path, token, callback) {
         } else {
             token.position.set(pos.x, pos.y + bobbingY, pos.z);
             token.rotation.set(
-                0,
+                bank,
                 angle + modelOffsetAngle + yawOscillation,
                 0
             );
