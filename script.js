@@ -7070,37 +7070,19 @@ function animate() {
         if (object.userData.mixer) object.userData.mixer.update(delta);
     });
 
-    if (isCenteringOnToken) {
-        if (isTokenMoving && selectedToken) {
-            // --- Follow token as before ---
-            controls.target.copy(selectedToken.position);
-            if (!userIsMovingCamera) {
-                const desiredPos = new THREE.Vector3(
-                    selectedToken.position.x + 2.5,
-                    selectedToken.position.y + 5,
-                    selectedToken.position.z + 2.5
-                );
-                camera.position.lerp(desiredPos, 0.18);
-            }
-            controls.update();
-            lastCameraMode = 'follow';
-        } else {
-            // --- Idle/orbit camera effect ---
-            idleCameraAngle += delta * 0.18; // Slow orbit
-            const x = idleCameraRadius * Math.cos(idleCameraAngle);
-            const z = idleCameraRadius * Math.sin(idleCameraAngle);
-            const y = idleCameraHeight;
-            const desiredPos = new THREE.Vector3(x, y, z);
-            // Smooth transition from follow to idle
-            if (lastCameraMode !== 'idle') {
-                camera.position.lerp(desiredPos, 0.12);
-            } else {
-                camera.position.copy(desiredPos);
-            }
-            controls.target.copy(idleCameraTarget);
-            controls.update();
-            lastCameraMode = 'idle';
+    if (isCenteringOnToken && selectedToken) {
+        // Only follow the token, never do idle/orbit anim
+        controls.target.copy(selectedToken.position);
+        if (!userIsMovingCamera) {
+            const desiredPos = new THREE.Vector3(
+                selectedToken.position.x + 2.5,
+                selectedToken.position.y + 5,
+                selectedToken.position.z + 2.5
+            );
+            camera.position.lerp(desiredPos, 0.18);
         }
+        controls.update();
+        lastCameraMode = 'follow';
     }
 
     renderer.render(scene, camera);
@@ -7162,7 +7144,20 @@ function addCenterOnTokenButton() {
         isCenteringOnToken = !isCenteringOnToken;
         centerOnTokenBtn.innerText = isCenteringOnToken ? 'Uncenter on Token' : 'Center on Token';
         if (isCenteringOnToken) {
-            focusCameraOnCurrentPlayerToken();
+            // Always set selectedToken to the current player's token or animated model if helicopter is moving
+            const currentPlayer = players[currentPlayerIndex];
+            if (currentPlayer.selectedToken) {
+                // If helicopter is moving, use animated model if visible
+                if (
+                    currentPlayer.selectedToken.userData.tokenName === 'helicopter' &&
+                    currentPlayer.selectedToken.userData.animatedModel &&
+                    currentPlayer.selectedToken.userData.animatedModel.visible
+                ) {
+                    selectedToken = currentPlayer.selectedToken.userData.animatedModel;
+                } else {
+                    selectedToken = currentPlayer.selectedToken;
+                }
+            }
         }
     };
     document.body.appendChild(centerOnTokenBtn);
