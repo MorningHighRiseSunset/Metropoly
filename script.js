@@ -12,7 +12,9 @@ import {
 import {
     FontLoader
 } from '../libs/FontLoader.js';
-import { CatmullRomCurve3 } from '../libs/three.module.js';
+import {
+    CatmullRomCurve3
+} from '../libs/three.module.js';
 
 // Initialize the GLTFLoader
 const loader = new GLTFLoader();
@@ -23,38 +25,64 @@ loader.register((parser) => new GLTFMaterialsPbrSpecularGlossinessExtension(pars
 let camera, scene, renderer, controls;
 const clock = new THREE.Clock();
 
-let editMode = false;
+let currentPlayerIndex = 0;
+let players = [
+    { name: "Player 1", money: 5000, properties: [], selectedToken: null, currentPosition: 0 },
+    { name: "Player 2", money: 5000, properties: [], selectedToken: null, currentPosition: 0 },
+    { name: "Player 3", money: 5000, properties: [], selectedToken: null, currentPosition: 0 },
+    { name: "Player 4", money: 5000, properties: [], selectedToken: null, currentPosition: 0 }
+];
+
+let selectedToken = null;
+let tokenSelectionUI = null;
+let popupGroup;
+let raycaster, mouse;
+
 let aiPlayers = new Set();
+let aiPlayerIndices = [];
 let initialSelectionComplete = false;
 let humanPlayerCount = 0;
+
 let allowedToRoll = true;
-let diceContainer = null;
-let aiPlayerIndices = [];
-let lastPlayerIndex = -1;
+let isTurnInProgress = false;
 let isTokenMoving = false;
+let isAIProcessing = false;
+let hasTakenAction = false;
+let hasDrawnCard = false;
+let hasRolledDice = false;
+let hasMovedToken = false;
+let hasHandledProperty = false;
+let turnCounter = 0;
+let lastPlayerIndex = -1;
+
+let cameraFollowMode = true; // Start with camera following token
+let userIsMovingCamera = false;
+
 let idleModel, walkModel;
 let idleMixer, walkMixer;
 let currentAnimation = null;
-let isTurnInProgress = false;
-let followCamera; // Secondary camera for following tokens// Flag to track if the follow camera is active
-let hasTakenAction = false; // Tracks if the player has taken an action
-let hasDrawnCard = false; // Global flag to track card drawing
-let hasRolledDice = false; // Tracks if the dice have been rolled
-let hasMovedToken = false; // Tracks if the token has been moved
-let hasHandledProperty = false; // Tracks if the property has been handled
-let isAIProcessing = false;
-let turnCounter = 0;
-let idleCameraAngle = 0;
-let idleCameraRadius = 38;
-let idleCameraHeight = 18;
+let rollsRoyceIdleAnim = null;
+let helicopterHoverAnim = null;
+let currentlyMovingToken = null;
+let hatIdleAnim = null;
+let nikeIdleAnim = null;
+let footballIdleAnim = null;
+let burgerIdleAnim = null;
+
+let followCamera; // For secondary camera if used
+let idleCameraAngle = 0, idleCameraRadius = 38, idleCameraHeight = 18;
 let idleCameraTarget = new THREE.Vector3(0, 0, 0);
 let lastCameraMode = null;
-let rollsRoyceIdleAnim = null;
 
-// 1. Set cutscene cam OFF by default
-let isCenteringOnToken = true;
+let propertyOptionsUI = null;
+let gameStarted = false;
+let diceContainer = null;
 
-// Initialize audio with proper settings
+let editMode = false;
+let draggedObject = null;
+let isPopupVisible = false;
+
+// --- Audio ---
 let accelerationSound = new Audio('');
 accelerationSound.preload = 'auto';
 accelerationSound.load();
@@ -62,6 +90,38 @@ accelerationSound.load();
 window.addEventListener('mousedown', onMouseDown);
 window.addEventListener('mousemove', onMouseMove);
 window.addEventListener('mouseup', onMouseUp);
+
+function getCurrentPlayerToken() {
+    const currentPlayer = players[currentPlayerIndex];
+    if (!currentPlayer) return null;
+    const token = currentPlayer.selectedToken;
+    if (token && token.parent && token.visible) return token;
+    if (DEBUG) {
+        console.warn('[CameraFollow] No valid token for player', currentPlayerIndex, currentPlayer);
+    }
+    return null;
+}
+
+function updateCameraFollowUI() {
+    const btn = document.getElementById('camera-follow-toggle');
+    const indicator = document.getElementById('camera-follow-indicator');
+    if (btn) btn.innerText = cameraFollowMode ? 'Unfollow Token (F)' : 'Follow Token (F)';
+    if (btn) btn.style.background = cameraFollowMode ? '#4caf50' : '#222';
+    if (indicator) indicator.style.display = cameraFollowMode ? 'block' : 'none';
+}
+
+function toggleCameraFollowMode() {
+    cameraFollowMode = !cameraFollowMode;
+    updateCameraFollowUI();
+    console.log('Camera follow mode:', cameraFollowMode);
+}
+
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'KeyF') {
+        console.log('F key pressed');
+        toggleCameraFollowMode();
+    }
+});
 
 const images = [
     "Images/p-las-vegas-motor-speedway_55_660x440_201404181828.webp", // Grand Prix
@@ -72,7 +132,7 @@ const images = [
     // Brothel
     "Images/693695_050215-ap-mayweather-img.jpg",
     //"Images/Screenshot 2024-12-12 033702.png", 
-    "",// Brothel
+    "", // Brothel
     "Images/1.png", // Luxury Tax
     // Bellagio
     "Images/11929141633_b4ab5fd45e_k.webp", // Horseback Riding
@@ -303,14 +363,14 @@ const properties = [{
         price: 100,
         rent: 10,
         owner: null,
-        address: "",
+        address: "3333 Al Davis Way, Las Vegas, NV 89118 (Allegiant Stadium)",
         color: "brown",
         mortgageValue: 50,
         housePrice: 50,
         hotelPrice: 250,
         rentWithHouse: [50, 150, 450, 625],
         rentWithHotel: 750,
-        videoUrls: [ 
+        videoUrls: [
             "Videos/LVRaidersVid.mp4",
             "Videos/LVRaiders 2.mp4",
             "Videos/LVRaiders 3.mp4",
@@ -321,9 +381,7 @@ const properties = [{
     {
         name: "Community Cards",
         type: "special",
-        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
-
-        ],
+        videoUrls: [],
         description: "Draw a Community Card!",
         special: true
     },
@@ -339,7 +397,7 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [60, 180, 500, 700],
         rentWithHotel: 900,
-        videoUrls: [ 
+        videoUrls: [
             "Videos/LV Grand Prix.mp4",
             "Videos/LV Grand Prix End.mp4",
         ],
@@ -349,7 +407,7 @@ const properties = [{
         name: "Income Tax",
         type: "tax",
         price: 200,
-        imageUrls: ["Images/Uncle-Sam-1.jpg"], // <-- use an array
+        imageUrls: ["Images/Uncle-Sam-1.jpg"],
         description: "Pay Income Tax: $200 or 10% of your total worth",
         special: true
     },
@@ -359,10 +417,10 @@ const properties = [{
         rent: 25,
         owner: null,
         type: "railroad",
-        address: "",
+        address: "2535 S Las Vegas Blvd, Las Vegas, NV 89109",
         mortgageValue: 100,
         rentWithRailroads: [25, 50, 100, 200],
-        videoUrls: [ "Videos/Monorail.mp4" ],
+        videoUrls: ["Videos/Monorail.mp4"],
         customBuyLabel: "Buy a ticket",
         noRent: true
     },
@@ -371,23 +429,21 @@ const properties = [{
         price: 140,
         rent: 14,
         owner: null,
-        address: "",
+        address: "14200 S Las Vegas Blvd, Las Vegas, NV 89054 (SPEEDVEGAS)",
         color: "lightblue",
         mortgageValue: 70,
         housePrice: 100,
         hotelPrice: 250,
         rentWithHouse: [70, 200, 550, 750],
         rentWithHotel: 950,
-        videoUrls: [ "Videos/Offroading 1.mp4" ],
+        videoUrls: ["Videos/Offroading 1.mp4"],
         customBuyLabel: "Rent a dune buggy",
         noRent: true
     },
     {
         name: "Chance",
         type: "special",
-        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
-
-        ],
+        videoUrls: [],
         description: "Draw a Chance card!",
         special: true
     },
@@ -396,43 +452,40 @@ const properties = [{
         price: 160,
         rent: 16,
         owner: null,
-        address: "",
+        address: "3780 S Las Vegas Blvd, Las Vegas, NV 89158 (T-Mobile Arena)",
         color: "lightblue",
         mortgageValue: 80,
         housePrice: 100,
         hotelPrice: 250,
         rentWithHouse: [80, 220, 600, 800],
         rentWithHotel: 1000,
-        videoUrls: [
-            // Add video URLs here if available
-        ],
+        videoUrls: [],
         customBuyLabel: "Buy a ticket",
     },
     {
         name: "JAIL",
-        price: 100, // Example price for the property
-        rent: 10, // Example rent for landing on it
+        price: 100,
+        rent: 10,
         owner: null,
         address: "Jail Square",
-        color: "gray", // Assign a color for the property
+        color: "gray",
         mortgageValue: 50,
         description: "Pay rent if owned, or just visit if unowned.",
-        videoUrls: [
-        ]
+        videoUrls: []
     },
     {
         name: "Maverick Helicopter Rides",
         price: 220,
         rent: 22,
         owner: null,
-        address: "",
+        address: "6075 S Las Vegas Blvd, Las Vegas, NV 89119",
         color: "pink",
         mortgageValue: 110,
         housePrice: 150,
         hotelPrice: 250,
         rentWithHouse: [110, 330, 800, 975],
         rentWithHotel: 1150,
-        videoUrls: [ 
+        videoUrls: [
             "Videos/MavHeli1.mp4",
             "Videos/MavHeli2.mp4",
             "Videos/MavHeli3.mp4",
@@ -444,14 +497,14 @@ const properties = [{
         price: 1500,
         rent: 300,
         owner: null,
-        address: "",
+        address: "Nevada Brothel (Fictional)",
         color: "pink",
         mortgageValue: 75,
         housePrice: 100,
         hotelPrice: 250,
         rentWithHouse: [75, 225, 675, 900],
         rentWithHotel: 1100,
-        videoUrls: [ "Videos/tapDancingWomen.mp4", "Videos/BrothelVid.mp4" ],
+        videoUrls: ["Videos/tapDancingWomen.mp4", "Videos/BrothelVid.mp4"],
         customBuyLabel: "Buy 1 night for 1500",
         customRentLabel: "Rent a room for 300",
         noRent: true
@@ -479,12 +532,12 @@ const properties = [{
         rentWithHouse: [150, 450, 1000, 1200],
         rentWithHotel: 1400,
         isPenthouse: true,
-        videoUrls: [ 
+        videoUrls: [
             "Videos/MGMBoxing 1.mp4",
             "Videos/MGMBoxing 2.mp4",
             "Videos/MGMBoxing 3.mp4",
         ],
-        customBuyLabel: "Buy ticket", // Added/updated label
+        customBuyLabel: "Buy ticket",
     },
     {
         name: "Bellagio",
@@ -499,16 +552,12 @@ const properties = [{
         rentWithHouse: [200, 600, 1400, 1700],
         rentWithHotel: 2000,
         isPenthouse: true,
-        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
-
-        ],
+        videoUrls: [],
     },
     {
         name: "Community Cards",
         type: "special",
-        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
-
-        ],
+        videoUrls: [],
         description: "Draw a Community Card!",
         special: true
     },
@@ -524,22 +573,20 @@ const properties = [{
         price: 340,
         rent: 34,
         owner: null,
-        address: "",
+        address: "Red Rock Canyon National Conservation Area, Las Vegas, NV",
         color: "orange",
         mortgageValue: 170,
         housePrice: 200,
         hotelPrice: 250,
         rentWithHouse: [220, 650, 1500, 1850],
         rentWithHotel: 2100,
-        videoUrls: [ "Videos/horse6.mp4" ],
+        videoUrls: ["Videos/horse6.mp4"],
         customBuyLabel: "Buy a ticket",
     },
     {
         name: "Chance",
         type: "special",
-        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
-
-        ],
+        videoUrls: [],
         description: "Draw a Chance card!",
         special: true
     },
@@ -556,9 +603,7 @@ const properties = [{
         rentWithHouse: [250, 750, 1600, 1950],
         rentWithHotel: 2200,
         isPenthouse: true,
-        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
-
-        ],
+        videoUrls: [],
     },
     {
         name: "Water Works",
@@ -575,23 +620,21 @@ const properties = [{
         price: 480,
         rent: 0,
         owner: null,
-        address: "",
+        address: "255 Sands Ave, Las Vegas, NV 89169 (The Sphere)",
         color: "yellow",
         mortgageValue: 240,
         housePrice: 200,
         hotelPrice: 250,
         rentWithHouse: [280, 850, 2000, 2200],
         rentWithHotel: 2400,
-        videoUrls: [ "Videos/Sphere.mp4" ],
+        videoUrls: ["Videos/Sphere.mp4"],
         customBuyLabel: "Buy a ticket",
         noRent: true
     },
     {
         name: "GO TO JAIL",
         type: "special",
-        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
-
-        ],
+        videoUrls: [],
         description: "Go directly to Jail. Do not pass GO. Do not collect $200.",
         special: true
     },
@@ -608,9 +651,7 @@ const properties = [{
         rentWithHouse: [300, 900, 2200, 2400],
         rentWithHotel: 2600,
         isPenthouse: true,
-        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
-
-        ],
+        videoUrls: [],
     },
     {
         name: "Santa Fe Hotel and Casino",
@@ -625,16 +666,12 @@ const properties = [{
         rentWithHouse: [320, 950, 2300, 2500],
         rentWithHotel: 2700,
         isPenthouse: true,
-        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
-
-        ],
+        videoUrls: [],
     },
     {
         name: "Chance",
         type: "special",
-        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
-
-        ],
+        videoUrls: [],
         description: "Draw a Chance card!",
         special: true
     },
@@ -642,7 +679,7 @@ const properties = [{
         name: "Luxury Tax",
         type: "tax",
         price: 75,
-        imageUrls: ["Images/luxuryTax.png"], // <-- always array
+        imageUrls: ["Images/luxuryTax.png"],
         description: "Pay Luxury Tax of $75",
         special: true
     },
@@ -659,7 +696,7 @@ const properties = [{
         rentWithHouse: [330, 1000, 2400, 2600],
         rentWithHotel: 2800,
         isPenthouse: true,
-        videoUrls: [ ],
+        videoUrls: [],
         customBuyLabel: "Buy a ticket",
     },
     {
@@ -679,10 +716,9 @@ const properties = [{
     },
     {
         name: "Community Cards",
-        type: "special",
-        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
 
-        ],
+        type: "special",
+        videoUrls: [],
         description: "Draw a Community Card!",
         special: true
     },
@@ -691,14 +727,14 @@ const properties = [{
         price: 320,
         rent: 32,
         owner: null,
-        address: "",
+        address: "3950 S Las Vegas Blvd, Las Vegas, NV 89119 (Michelob ULTRA Arena)",
         color: "orange",
         mortgageValue: 160,
         housePrice: 200,
         hotelPrice: 250,
         rentWithHouse: [210, 625, 1450, 1750],
         rentWithHotel: 2050,
-        videoUrls: [ 
+        videoUrls: [
             "Videos/WNBAHL1.mp4",
             "Videos/WNBAHL2.mp4",
             "Videos/WNBAHL3.mp4",
@@ -710,7 +746,7 @@ const properties = [{
         price: 300,
         rent: 0,
         owner: null,
-        address: "",
+        address: "3000 S Las Vegas Blvd, Las Vegas, NV 89109 (Resorts World)",
         color: "red",
         mortgageValue: 180,
         housePrice: 200,
@@ -734,9 +770,7 @@ const properties = [{
         rentWithHouse: [260, 800, 1900, 2100],
         rentWithHotel: 2300,
         isPenthouse: true,
-        videoUrls: [ // Changed from imageUrls to videoUrls for clarity
-
-        ],
+        videoUrls: [],
     },
     {
         name: "Shriners Children's Open",
@@ -750,7 +784,7 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [270, 825, 1950, 2150],
         rentWithHotel: 2350,
-        videoUrls: [ 
+        videoUrls: [
             "Videos/Shriners 1.mp4",
             "Videos/Shriners 3.mp4",
             "Videos/Shriners 4.mp4",
@@ -859,66 +893,8 @@ const communityChestCards = [
     "Collect $100 for a lucky slot machine spin.", // Increased from $50
 ];
 
-let enableXMovement = true;
-let enableZMovement = true;
-
-let propertyOptionsUI = null;
-const loadingManager = new THREE.LoadingManager();
-let currentPlayerIndex = 0;
-const horizontalGridSize = 0.1;
-const verticalGridSize = 0.5;
-let draggedObject = null;
-let offset = new THREE.Vector3();
-let isMoving = false;
-let imagePlaceholders = [];
-let propertyPlaceholders = [];
-let carouselPlaceholder;
-let currentCarouselImage = 0;
-let lastCarouselUpdate = 0;
-let raycaster;
-let mouse;
-let popupGroup;
-let isPopupVisible = false;
-let readyBuffer;
-let audioContext;
-let selectedToken = null;
-let currentPosition = 0;
-let gameStarted = false;
-let tokenSelectionUI = null;
-
-let players = [{
-        name: "Player 1",
-        money: 5000,
-        properties: [],
-        selectedToken: null,
-        currentPosition: 0
-    },
-    {
-        name: "Player 2",
-        money: 5000,
-        properties: [],
-        selectedToken: null,
-        currentPosition: 0
-    },
-    {
-        name: "Player 3",
-        money: 5000,
-        properties: [],
-        selectedToken: null,
-        currentPosition: 0
-    },
-    {
-        name: "Player 4",
-        money: 5000,
-        properties: [],
-        selectedToken: null,
-        currentPosition: 0
-    }
-];
-
 // filepath: c:\Users\DELL\Metropoly\script.js
-let availableTokens = [
-    {
+let availableTokens = [{
         name: "hat",
         displayName: "Top Hat"
     },
@@ -931,8 +907,8 @@ let availableTokens = [
         displayName: "Rolls Royce"
     },
     //{
-        //name: "speed boat",
-        //displayName: "Speed Boat"
+    //name: "speed boat",
+    //displayName: "Speed Boat"
     //},
     {
         name: "football",
@@ -969,6 +945,43 @@ function startTurn() {
     } else {
         enableHumanTurn(currentPlayer);
     }
+
+    const originalEndTurn = endTurn;
+    endTurn = function() {
+        originalEndTurn.apply(this, arguments);
+        if (cameraFollowMode) {
+            setTimeout(() => {
+                const currentPlayer = players[currentPlayerIndex];
+                if (currentPlayer && currentPlayer.selectedToken) {
+                    controls.target.copy(currentPlayer.selectedToken.position);
+                    camera.position.lerp(new THREE.Vector3(
+                        currentPlayer.selectedToken.position.x + 4,
+                        currentPlayer.selectedToken.position.y + 7,
+                        currentPlayer.selectedToken.position.z + 4
+                    ), 1.0);
+                    controls.update();
+                }
+            }, 400);
+        }
+    };
+    const originalStartTurn = startTurn;
+    startTurn = function() {
+        originalStartTurn.apply(this, arguments);
+        if (cameraFollowMode) {
+            setTimeout(() => {
+                const currentPlayer = players[currentPlayerIndex];
+                if (currentPlayer && currentPlayer.selectedToken) {
+                    controls.target.copy(currentPlayer.selectedToken.position);
+                    camera.position.lerp(new THREE.Vector3(
+                        currentPlayer.selectedToken.position.x + 4,
+                        currentPlayer.selectedToken.position.y + 7,
+                        currentPlayer.selectedToken.position.z + 4
+                    ), 1.0);
+                    controls.update();
+                }
+            }, 400);
+        }
+    };
 }
 
 function toggleAI(token, button) {
@@ -1008,13 +1021,12 @@ function toggleAI(token, button) {
             currentPlayer.isAI = true;
             aiPlayerIndices.push(aiPlayerIndex);
 
-            // Find and set up the token
-            const selectedTokenObject = scene.children.find(obj => obj.userData.tokenName === token.name);
+            // Use loadedTokenModels for robust assignment
+            const selectedTokenObject = window.loadedTokenModels && window.loadedTokenModels[token.name];
             if (selectedTokenObject) {
-                selectedTokenObject.visible = true;
-                selectedTokenObject.position.set(22.5, 2.5, 22.5);
-                selectedTokenObject.userData.playerIndex = aiPlayerIndex;
                 currentPlayer.selectedToken = selectedTokenObject;
+                selectedTokenObject.visible = true;
+                selectedTokenObject.traverse(child => { child.visible = true; });
             }
 
             aiPlayers.add(token.name);
@@ -1501,130 +1513,80 @@ function hideTokenSpinner(tokenName) {
     if (spinner) spinner.remove();
 }
 
+
+
 // 2. Replace your createTokens function with this:
-function createTokens() {
+function createTokens(onAllLoaded) {
     const loader = new GLTFLoader();
-    // Track loaded models by tokenName
     window.loadedTokenModels = {};
-    // Store callbacks for when a model loads and is needed
-    window.tokenModelReadyCallbacks = {};
 
-    const tokenSetup = (model, tokenName, heightOffset = 2.5) => {
-        model.traverse((object) => {
-            if (object.isMesh) {
-                object.castShadow = true;
-                object.receiveShadow = true;
-            }
-        });
-        model.visible = false;
-        model.userData.isToken = true;
-        model.userData.tokenName = tokenName;
-        model.position.set(22.5, heightOffset, 22.5);
-        scene.add(model);
-        // Mark as loaded
-        loadedTokenModels[tokenName] = model;
-        // If a player has already selected this token, assign it now
-        if (window.tokenModelReadyCallbacks[tokenName]) {
-            window.tokenModelReadyCallbacks[tokenName](model);
-            delete window.tokenModelReadyCallbacks[tokenName];
-        }
-        // Update start button state if needed
-        if (typeof updateStartButtonVisibility === 'function') updateStartButtonVisibility();
-    };
+    const tokenList = [
+        { name: 'rolls royce', path: 'Models/rolls-royce_ghost/rollsRoyceCarAnim.glb', scale: [0.9, 0.9, 0.9] },
+        { name: 'helicopter', path: 'Models/Helicopter/blueHelicopter.glb', scale: [0.01, 0.01, 0.01] },
+        { name: 'nike', path: 'Models/nike_air_zoom_pegasus_36/scene.gltf', scale: [1.5, 1.5, 1.5] },
+        { name: 'burger', path: 'Models/mcdonalds_big_mac/scene.gltf', scale: [3.5, 3.5, 3.5] },
+        { name: 'hat', path: 'Models/top_hat__free_download/tophat.gltf', scale: [0.5, 0.5, 0.5] },
+        { name: 'football', path: 'Models/wilson_football/football.gltf', scale: [0.1, 0.1, 0.1] },
+        { name: 'woman', path: 'Models/ModelIdleAnim/WhiteGirlBlackandRedOutfit.gltf', scale: [0.02, 0.02, 0.02] }
+    ];
 
-    function loadTokenModel(path, tokenName, scale, heightOffset, onLoaded) {
-        loader.load(path, (gltf) => {
+    let loadedCount = 0;
+
+    tokenList.forEach(tokenInfo => {
+        loader.load(tokenInfo.path, (gltf) => {
             const model = gltf.scene;
-            model.scale.set(...scale);
-            tokenSetup(model, tokenName, heightOffset);
-            if (onLoaded) onLoaded(model, gltf);
-        }, undefined, (error) => {
-            console.error(`Error loading the ${tokenName} model:`, error);
-        });
-    }
+            model.scale.set(...tokenInfo.scale);
+            model.visible = false;
+            model.userData.isToken = true;
+            model.userData.tokenName = tokenInfo.name;
+            model.position.set(22.5, 3.0, 22.5);
+            scene.add(model);
 
-    loadTokenModel('Models/nike_air_zoom_pegasus_36/scene.gltf', 'nike', [1.5, 1.5, 1.5], 3.0);
-    loadTokenModel('Models/mcdonalds_big_mac/scene.gltf', 'burger', [3.5, 3.5, 3.5], 3.0);
-    loadTokenModel('Models/rolls-royce_ghost/scene.gltf', 'rolls royce', [0.9, 0.9, 0.9], 3.0, (staticModel) => {
-        // Load animated model with wheel animations
-        loader.load('Models/rolls-royce_ghost/rollsRoyceCarAnim.glb', (gltf) => {
-            const animatedModel = gltf.scene;
-            animatedModel.scale.set(0.9, 0.9, 0.9);
-            animatedModel.visible = false;
-            animatedModel.position.copy(staticModel.position);
-            animatedModel.userData.tokenName = 'rolls royce';
-            scene.add(animatedModel);
-            staticModel.userData.animatedModel = animatedModel;
-            // Setup animation mixer and play all animations
+            // Animation setup for tokens with animations
             if (gltf.animations && gltf.animations.length > 0) {
-                animatedModel.userData.mixer = new THREE.AnimationMixer(animatedModel);
-                animatedModel.userData.actions = [];
-                gltf.animations.forEach(anim => {
-                    const action = animatedModel.userData.mixer.clipAction(anim);
-                    action.play();
-                    animatedModel.userData.actions.push(action);
-                });
+                model.userData.mixer = new THREE.AnimationMixer(model);
+            
+                // Woman: idle and walk
+                if (tokenInfo.name === "woman") {
+                    model.userData.idleAction = model.userData.mixer.clipAction(gltf.animations[0]);
+                    model.userData.idleAction.play();
+                    if (gltf.animations[1]) {
+                        model.userData.walkAction = model.userData.mixer.clipAction(gltf.animations[1]);
+                    }
+                }
+                // Rolls Royce & Helicopter: play all animations (wheels/rotors spinning)
+                else if (tokenInfo.name === "rolls royce" || tokenInfo.name === "helicopter") {
+                    model.userData.mixer = new THREE.AnimationMixer(model);
+                    model.userData.actions = [];
+                    gltf.animations.forEach(anim => {
+                        const action = model.userData.mixer.clipAction(anim);
+                        action.play();
+                        model.userData.actions.push(action);
+                    });
+                }
+                // Other tokens: play all animations (if any)
+                else {
+                    model.userData.actions = [];
+                    gltf.animations.forEach(anim => {
+                        const action = model.userData.mixer.clipAction(anim);
+                        action.play();
+                        model.userData.actions.push(action);
+                    });
+                }
+            }
+
+            window.loadedTokenModels[tokenInfo.name] = model;
+            loadedCount++;
+            if (loadedCount === tokenList.length && typeof onAllLoaded === 'function') {
+                onAllLoaded();
+            }
+        }, undefined, (err) => {
+            console.error(`Error loading model for ${tokenInfo.name}:`, err);
+            loadedCount++;
+            if (loadedCount === tokenList.length && typeof onAllLoaded === 'function') {
+                onAllLoaded();
             }
         });
-    });
-    loadTokenModel('Models/speed_boat_05/speedeboatscene.gltf', 'speed boat', [1.2, 1.2, 1.2], 3.0);
-    loadTokenModel('Models/top_hat__free_download/tophat.gltf', 'hat', [0.5, 0.5, 0.5], 3.0);
-    loadTokenModel('Models/wilson_football/football.gltf', 'football', [0.1, 0.1, 0.1], 3.0);
-    loadTokenModel('Models/Helicopter/helicopter.glb', 'helicopter', [0.01, 0.01, 0.01], 3.0, (staticModel) => {
-        loader.load('Models/Helicopter/blueHelicopter.glb', (gltf) => {
-            const animatedModel = gltf.scene;
-            animatedModel.scale.set(0.01, 0.01, 0.01);
-            animatedModel.visible = false;
-            animatedModel.position.copy(staticModel.position);
-            animatedModel.userData.tokenName = 'helicopter';
-            scene.add(animatedModel);
-            staticModel.userData.animatedModel = animatedModel;
-            if (gltf.animations && gltf.animations.length > 0) {
-                animatedModel.userData.mixer = new THREE.AnimationMixer(animatedModel);
-                animatedModel.userData.actions = [];
-                gltf.animations.forEach(anim => {
-                    const action = animatedModel.userData.mixer.clipAction(anim);
-                    action.play();
-                    animatedModel.userData.actions.push(action);
-                });
-            }
-        });
-    });
-
-    // Woman token (with animation)
-    loader.load('../Models/ModelIdleAnim/WhiteGirlBlackandRedOutfit.gltf', function (gltf) {
-        const whiteGirlModel = gltf.scene;
-        whiteGirlModel.traverse((child) => {
-            if (child.isMesh) {
-                child.material.transparent = false;
-                child.material.depthWrite = true;
-            }
-        });
-        whiteGirlModel.scale.set(0.02, 0.02, 0.02);
-        tokenSetup(whiteGirlModel, 'woman', 0.5);
-
-        const idleMixer = new THREE.AnimationMixer(whiteGirlModel);
-        const idleAction = idleMixer.clipAction(gltf.animations[0]);
-        idleAction.clampWhenFinished = true;
-        idleAction.loop = THREE.LoopRepeat;
-        idleAction.play();
-
-        whiteGirlModel.userData.idleMixer = idleMixer;
-        whiteGirlModel.userData.idleAction = idleAction;
-
-        loader.load('../Models/ModelWalkAnim/WhiteGirlBlackandRedOutfitWalk.gltf', function (walkGltf) {
-            const walkMixer = new THREE.AnimationMixer(whiteGirlModel);
-            const walkAction = walkMixer.clipAction(walkGltf.animations[0]);
-            walkAction.clampWhenFinished = true;
-            walkAction.loop = THREE.LoopRepeat;
-
-            whiteGirlModel.userData.walkMixer = walkMixer;
-            whiteGirlModel.userData.walkAction = walkAction;
-        }, undefined, function (error) {
-            console.error(error);
-        });
-    }, undefined, function (error) {
-        console.error(error);
     });
 }
 
@@ -1645,9 +1607,9 @@ function hopWithNikeEffect(startPos, endPos, token, callback) {
         const progress = Math.min(elapsed / duration, 1);
 
         // Easing function for smooth animation
-        const easeProgress = progress < 0.5
-            ? 2 * progress * progress
-            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+        const easeProgress = progress < 0.5 ?
+            2 * progress * progress :
+            1 - Math.pow(-2 * progress + 2, 2) / 2;
 
         // Calculate the current position
         const currentX = startPos.x + (endPos.x - startPos.x) * easeProgress;
@@ -1698,9 +1660,9 @@ function jumpWithBigMacEffect(startPos, endPos, token, callback) {
         const progress = Math.min(elapsed / duration, 1);
 
         // Easing function for smooth animation
-        const easeProgress = progress < 0.5
-            ? 2 * progress * progress
-            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+        const easeProgress = progress < 0.5 ?
+            2 * progress * progress :
+            1 - Math.pow(-2 * progress + 2, 2) / 2;
 
         // Calculate the current position
         const currentX = startPos.x + (endPos.x - startPos.x) * easeProgress;
@@ -2151,6 +2113,7 @@ function showPropertyUI(position) {
 
     // --- Video on top ---
     let mediaShown = false;
+
     function showImageFallback() {
         let imageUrl = null;
         if (Array.isArray(property.imageUrls) && property.imageUrls.length > 0) {
@@ -2266,6 +2229,18 @@ function showPropertyUI(position) {
     titleDiv.style.textAlign = 'center';
     titleDiv.textContent = property.name;
     content.appendChild(titleDiv);
+
+    // --- Address under title (if present) ---
+    if (property.address && property.address.length > 0) {
+        const addressDiv = document.createElement('div');
+        addressDiv.className = 'property-address';
+        addressDiv.style.fontSize = '11px';
+        addressDiv.style.color = '#bbb';
+        addressDiv.style.margin = '0 0 6px 0';
+        addressDiv.style.textAlign = 'center';
+        addressDiv.textContent = property.address;
+        content.appendChild(addressDiv);
+    }
 
     // --- Details and buttons side by side ---
     const rowContainer = document.createElement('div');
@@ -2445,9 +2420,9 @@ function showJailUI(player) {
     // Add message
     const message = document.createElement('div');
     message.className = 'jail-message';
-    message.textContent = player.inJail
-        ? `${player.name} is in Jail for ${player.jailTurns} more turn(s).`
-        : `${player.name} is just visiting Jail.`;
+    message.textContent = player.inJail ?
+        `${player.name} is in Jail for ${player.jailTurns} more turn(s).` :
+        `${player.name} is just visiting Jail.`;
 
     // Add button container
     const buttonContainer = document.createElement('div');
@@ -2639,11 +2614,11 @@ function createButtonContainer(property) {
                     closePropertyUI();
                 } else {
                     showFeedback(
-                        property.isPenthouse
-                            ? "Not enough money to buy this penthouse!"
-                            : ticketProperties.includes(property.name)
-                                ? "Not enough money to buy a ticket!"
-                                : "Not enough money to buy this property!"
+                        property.isPenthouse ?
+                        "Not enough money to buy this penthouse!" :
+                        ticketProperties.includes(property.name) ?
+                        "Not enough money to buy a ticket!" :
+                        "Not enough money to buy this property!"
                     );
                 }
             };
@@ -3318,9 +3293,49 @@ function endTurn() {
         console.error("Error in endTurn:", error);
         isTurnInProgress = false; // Ensure the flag is reset even if an error occurs
     }
+
+    const originalEndTurn = endTurn;
+    endTurn = function() {
+        originalEndTurn.apply(this, arguments);
+        if (cameraFollowMode) {
+            setTimeout(() => {
+                const currentPlayer = players[currentPlayerIndex];
+                if (currentPlayer && currentPlayer.selectedToken) {
+                    controls.target.copy(currentPlayer.selectedToken.position);
+                    camera.position.lerp(new THREE.Vector3(
+                        currentPlayer.selectedToken.position.x + 4,
+                        currentPlayer.selectedToken.position.y + 7,
+                        currentPlayer.selectedToken.position.z + 4
+                    ), 1.0);
+                    controls.update();
+                }
+            }, 400);
+        }
+    };
+    const originalStartTurn = startTurn;
+    startTurn = function() {
+        originalStartTurn.apply(this, arguments);
+        if (cameraFollowMode) {
+            setTimeout(() => {
+                const currentPlayer = players[currentPlayerIndex];
+                if (currentPlayer && currentPlayer.selectedToken) {
+                    controls.target.copy(currentPlayer.selectedToken.position);
+                    camera.position.lerp(new THREE.Vector3(
+                        currentPlayer.selectedToken.position.x + 4,
+                        currentPlayer.selectedToken.position.y + 7,
+                        currentPlayer.selectedToken.position.z + 4
+                    ), 1.0);
+                    controls.update();
+                }
+            }, 400);
+        }
+    };
 }
 
 function startPlayerTurn(player) {
+    currentlyMovingToken = null;
+    isCenteringOnToken = false;
+    cameraFollowToken = null;
     selectedToken = player.selectedToken;
     isTokenMoving = false;
     console.log(`Starting turn for Player ${currentPlayerIndex + 1} (${player.name})`);
@@ -3422,13 +3437,15 @@ function createPlayerTokenSelectionUI(playerIndex) {
     tokenGrid.style.padding = (window.innerWidth < 700) ? "2vw" : "5px";
 
     if (window.innerWidth < 700) {
-    tokenGrid.style.maxHeight = "60vh";
-    tokenGrid.style.overflowY = "auto";
-}
+        tokenGrid.style.maxHeight = "60vh";
+        tokenGrid.style.overflowY = "auto";
+    }
 
     availableTokens.forEach((token, index) => {
-        const tokenButton = createTokenButton(token, index);
-        tokenGrid.appendChild(tokenButton);
+        if (window.loadedTokenModels && window.loadedTokenModels[token.name]) {
+            const tokenButton = createTokenButton(token, index);
+            tokenGrid.appendChild(tokenButton);
+        }
     });
 
     const startButton = document.createElement("button");
@@ -3501,7 +3518,7 @@ function createPlayerTokenSelectionUI(playerIndex) {
     updateStartButtonVisibility();
 
     // Overwrite updateStartButtonVisibility to handle flashing and arrows
-    window.updateStartButtonVisibility = function () {
+    window.updateStartButtonVisibility = function() {
         const count = humanPlayerCount + aiPlayers.size;
         // Check if all selected tokens are loaded
         let allTokensLoaded = true;
@@ -3539,29 +3556,17 @@ function finalizePlayerSelection() {
 
     // Rebuild the players array with correct indices and properties
     players = selectedPlayers.map((player, idx) => {
-        // Find and set up the token
-        const tokenObject = scene.children.find(obj =>
-            obj.userData.isToken &&
-            obj.userData.tokenName === player.tokenName
-        );
-        if (tokenObject) {
-            tokenObject.visible = true;
-            const startPos = positions[0];
-            tokenObject.position.set(startPos.x, 2.5, startPos.z);
-            tokenObject.userData.playerIndex = idx;
-
-            // Remove any existing highlights/indicators
-            tokenObject.children = tokenObject.children.filter(
-                child => !child.userData.isHighlight && !child.userData.isPlayerIndicator
-            );
-
+        // Use loadedTokenModels for all tokens (robust assignment)
+        const token = window.loadedTokenModels && window.loadedTokenModels[player.tokenName];
+        if (token) {
+            token.visible = false; // Keep invisible until first move
+            player.selectedToken = token;
         }
-
         return {
             name: `Player ${idx + 1}`,
             money: 5000,
             properties: [],
-            selectedToken: tokenObject || null,
+            selectedToken: token || null,
             tokenName: player.tokenName,
             currentPosition: 0,
             isAI: aiPlayers.has(player.tokenName),
@@ -3705,7 +3710,7 @@ function addPropertyText(property, name) {
         plane.scale.set(-1, 1, 1); // Remove the horizontal mirroring
 
         group.add(plane);
-        addDiamondSparkleToPlane(plane); 
+        addDiamondSparkleToPlane(plane);
 
         xOffset += letterSpacing; // Move to the next letter position
     });
@@ -3727,9 +3732,15 @@ function addDiamondSparkleToPlane(plane) {
         ctx.clearRect(0, 0, 32, 32);
         ctx.globalAlpha = 0.7;
         ctx.beginPath();
-        ctx.moveTo(16, 0); ctx.lineTo(20, 12); ctx.lineTo(32, 16);
-        ctx.lineTo(20, 20); ctx.lineTo(16, 32); ctx.lineTo(12, 20);
-        ctx.lineTo(0, 16); ctx.lineTo(12, 12); ctx.closePath();
+        ctx.moveTo(16, 0);
+        ctx.lineTo(20, 12);
+        ctx.lineTo(32, 16);
+        ctx.lineTo(20, 20);
+        ctx.lineTo(16, 32);
+        ctx.lineTo(12, 20);
+        ctx.lineTo(0, 16);
+        ctx.lineTo(12, 12);
+        ctx.closePath();
         ctx.fillStyle = 'white';
         ctx.shadowColor = 'white';
         ctx.shadowBlur = 8;
@@ -3933,23 +3944,37 @@ function updateFollowCamera(token) {
 }
 
 function moveToken(startPos, endPos, token, callback) {
+    currentlyMovingToken = token;
+    isTokenMoving = true;
+    selectedToken = token;
     if (!token || !startPos || !endPos) {
         console.error("Invalid parameters passed to moveToken");
         return;
     }
 
-    isCenteringOnToken = true;
-    isTokenMoving = true;
-    selectedToken = token;
-
-    // No more setTimeout! Start movement immediately.
-    // Determine the animation based on the token type
+    // Stop idle animation for all tokens before moving
     const tokenName = token.userData.tokenName;
+    if (tokenName === "hat") stopHatIdle();
+    else if (tokenName === "burger") stopBurgerIdle();
+    else if (tokenName === "football") stopFootballIdle();
+    else if (tokenName === "nike") stopNikeIdle();
+    else if (tokenName === "woman") {
+        // Optionally stop idleAction if needed, but usually handled by playWalkAnimation
+    }
+    else if (tokenName === "rolls royce") stopRollsRoyceIdle();
+    else if (tokenName === "helicopter") stopHelicopterHover();
 
+    // Determine the animation based on the token type
     if (tokenName === "nike") {
         const nikeHeight = 0.7;
-        const adjustedStartPos = { ...startPos, y: startPos.y + nikeHeight };
-        const adjustedEndPos = { ...endPos, y: endPos.y + nikeHeight };
+        const adjustedStartPos = {
+            ...startPos,
+            y: startPos.y + nikeHeight
+        };
+        const adjustedEndPos = {
+            ...endPos,
+            y: endPos.y + nikeHeight
+        };
 
         hopWithNikeEffect(adjustedStartPos, adjustedEndPos, token, () => {
             finalizeMove(token, adjustedEndPos, callback);
@@ -3960,9 +3985,13 @@ function moveToken(startPos, endPos, token, callback) {
         });
     } else if (tokenName === "hat") {
         const hatRestingHeight = getTokenHeight('hat', endPos.y !== undefined ? endPos.y : 2);
-        jumpWithHatEffect(
-            { ...startPos, y: hatRestingHeight },
-            { ...endPos, y: hatRestingHeight },
+        jumpWithHatEffect({
+                ...startPos,
+                y: hatRestingHeight
+            }, {
+                ...endPos,
+                y: hatRestingHeight
+            },
             token,
             () => {
                 finalizeMove(token, endPos, callback);
@@ -3970,11 +3999,19 @@ function moveToken(startPos, endPos, token, callback) {
         );
     } else if (tokenName === "woman") {
         const womanHeight = 0.5;
-        const adjustedStartPos = { ...startPos, y: startPos.y + womanHeight };
-        const adjustedEndPos = { ...endPos, y: endPos.y + womanHeight };
+        const adjustedStartPos = {
+            ...startPos,
+            y: startPos.y + womanHeight
+        };
+        const adjustedEndPos = {
+            ...endPos,
+            y: endPos.y + womanHeight
+        };
 
         const duration = 1000;
         const startTime = Date.now();
+
+        playWalkAnimation(token);
 
         function animate() {
             const elapsed = Date.now() - startTime;
@@ -3995,28 +4032,21 @@ function moveToken(startPos, endPos, token, callback) {
             if (progress < 1) {
                 requestAnimationFrame(animate);
             } else {
+                stopWalkAnimation(token);
                 finalizeMove(token, adjustedEndPos, callback);
             }
         }
 
         animate();
-    } else if (tokenName === "speed boat") {
-        driveWithSpeedboatEffect(startPos, endPos, token, () => {
-            finalizeMove(token, endPos, callback);
-        });
-    } else if (tokenName === "rolls royce") {
-        driveWithRollsRoyceEffect(startPos, endPos, token, () => {
-            finalizeMove(token, endPos, callback);
-        });
-    } else if (tokenName === "helicopter") {
-        flyWithHelicopterEffectPath([startPos, endPos], token, () => {
-            finalizeMove(token, endPos, callback);
-        });
     } else if (tokenName === "football") {
-        const finalHeight = getTokenHeight(tokenName, endPos.y) + 1.0;
-        throwFootballAnimation(token, endPos, finalHeight, () => {
-            finalizeMove(token, endPos, callback);
-        });
+        // Football movement is handled elsewhere (throwFootballAnimation)
+        finalizeMove(token, endPos, callback);
+    } else if (tokenName === "rolls royce") {
+        // Rolls Royce handled by driveWithRollsRoyceEffect or driveRollsRoyceAlongPath
+        finalizeMove(token, endPos, callback);
+    } else if (tokenName === "helicopter") {
+        // Helicopter handled by flyWithHelicopterEffectPath
+        finalizeMove(token, endPos, callback);
     } else {
         // Default movement for other tokens
         const duration = 1000;
@@ -4049,29 +4079,29 @@ function moveToken(startPos, endPos, token, callback) {
     }
 }
 
+
 function finalizeMove(token, endPos, callback) {
-    // Get the base height from the property square
     const baseHeight = endPos.y;
-    // Calculate the final height for the token
     let finalHeight = getTokenHeight(token.userData.tokenName, baseHeight);
-    // Adjust height for specific tokens
-    if (token.userData.tokenName === "nike") {
-        finalHeight += 0.5;
-    } else if (token.userData.tokenName === "burger") {
-        finalHeight += 0.7;
-    } else if (token.userData.tokenName === "speed boat") {
-        finalHeight += 0.5;
-    } else if (token.userData.tokenName === "rolls royce") {
-        finalHeight += 0.3;
-    } else if (token.userData.tokenName === "football") {
-        finalHeight += 1.0;
-    }
-    // Ensure final position is exact
+    if (token.userData.tokenName === "nike") finalHeight += 0.5;
+    else if (token.userData.tokenName === "burger") finalHeight += 0.7;
+    else if (token.userData.tokenName === "speed boat") finalHeight += 0.5;
+    else if (token.userData.tokenName === "rolls royce") finalHeight += 0.3;
+    else if (token.userData.tokenName === "football") finalHeight += 1.0;
     token.position.set(endPos.x, finalHeight, endPos.z);
     isTokenMoving = false;
-    // Rolls Royce: do NOT start idle here, handled after movement
+    currentlyMovingToken = null;
+
+    // --- Start idle animation for tokens that need it ---
+    const tokenName = token.userData.tokenName;
+    if (tokenName === "hat") startHatIdle(token);
+    else if (tokenName === "burger") startBurgerIdle(token);
+    else if (tokenName === "football") startFootballIdle(token);
+    else if (tokenName === "nike") startNikeIdle(token);
+    // Rolls Royce and helicopter handled in their own movement functions
+    // Woman uses built-in GLTF idle
+
     if (callback) callback();
-    isCenteringOnToken = false;
 }
 
 function createTokenButton(token, index) {
@@ -4315,7 +4345,7 @@ function driveWithRollsRoyceEffect(startPos, endPos, token, callback) {
             const tilt = Math.sin(t * Math.PI * frequency) * 0.18; // gentle tilt as it swerves
             animatedModel.rotation.set(tilt, angle, 0);
 
-            if (mixer) mixer.update(1/60);
+            if (mixer) mixer.update(1 / 60);
         } else {
             token.position.set(mainPos.x, mainPos.y + 0.29, mainPos.z);
             const nextT = Math.min(t + 0.01, 1);
@@ -4332,7 +4362,11 @@ function driveWithRollsRoyceEffect(startPos, endPos, token, callback) {
         } else {
             // End: keep animated model visible and start idle anim
             if (animatedModel) {
-                startRollsRoyceIdle(animatedModel, {x: mainPos.x, y: mainPos.y + 0.29, z: mainPos.z});
+                startRollsRoyceIdle(animatedModel, {
+                    x: mainPos.x,
+                    y: mainPos.y + 0.29,
+                    z: mainPos.z
+                });
             }
             if (callback) callback();
         }
@@ -4341,30 +4375,17 @@ function driveWithRollsRoyceEffect(startPos, endPos, token, callback) {
 }
 
 function driveRollsRoyceAlongPath(token, path, callback) {
-    if (!token || !path || path.length < 2) {
-        if (callback) callback();
-        return;
-    }
     // Use animated model if available
-    const animatedModel = token.userData.animatedModel;
-    let mixer, actions;
-    if (animatedModel) {
-        stopRollsRoyceIdle();
-        token.visible = false;
-        animatedModel.visible = true;
-        animatedModel.position.copy(token.position);
-        animatedModel.rotation.copy(token.rotation);
-        mixer = animatedModel.userData.mixer;
-        actions = animatedModel.userData.actions;
-        if (actions) actions.forEach(action => action.play());
-    }
-    selectedToken = animatedModel || token;
+    const animatedModel = token.userData.animatedModel || token;
+    stopRollsRoyceIdle(); // Stop idle before moving
+
     // Build a smooth path using CatmullRomCurve3
     const points = path.map(p => new THREE.Vector3(p.x, p.y, p.z));
     const curve = new CatmullRomCurve3(points);
     const duration = (1200 + points.length * 180) * 3.5; // SLOWER: 3.5x
     const startTime = Date.now();
     let lastDir = null;
+
     function animate() {
         const elapsed = Date.now() - startTime;
         const t = Math.min(elapsed / duration, 1);
@@ -4385,7 +4406,7 @@ function driveRollsRoyceAlongPath(token, path, callback) {
         if (animatedModel) {
             animatedModel.position.set(pos.x, pos.y + 0.29, pos.z);
             animatedModel.rotation.set(tilt, Math.atan2(dir.x, dir.z), 0);
-            if (mixer) mixer.update(1/60);
+            if (animatedModel.userData.mixer) animatedModel.userData.mixer.update(1 / 60);
         } else {
             token.position.set(pos.x, pos.y + 0.29, pos.z);
             token.rotation.set(tilt, Math.atan2(dir.x, dir.z), 0);
@@ -4395,7 +4416,11 @@ function driveRollsRoyceAlongPath(token, path, callback) {
         } else {
             // End: keep animated model visible and start idle anim
             if (animatedModel) {
-                startRollsRoyceIdle(animatedModel, {x: pos.x, y: pos.y + 0.29, z: pos.z});
+                startRollsRoyceIdle(animatedModel, {
+                    x: pos.x,
+                    y: pos.y + 0.29,
+                    z: pos.z
+                });
             }
             if (callback) callback();
         }
@@ -4408,7 +4433,7 @@ function throwFootballAnimation(token, endPos, finalHeight, callback) {
     const startPos = token.position.clone();
     let endVec = (endPos instanceof THREE.Vector3) ? endPos : new THREE.Vector3(endPos.x, endPos.y, endPos.z);
     const duration = 1200; // Duration for the throw
-    const arcHeight = 5;   // Height of the arc
+    const arcHeight = 5; // Height of the arc
 
     // --- Play new woosh sound for football throw ---
     const wooshSound = new Audio('Sounds/woosh-260275.mp3');
@@ -4416,6 +4441,7 @@ function throwFootballAnimation(token, endPos, finalHeight, callback) {
     wooshSound.play().catch(() => {});
 
     const startTime = Date.now();
+
     function getArcPoint(t) {
         // Parabolic arc for Y
         const x = startPos.x + (endVec.x - startPos.x) * t;
@@ -4506,7 +4532,9 @@ function startFootballIdleAnimation(token) {
     }
     idleAnim();
     // Store a reference to stop the animation later if needed
-    token.userData.footballIdleAnim = () => { running = false; };
+    token.userData.footballIdleAnim = () => {
+        running = false;
+    };
 }
 
 function jumpWithHatEffect(startPos, endPos, token, callback) {
@@ -4527,14 +4555,22 @@ function jumpWithHatEffect(startPos, endPos, token, callback) {
         const x = startPos.x + (endPos.x - startPos.x) * t;
         const z = startPos.z + (endPos.z - startPos.z) * t;
         const y = startPos.y + Math.sin(t * Math.PI) * jumpHeight;
-        return { x, y, z };
+        return {
+            x,
+            y,
+            z
+        };
     }
 
     function animate() {
         const elapsed = Date.now() - startTime;
         const t = Math.min(elapsed / duration, 1);
 
-        const { x, y, z } = getArcPoint(t);
+        const {
+            x,
+            y,
+            z
+        } = getArcPoint(t);
         token.position.set(x, y, z);
 
         // Always keep hat upright: rotate only around Y, not X/Z
@@ -4692,7 +4728,7 @@ function flyWithHelicopterEffect(startPos, endPos, token, callback) {
         if (animatedModel) {
             animatedModel.position.set(currentX, y, currentZ);
             animatedModel.rotation.set(tilt, angle + modelOffsetAngle, 0);
-            if (mixer) mixer.update(1/60); // Advance animation
+            if (mixer) mixer.update(1 / 60); // Advance animation
         } else {
             token.position.set(currentX, y, currentZ);
             token.rotation.set(tilt, angle + modelOffsetAngle, 0);
@@ -4710,6 +4746,9 @@ function flyWithHelicopterEffect(startPos, endPos, token, callback) {
                 token.position.copy(animatedModel.position);
                 token.rotation.copy(animatedModel.rotation);
                 token.visible = true;
+                token.traverse(child => {
+                    child.visible = true;
+                });
             } else {
                 token.position.set(endPos.x, 1.5, endPos.z);
                 token.rotation.set(0, angle + modelOffsetAngle, 0);
@@ -4947,7 +4986,7 @@ function handlePropertyLanding(player, position) {
     // Handle property ownership scenarios
     if (property.owner && property.owner !== player) {
         console.log(`${player.name} landed on ${property.name}, owned by ${property.owner.name}`);
-        
+
         // Handle utilities differently
         if (property.type === "utility") {
             handleUtilitySpace(player, property);
@@ -5365,6 +5404,9 @@ function selectToken(tokenName) {
         if (object.userData.isToken && object.userData.tokenName === tokenName) {
             selectedToken = object;
             players[currentPlayerIndex].selectedToken = selectedToken;
+            selectedToken.visible = true; // <-- Ensure token is visible!
+            console.log('[TokenAssign] Assigned token to player', players[currentPlayerIndex]);
+            console.log('[TokenAssign] Token object:', selectedToken, '| Visible:', selectedToken.visible, '| In scene:', !!selectedToken.parent, '| Position:', selectedToken.position);
 
             object.traverse((child) => {
                 if (child.isMesh) {
@@ -5400,6 +5442,8 @@ function selectToken(tokenName) {
 function init() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x1a1a1a);
+    setupCameraFollowToggle();
+    updateCameraFollowUI();
 
     // Main camera
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1500);
@@ -5421,6 +5465,48 @@ function init() {
     // Use OrbitControls for the main camera
     controls = new OrbitControls(camera, renderer.domElement);
 
+    function setupCameraFollowToggle() {
+        if (document.getElementById('camera-follow-toggle')) return;
+        const btn = document.createElement('button');
+        btn.id = 'camera-follow-toggle';
+        btn.innerText = 'Follow Token (F)';
+        btn.style.position = 'fixed';
+        btn.style.top = '20px';
+        btn.style.left = '50%';
+        btn.style.transform = 'translateX(-50%)';
+        btn.style.zIndex = '2002';
+        btn.style.background = '#222';
+        btn.style.color = '#fff';
+        btn.style.padding = '10px 18px';
+        btn.style.borderRadius = '8px';
+        btn.style.fontSize = '15px';
+        btn.style.opacity = '0.85';
+        btn.style.border = 'none';
+        btn.style.cursor = 'pointer';
+        btn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.18)';
+        btn.onclick = toggleCameraFollowMode;
+        document.body.appendChild(btn);
+
+        const indicator = document.createElement('div');
+        indicator.id = 'camera-follow-indicator';
+        indicator.innerText = 'FOLLOWING TOKEN';
+        indicator.style.position = 'fixed';
+        indicator.style.top = '60px';
+        indicator.style.left = '50%';
+        indicator.style.transform = 'translateX(-50%)';
+        indicator.style.zIndex = '2002';
+        indicator.style.background = '#4caf50';
+        indicator.style.color = '#fff';
+        indicator.style.padding = '6px 18px';
+        indicator.style.borderRadius = '8px';
+        indicator.style.fontSize = '14px';
+        indicator.style.fontWeight = 'bold';
+        indicator.style.opacity = '0.92';
+        indicator.style.display = 'none';
+        indicator.style.boxShadow = '0 2px 8px rgba(0,0,0,0.18)';
+        document.body.appendChild(indicator);
+    }
+
     setupLighting();
     createBoard();
     createTokens();
@@ -5432,6 +5518,10 @@ function init() {
         y: 1.5,
         z: 0
     }); // Position in the middle of the board
+
+    createTokens(() => {
+        createPlayerTokenSelectionUI(currentPlayerIndex);
+    });
 
     raycaster = new THREE.Raycaster();
     mouse = new THREE.Vector2();
@@ -5475,7 +5565,9 @@ function createImageCarousel(images, position) {
     let baseplate = null; // <-- Add this line
 
     // Create a single plane for the carousel
-    const material = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
+    const material = new THREE.MeshBasicMaterial({
+        side: THREE.DoubleSide
+    });
     const plane = new THREE.Mesh(planeGeometry, material);
     plane.rotation.x = -Math.PI / 2;
     carouselGroup.add(plane);
@@ -5926,34 +6018,34 @@ function rollDice() {
     scene.add(dice1);
     scene.add(dice2);
 
-	let rotations = 0;
-	const maxRotations = 2.5; // Faster
+    let rotations = 0;
+    const maxRotations = 2.5; // Faster
 
-	const animate = () => {
-		if (rotations < maxRotations) {
-			dice1.rotation.x += Math.random() * 0.4;
-			dice1.rotation.y += Math.random() * 0.4;
-			dice1.rotation.z += Math.random() * 0.4;
-			dice2.rotation.x += Math.random() * 0.4;
-			dice2.rotation.y += Math.random() * 0.4;
-			dice2.rotation.z += Math.random() * 0.4;
-			rotations += 0.2; // Faster increment
-			requestAnimationFrame(animate);
-		} else {
-			dice1.rotation.set(0, 0, Math.PI / 2);
-			dice2.rotation.set(0, 0, Math.PI / 2);
+    const animate = () => {
+        if (rotations < maxRotations) {
+            dice1.rotation.x += Math.random() * 0.4;
+            dice1.rotation.y += Math.random() * 0.4;
+            dice1.rotation.z += Math.random() * 0.4;
+            dice2.rotation.x += Math.random() * 0.4;
+            dice2.rotation.y += Math.random() * 0.4;
+            dice2.rotation.z += Math.random() * 0.4;
+            rotations += 0.2; // Faster increment
+            requestAnimationFrame(animate);
+        } else {
+            dice1.rotation.set(0, 0, Math.PI / 2);
+            dice2.rotation.set(0, 0, Math.PI / 2);
 
-			showDiceResult(total, roll1, roll2);
+            showDiceResult(total, roll1, roll2);
 
-			setTimeout(() => {
-				scene.remove(dice1);
-				scene.remove(dice2);
-				moveTokenToNewPosition(total, () => {
-					isTurnInProgress = false;
-				});
-			}, 1500); // Shorter delay
-		}
-	};
+            setTimeout(() => {
+                scene.remove(dice1);
+                scene.remove(dice2);
+                moveTokenToNewPosition(total, () => {
+                    isTurnInProgress = false;
+                });
+            }, 1500); // Shorter delay
+        }
+    };
 
     animate();
 }
@@ -5995,6 +6087,12 @@ function moveTokenToNewPosition(spaces, callback) {
 
     const token = currentPlayer.selectedToken;
     const tokenName = token.userData.tokenName;
+
+    // --- Make token and all children visible on first move ---
+    if (!token.visible) {
+        token.visible = true;
+        token.traverse(child => { child.visible = true; });
+    }
 
     let isWoman = tokenName === "woman";
     if (isWoman) playWalkAnimation(token);
@@ -6064,7 +6162,6 @@ function moveTokenToNewPosition(spaces, callback) {
         });
     }
 
-    // Only call moveOneSpace for non-football, non-rolls royce, non-helicopter tokens
     moveOneSpace();
 }
 
@@ -6756,11 +6853,11 @@ function handleTurnError(error) {
     console.error("Turn error occurred:", error);
     const validation = validateTurnProgression();
     console.log("Current turn state:", validation.currentState);
-    
+
     // Reset critical flags if needed
     isTurnInProgress = false;
     isAIProcessing = false;
-    
+
     // Show feedback to user
     showFeedback("An error occurred. Please try again.");
 }
@@ -6812,7 +6909,7 @@ function setupPropertiesToggleButton() {
 
     document.body.appendChild(btn);
 
-    btn.addEventListener('click', function () {
+    btn.addEventListener('click', function() {
         const myBoard = document.getElementById('property-management-board');
         const otherBoard = document.getElementById('other-players-board');
 
@@ -6904,31 +7001,13 @@ init();
 setupPropertiesToggleButton();
 
 // --- Helicopter Hover Animation State ---
-let helicopterHoverAnim = null;
-
 function startHelicopterHover(animatedModel, position) {
-
-    if (!animatedModel.userData.heliIdleSound) {
-        const heliIdleSound = new Audio('Sounds/helicopter-rotor-sound-effectpart-2-95798.mp3');
-        heliIdleSound.loop = true;
-        heliIdleSound.volume = 0.08; // Start low
-        heliIdleSound.currentTime = 0;
-        animatedModel.userData.heliIdleSound = heliIdleSound;
-    }
-    const heliIdleSound = animatedModel.userData.heliIdleSound;
-    if (heliIdleSound.paused) {
-        heliIdleSound.currentTime = 0;
-        heliIdleSound.play().catch(() => {});
-    }
-
     if (!animatedModel) return;
     stopHelicopterHover();
     animatedModel.visible = true;
-    // Keep all actions playing
+    // Play all actions (rotors)
     if (animatedModel.userData.actions) {
-        animatedModel.userData.actions.forEach(action => {
-            action.play();
-        });
+        animatedModel.userData.actions.forEach(action => action.play());
     }
     let t = 0;
     const hoverRadius = 1.1 + Math.random() * 0.5; // Small circle
@@ -6937,8 +7016,9 @@ function startHelicopterHover(animatedModel, position) {
     const baseY = hoverHeight;
     const baseX = position.x;
     const baseZ = position.z;
+
     function animate() {
-        t += 1/60;
+        t += 1 / 60;
         // Circle or figure-eight path
         const angle = t * hoverSpeed;
         const x = baseX + Math.cos(angle) * hoverRadius * 0.7;
@@ -6946,23 +7026,14 @@ function startHelicopterHover(animatedModel, position) {
         const y = baseY + Math.sin(angle * 2.1) * 0.35 + Math.cos(angle * 1.3) * 0.18;
         animatedModel.position.set(x, y, z);
 
-        if (typeof camera !== 'undefined') {
-            const camPos = camera.position;
-            const heliPos = animatedModel.position;
-            const dist = camPos.distanceTo(heliPos);
-            let vol = 0.08;
-            if (dist < 18) vol = 0.08 + (0.25 - 0.08) * (1 - Math.min(dist, 18) / 18);
-            heliIdleSound.volume = Math.min(0.25, Math.max(0.01, vol));
-        }
-
         // Gentle yaw oscillation
         const yaw = Math.sin(angle * 1.1) * 0.18;
         animatedModel.rotation.set(
             Math.sin(angle * 0.7) * 0.08, // Subtle banking
-            Math.PI + Math.PI/2 + yaw,
+            Math.PI + Math.PI / 2 + yaw,
             0
         );
-        if (animatedModel.userData.mixer) animatedModel.userData.mixer.update(1/60); // Advance animation
+        if (animatedModel.userData.mixer) animatedModel.userData.mixer.update(1 / 60);
         helicopterHoverAnim = requestAnimationFrame(animate);
     }
     helicopterHoverAnim = requestAnimationFrame(animate);
@@ -6973,45 +7044,16 @@ function stopHelicopterHover() {
         cancelAnimationFrame(helicopterHoverAnim);
         helicopterHoverAnim = null;
     }
-    // Fix: get animatedModel from loadedTokenModels
-    if (window.loadedTokenModels && window.loadedTokenModels['helicopter'] && window.loadedTokenModels['helicopter'].userData.animatedModel) {
-        const anim = window.loadedTokenModels['helicopter'].userData.animatedModel;
-        if (anim.userData.heliIdleSound) {
-            anim.userData.heliIdleSound.pause();
-            anim.userData.heliIdleSound.currentTime = 0;
-        }
-    }
 }
 
 function flyWithHelicopterEffectPath(path, token, callback) {
-    if (!token || !path || path.length < 2) {
-        console.error("Invalid parameters passed to flyWithHelicopterEffectPath");
-        if (callback) callback();
-        return;
-    }
-    stopHelicopterHover(); // Stop any idle hover
-    let previousSelectedToken = selectedToken;
-    // Helicopter sound setup
-    let heliSound = new Audio('Sounds/helicopter-rotor-sound-effectpart-2-95798.mp3');
-    heliSound.loop = true;
-    heliSound.volume = 0.7;
-    heliSound.currentTime = 0;
-    heliSound.play().catch(() => {});
-    // Always use animated model
-    const animatedModel = token.userData.animatedModel;
+    stopHelicopterHover(); // Stop idle before moving
+    // Always use animated model for helicopter if available
+    const animatedModel = token.userData.animatedModel || token;
     let mixer, actions;
-    if (animatedModel) {
-        token.visible = false;
-        animatedModel.visible = true;
-        animatedModel.position.copy(token.position);
-        animatedModel.rotation.copy(token.rotation);
-        mixer = animatedModel.userData.mixer;
-        actions = animatedModel.userData.actions;
-        if (actions) actions.forEach(action => action.play());
-        selectedToken = animatedModel;
-    } else {
-        selectedToken = token;
-    }
+    if (animatedModel.userData.mixer) mixer = animatedModel.userData.mixer;
+    if (animatedModel.userData.actions) actions = animatedModel.userData.actions;
+
     // --- Dynamic arc height based on path length ---
     const minFlightHeight = 7;
     const maxFlightHeight = 16;
@@ -7030,6 +7072,7 @@ function flyWithHelicopterEffectPath(path, token, callback) {
     let lastDirection = null;
     let flareTimer = 0;
     const flareDuration = 0.18;
+
     function animate() {
         const elapsed = Date.now() - startTime;
         const t = Math.min(elapsed / duration, 1);
@@ -7048,7 +7091,7 @@ function flyWithHelicopterEffectPath(path, token, callback) {
         }
         if (flareTimer > 0) {
             bank += Math.sin((flareDuration - flareTimer) * Math.PI / flareDuration) * 0.35;
-            flareTimer -= 1/60;
+            flareTimer -= 1 / 60;
         }
         lastDirection = direction.clone();
         let y = pos.y + bobbingY;
@@ -7061,7 +7104,7 @@ function flyWithHelicopterEffectPath(path, token, callback) {
                 angle + modelOffsetAngle + yawOscillation,
                 0
             );
-            if (mixer) mixer.update(1/60);
+            if (mixer) mixer.update(1 / 60);
         } else {
             token.position.set(pos.x, y, pos.z);
             token.rotation.set(
@@ -7080,14 +7123,14 @@ function flyWithHelicopterEffectPath(path, token, callback) {
                 if (actions) actions.forEach(action => action.play());
                 animatedModel.visible = true;
                 // Start idle hover at new position
-                startHelicopterHover(animatedModel, {x: pos.x, z: pos.z});
+                startHelicopterHover(animatedModel, {
+                    x: pos.x,
+                    z: pos.z
+                });
             } else {
                 token.position.set(pos.x, hoverHeight, pos.z);
                 token.rotation.set(0, angle + modelOffsetAngle, 0);
             }
-            heliSound.pause();
-            heliSound.currentTime = 0;
-            selectedToken = previousSelectedToken;
             if (callback) callback();
         }
     }
@@ -7137,13 +7180,39 @@ function animate() {
         if (object.userData.mixer) object.userData.mixer.update(delta);
     });
 
+    if (cameraFollowMode) {
+        const token = getCurrentPlayerToken();
+        if (token) {
+            // Debug log for camera follow
+            if (DEBUG) {
+                console.log('[CameraFollow] Following token:', token.userData.tokenName, '| Player:', players[currentPlayerIndex].name);
+            }
+            controls.target.copy(token.position);
+            if (!userIsMovingCamera) {
+                const desiredPos = new THREE.Vector3(
+                    token.position.x + 4,
+                    token.position.y + 7,
+                    token.position.z + 4
+                );
+                camera.position.lerp(desiredPos, 0.18);
+            }
+            controls.update();
+        } else {
+            if (DEBUG) {
+                console.warn('[CameraFollow] No valid token for player', currentPlayerIndex, players[currentPlayerIndex]);
+            }
+        }
+    }
     renderer.render(scene, camera);
 }
 
 // Add this near your OrbitControls setup (in init or after controls is created):
-let userIsMovingCamera = false;
-controls.addEventListener('start', () => { userIsMovingCamera = true; });
-controls.addEventListener('end', () => { userIsMovingCamera = false; });
+controls.addEventListener('start', () => {
+    userIsMovingCamera = true;
+});
+controls.addEventListener('end', () => {
+    userIsMovingCamera = false;
+});
 
 // --- Rolls Royce Idle Animation State ---
 function startRollsRoyceIdle(animatedModel, position) {
@@ -7157,21 +7226,105 @@ function startRollsRoyceIdle(animatedModel, position) {
     // Place the car at the stopped position
     animatedModel.position.set(position.x, position.y, position.z);
     let t = 0;
+
     function animate() {
-        t += 1/60;
+        t += 1 / 60;
         // Simulate a gentle engine rev: rock the car up/down and a little side-to-side
         const revAmount = Math.sin(t * 2.5) * 0.04; // up/down
         const tiltAmount = Math.sin(t * 1.7) * 0.02; // side tilt
         animatedModel.position.y = position.y + revAmount;
         animatedModel.rotation.set(tiltAmount, animatedModel.rotation.y, 0);
-        if (animatedModel.userData.mixer) animatedModel.userData.mixer.update(1/60);
+        if (animatedModel.userData.mixer) animatedModel.userData.mixer.update(1 / 60);
         rollsRoyceIdleAnim = requestAnimationFrame(animate);
     }
     rollsRoyceIdleAnim = requestAnimationFrame(animate);
 }
+
 function stopRollsRoyceIdle() {
     if (rollsRoyceIdleAnim) {
         cancelAnimationFrame(rollsRoyceIdleAnim);
         rollsRoyceIdleAnim = null;
+    }
+}
+
+function startHatIdle(token) {
+    stopHatIdle();
+    let t = 0;
+    const baseY = token.position.y;
+    function animate() {
+        t += 1 / 60;
+        token.rotation.y += 0.02; // gentle spin
+        token.position.y = baseY + Math.sin(t * 1.2) * 0.18; // gentle bob
+        hatIdleAnim = requestAnimationFrame(animate);
+    }
+    hatIdleAnim = requestAnimationFrame(animate);
+}
+function stopHatIdle() {
+    if (hatIdleAnim) {
+        cancelAnimationFrame(hatIdleAnim);
+        hatIdleAnim = null;
+    }
+}
+
+function startBurgerIdle(token) {
+    stopBurgerIdle();
+    let t = 0;
+    const baseY = token.position.y;
+    const baseScale = token.scale.clone();
+    function animate() {
+        t += 1 / 60;
+        token.rotation.y += 0.015; // slow spin
+        token.position.y = baseY + Math.sin(t * 1.1) * 0.12;
+        const squish = 1 - Math.abs(Math.sin(t * 0.7)) * 0.08;
+        token.scale.set(baseScale.x, baseScale.y * squish, baseScale.z);
+        burgerIdleAnim = requestAnimationFrame(animate);
+    }
+    burgerIdleAnim = requestAnimationFrame(animate);
+}
+function stopBurgerIdle() {
+    if (burgerIdleAnim) {
+        cancelAnimationFrame(burgerIdleAnim);
+        burgerIdleAnim = null;
+    }
+}
+
+function startFootballIdle(token) {
+    stopFootballIdle();
+    let t = 0;
+    const baseY = token.position.y;
+    function animate() {
+        t += 1 / 60;
+        token.position.y = baseY + Math.sin(t * 1.5) * 0.18;
+        token.rotation.y += 0.07; // spin
+        token.rotation.x = Math.sin(t * 1.1) * 0.18;
+        token.rotation.z = Math.cos(t * 0.8) * 0.13;
+        footballIdleAnim = requestAnimationFrame(animate);
+    }
+    footballIdleAnim = requestAnimationFrame(animate);
+}
+function stopFootballIdle() {
+    if (footballIdleAnim) {
+        cancelAnimationFrame(footballIdleAnim);
+        footballIdleAnim = null;
+    }
+}
+
+function startNikeIdle(token) {
+    stopNikeIdle();
+    let t = 0;
+    const baseY = token.position.y;
+    function animate() {
+        t += 1 / 60;
+        token.position.y = baseY + Math.abs(Math.sin(t * 1.3)) * 0.22;
+        token.rotation.z = Math.sin(t * 1.3) * 0.18;
+        token.rotation.y += 0.01; // slow spin
+        nikeIdleAnim = requestAnimationFrame(animate);
+    }
+    nikeIdleAnim = requestAnimationFrame(animate);
+}
+function stopNikeIdle() {
+    if (nikeIdleAnim) {
+        cancelAnimationFrame(nikeIdleAnim);
+        nikeIdleAnim = null;
     }
 }
