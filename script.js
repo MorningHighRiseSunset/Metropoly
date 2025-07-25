@@ -49,10 +49,10 @@ let idleCameraRadius = 38;
 let idleCameraHeight = 18;
 let idleCameraTarget = new THREE.Vector3(0, 0, 0);
 let lastCameraMode = null;
+let rollsRoyceIdleAnim = null;
 
 // 1. Set cutscene cam OFF by default
-let isCenteringOnToken = false; // Start with camera NOT following token
-let centerOnTokenBtn = null;
+let isCenteringOnToken = true;
 
 // Initialize audio with proper settings
 let accelerationSound = new Audio('');
@@ -433,9 +433,9 @@ const properties = [{
         rentWithHouse: [110, 330, 800, 975],
         rentWithHotel: 1150,
         videoUrls: [ 
-            "Videos/MavHeli-1.mp4",
-            "Videos/MavHeli-2.mp4",
-            "Videos/MavHeli-3.mp4",
+            "Videos/MavHeli1.mp4",
+            "Videos/MavHeli2.mp4",
+            "Videos/MavHeli3.mp4",
         ],
         customBuyLabel: "Buy a helicopter ride",
     },
@@ -926,10 +926,10 @@ let availableTokens = [
         name: "woman",
         displayName: "Woman"
     },
-    //{
-       // name: "rolls royce",
-        //displayName: "Rolls Royce"
-    //},
+    {
+        name: "rolls royce",
+        displayName: "Rolls Royce"
+    },
     //{
         //name: "speed boat",
         //displayName: "Speed Boat"
@@ -1545,7 +1545,28 @@ function createTokens() {
 
     loadTokenModel('Models/nike_air_zoom_pegasus_36/scene.gltf', 'nike', [1.5, 1.5, 1.5], 3.0);
     loadTokenModel('Models/mcdonalds_big_mac/scene.gltf', 'burger', [3.5, 3.5, 3.5], 3.0);
-    loadTokenModel('Models/rolls-royce_ghost/scene.gltf', 'rolls royce', [0.9, 0.9, 0.9], 3.0);
+    loadTokenModel('Models/rolls-royce_ghost/scene.gltf', 'rolls royce', [0.9, 0.9, 0.9], 3.0, (staticModel) => {
+        // Load animated model with wheel animations
+        loader.load('Models/rolls-royce_ghost/rollsRoyceCarAnim.glb', (gltf) => {
+            const animatedModel = gltf.scene;
+            animatedModel.scale.set(0.9, 0.9, 0.9);
+            animatedModel.visible = false;
+            animatedModel.position.copy(staticModel.position);
+            animatedModel.userData.tokenName = 'rolls royce';
+            scene.add(animatedModel);
+            staticModel.userData.animatedModel = animatedModel;
+            // Setup animation mixer and play all animations
+            if (gltf.animations && gltf.animations.length > 0) {
+                animatedModel.userData.mixer = new THREE.AnimationMixer(animatedModel);
+                animatedModel.userData.actions = [];
+                gltf.animations.forEach(anim => {
+                    const action = animatedModel.userData.mixer.clipAction(anim);
+                    action.play();
+                    animatedModel.userData.actions.push(action);
+                });
+            }
+        });
+    });
     loadTokenModel('Models/speed_boat_05/speedeboatscene.gltf', 'speed boat', [1.2, 1.2, 1.2], 3.0);
     loadTokenModel('Models/top_hat__free_download/tophat.gltf', 'hat', [0.5, 0.5, 0.5], 3.0);
     loadTokenModel('Models/wilson_football/football.gltf', 'football', [0.1, 0.1, 0.1], 3.0);
@@ -3300,6 +3321,7 @@ function endTurn() {
 }
 
 function startPlayerTurn(player) {
+    selectedToken = player.selectedToken;
     isTokenMoving = false;
     console.log(`Starting turn for Player ${currentPlayerIndex + 1} (${player.name})`);
 
@@ -3916,6 +3938,7 @@ function moveToken(startPos, endPos, token, callback) {
         return;
     }
 
+    isCenteringOnToken = true;
     isTokenMoving = true;
     selectedToken = token;
 
@@ -4029,10 +4052,8 @@ function moveToken(startPos, endPos, token, callback) {
 function finalizeMove(token, endPos, callback) {
     // Get the base height from the property square
     const baseHeight = endPos.y;
-
     // Calculate the final height for the token
     let finalHeight = getTokenHeight(token.userData.tokenName, baseHeight);
-
     // Adjust height for specific tokens
     if (token.userData.tokenName === "nike") {
         finalHeight += 0.5;
@@ -4045,15 +4066,12 @@ function finalizeMove(token, endPos, callback) {
     } else if (token.userData.tokenName === "football") {
         finalHeight += 1.0;
     }
-
     // Ensure final position is exact
     token.position.set(endPos.x, finalHeight, endPos.z);
-
-    // --- DO NOT stopWalkAnimation(token) here for "woman"! ---
-
     isTokenMoving = false;
-    if (typeof centerOnTokenBtn !== 'undefined' && centerOnTokenBtn) centerOnTokenBtn.innerText = 'Center on Token';
+    // Rolls Royce: do NOT start idle here, handled after movement
     if (callback) callback();
+    isCenteringOnToken = false;
 }
 
 function createTokenButton(token, index) {
@@ -4243,42 +4261,82 @@ function driveWithRollsRoyceEffect(startPos, endPos, token, callback) {
         console.error("Invalid parameters passed to driveWithRollsRoyceEffect");
         return;
     }
+    // Use animated model if available
+    const animatedModel = token.userData.animatedModel;
+    let mixer, actions;
+    if (animatedModel) {
+        stopRollsRoyceIdle();
+        token.visible = false;
+        animatedModel.visible = true;
+        animatedModel.position.copy(token.position);
+        animatedModel.rotation.copy(token.rotation);
+        mixer = animatedModel.userData.mixer;
+        actions = animatedModel.userData.actions;
+        if (actions) actions.forEach(action => action.play());
+    }
+    selectedToken = animatedModel || token;
 
-    selectedToken = token;
+    // Calculate direction and distance
+    const from = new THREE.Vector3(startPos.x, startPos.y, startPos.z);
+    const to = new THREE.Vector3(endPos.x, endPos.y, endPos.z);
+    const direction = to.clone().sub(from).normalize();
+    const distance = from.distanceTo(to);
 
-    const distance = Math.sqrt(
-        Math.pow(endPos.x - startPos.x, 2) +
-        Math.pow(endPos.z - startPos.z, 2)
-    );
-    const duration = 400 + distance * 18;
+    // Parameters for the wavy path
+    const amplitude = 1.2; // How far to swerve left/right (increase for more drama)
+    const frequency = 2.5; // How many full waves per trip (increase for more wiggle)
+    const duration = (1200 + distance * 18) * 3.5; // SLOWER: 3.5x
     const startTime = Date.now();
+
+    // Find a vector perpendicular to the direction of travel (for swerving)
+    const perp = new THREE.Vector3(-direction.z, 0, direction.x).normalize();
 
     function animate() {
         const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / duration, 1);
+        const t = Math.min(elapsed / duration, 1);
 
-        const easeProgress = progress < 0.5
-            ? 2 * progress * progress
-            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+        // Linear interpolation along the main path
+        const mainPos = from.clone().lerp(to, t);
 
-        const currentX = startPos.x + (endPos.x - startPos.x) * easeProgress;
-        const currentZ = startPos.z + (endPos.z - startPos.z) * easeProgress;
-        const currentY = startPos.y + 0.29;
+        // Swerve offset
+        const wave = Math.sin(t * Math.PI * frequency) * amplitude * (1 - Math.abs(2 * t - 1)); // fade at ends
+        mainPos.add(perp.clone().multiplyScalar(wave));
 
-        const directionVector = new THREE.Vector3(endPos.x - startPos.x, 0, endPos.z - startPos.z).normalize();
-        const angle = Math.atan2(directionVector.x, directionVector.z);
+        // Set position and rotation
+        if (animatedModel) {
+            animatedModel.position.set(mainPos.x, mainPos.y + 0.29, mainPos.z);
 
-        token.position.set(currentX, currentY, currentZ);
-        token.rotation.set(0, angle, 0);
+            // Face the direction of travel (with a little tilt for style)
+            const nextT = Math.min(t + 0.01, 1);
+            const nextMainPos = from.clone().lerp(to, nextT);
+            nextMainPos.add(perp.clone().multiplyScalar(Math.sin(nextT * Math.PI * frequency) * amplitude * (1 - Math.abs(2 * nextT - 1))));
+            const dir = nextMainPos.clone().sub(mainPos).normalize();
+            const angle = Math.atan2(dir.x, dir.z);
+            const tilt = Math.sin(t * Math.PI * frequency) * 0.18; // gentle tilt as it swerves
+            animatedModel.rotation.set(tilt, angle, 0);
 
-        if (progress < 1) {
+            if (mixer) mixer.update(1/60);
+        } else {
+            token.position.set(mainPos.x, mainPos.y + 0.29, mainPos.z);
+            const nextT = Math.min(t + 0.01, 1);
+            const nextMainPos = from.clone().lerp(to, nextT);
+            nextMainPos.add(perp.clone().multiplyScalar(Math.sin(nextT * Math.PI * frequency) * amplitude * (1 - Math.abs(2 * nextT - 1))));
+            const dir = nextMainPos.clone().sub(mainPos).normalize();
+            const angle = Math.atan2(dir.x, dir.z);
+            const tilt = Math.sin(t * Math.PI * frequency) * 0.18;
+            token.rotation.set(tilt, angle, 0);
+        }
+
+        if (t < 1) {
             requestAnimationFrame(animate);
         } else {
-            if (typeof centerOnTokenBtn !== 'undefined' && centerOnTokenBtn) centerOnTokenBtn.innerText = 'Center on Token';
+            // End: keep animated model visible and start idle anim
+            if (animatedModel) {
+                startRollsRoyceIdle(animatedModel, {x: mainPos.x, y: mainPos.y + 0.29, z: mainPos.z});
+            }
             if (callback) callback();
         }
     }
-
     animate();
 }
 
@@ -4287,49 +4345,61 @@ function driveRollsRoyceAlongPath(token, path, callback) {
         if (callback) callback();
         return;
     }
-
-    selectedToken = token;
-
-    const duration = 400 + path.length * 180; // Duration scales with path length
-    const startTime = Date.now();
-
-    function lerp(a, b, t) {
-        return a + (b - a) * t;
+    // Use animated model if available
+    const animatedModel = token.userData.animatedModel;
+    let mixer, actions;
+    if (animatedModel) {
+        stopRollsRoyceIdle();
+        token.visible = false;
+        animatedModel.visible = true;
+        animatedModel.position.copy(token.position);
+        animatedModel.rotation.copy(token.rotation);
+        mixer = animatedModel.userData.mixer;
+        actions = animatedModel.userData.actions;
+        if (actions) actions.forEach(action => action.play());
     }
-
+    selectedToken = animatedModel || token;
+    // Build a smooth path using CatmullRomCurve3
+    const points = path.map(p => new THREE.Vector3(p.x, p.y, p.z));
+    const curve = new CatmullRomCurve3(points);
+    const duration = (1200 + points.length * 180) * 3.5; // SLOWER: 3.5x
+    const startTime = Date.now();
+    let lastDir = null;
     function animate() {
         const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-
-        // Find which segment we're on
-        const totalSegments = path.length - 1;
-        const totalProgress = progress * totalSegments;
-        const segmentIndex = Math.floor(totalProgress);
-        const segmentT = totalProgress - segmentIndex;
-
-        const from = path[segmentIndex];
-        const to = path[segmentIndex + 1] || path[segmentIndex];
-
-        // Interpolate position
-        const currentX = lerp(from.x, to.x, segmentT);
-        const currentZ = lerp(from.z, to.z, segmentT);
-        const currentY = from.y + 0.29; // Flat, no jump
-
-        // Face direction of movement
-        const directionVector = new THREE.Vector3(to.x - from.x, 0, to.z - from.z).normalize();
-        const angle = Math.atan2(directionVector.x, directionVector.z);
-
-        token.position.set(currentX, currentY, currentZ);
-        token.rotation.set(0, angle, 0);
-
-        if (progress < 1) {
+        const t = Math.min(elapsed / duration, 1);
+        const pos = curve.getPoint(t);
+        const nextPos = curve.getPoint(Math.min(t + 0.01, 1));
+        const prevPos = curve.getPoint(Math.max(t - 0.01, 0));
+        const dir = nextPos.clone().sub(prevPos).normalize();
+        // Detect sharp right turn for drift
+        let drift = 0;
+        if (lastDir) {
+            const angleDelta = Math.atan2(dir.x, dir.z) - Math.atan2(lastDir.x, lastDir.z);
+            if (angleDelta > 0.25) drift = Math.min(angleDelta, 0.7); // right drift
+            else if (angleDelta < -0.25) drift = Math.max(angleDelta, -0.7); // left drift
+        }
+        lastDir = dir.clone();
+        // Tilt the car for drift
+        const tilt = drift * 0.7;
+        if (animatedModel) {
+            animatedModel.position.set(pos.x, pos.y + 0.29, pos.z);
+            animatedModel.rotation.set(tilt, Math.atan2(dir.x, dir.z), 0);
+            if (mixer) mixer.update(1/60);
+        } else {
+            token.position.set(pos.x, pos.y + 0.29, pos.z);
+            token.rotation.set(tilt, Math.atan2(dir.x, dir.z), 0);
+        }
+        if (t < 1) {
             requestAnimationFrame(animate);
         } else {
-            if (typeof centerOnTokenBtn !== 'undefined' && centerOnTokenBtn) centerOnTokenBtn.innerText = 'Center on Token';
+            // End: keep animated model visible and start idle anim
+            if (animatedModel) {
+                startRollsRoyceIdle(animatedModel, {x: pos.x, y: pos.y + 0.29, z: pos.z});
+            }
             if (callback) callback();
         }
     }
-
     animate();
 }
 
@@ -4394,7 +4464,6 @@ function throwFootballAnimation(token, endPos, finalHeight, callback) {
             const finalDir = endVec.clone().sub(startPos).normalize();
             const finalQuat = new THREE.Quaternion().setFromUnitVectors(forward, finalDir);
             token.quaternion.copy(finalQuat);
-            if (typeof centerOnTokenBtn !== 'undefined' && centerOnTokenBtn) centerOnTokenBtn.innerText = 'Center on Token';
             startFootballIdleAnimation(token);
             if (callback) callback();
         }
@@ -5380,7 +5449,6 @@ function init() {
     createDiceButton();
     startGameTimer();
     updatePropertyManagementBoard(players[currentPlayerIndex]);
-    addCenterOnTokenButton();
     // If selectedToken exists, zoom in on it
     if (selectedToken) {
         camera.position.set(
@@ -7020,7 +7088,6 @@ function flyWithHelicopterEffectPath(path, token, callback) {
             heliSound.pause();
             heliSound.currentTime = 0;
             selectedToken = previousSelectedToken;
-            if (typeof centerOnTokenBtn !== 'undefined' && centerOnTokenBtn) centerOnTokenBtn.innerText = 'Center on Token';
             if (callback) callback();
         }
     }
@@ -7070,113 +7137,41 @@ function animate() {
         if (object.userData.mixer) object.userData.mixer.update(delta);
     });
 
-    if (isCenteringOnToken && selectedToken) {
-        // Only follow the token, never do idle/orbit anim
-        controls.target.copy(selectedToken.position);
-        if (!userIsMovingCamera) {
-            const desiredPos = new THREE.Vector3(
-                selectedToken.position.x + 2.5,
-                selectedToken.position.y + 5,
-                selectedToken.position.z + 2.5
-            );
-            camera.position.lerp(desiredPos, 0.18);
-        }
-        controls.update();
-        lastCameraMode = 'follow';
-    }
-
     renderer.render(scene, camera);
 }
-// ... existing code ...
 
 // Add this near your OrbitControls setup (in init or after controls is created):
 let userIsMovingCamera = false;
 controls.addEventListener('start', () => { userIsMovingCamera = true; });
 controls.addEventListener('end', () => { userIsMovingCamera = false; });
 
-// In your main animate loop, change the auto-centering block to:
-if (isCenteringOnToken && selectedToken && !window.userIsMovingCamera) {
-    // Less zoomed in: move camera further back and higher
-    const desiredPos = new THREE.Vector3(
-        selectedToken.position.x + 4, // was +2
-        selectedToken.position.y + 7, // was +3.5
-        selectedToken.position.z + 4  // was +2
-    );
-    camera.position.lerp(desiredPos, 0.18);
-    controls.update();
-}
-
-// After changing currentPlayerIndex (e.g., in endTurn, startPlayerTurn, etc.), always set selectedToken to the new current player's token if isCenteringOnToken is true
-function focusCameraOnCurrentPlayerToken() {
-    const currentPlayer = players[currentPlayerIndex];
-    if (currentPlayer.selectedToken) {
-        selectedToken = currentPlayer.selectedToken;
-        if (isCenteringOnToken && centerOnTokenBtn) {
-            centerOnTokenBtn.innerText = 'Uncenter on Token';
-        }
+// --- Rolls Royce Idle Animation State ---
+function startRollsRoyceIdle(animatedModel, position) {
+    if (!animatedModel) return;
+    stopRollsRoyceIdle();
+    animatedModel.visible = true;
+    // Play all actions (wheels)
+    if (animatedModel.userData.actions) {
+        animatedModel.userData.actions.forEach(action => action.play());
     }
+    // Place the car at the stopped position
+    animatedModel.position.set(position.x, position.y, position.z);
+    let t = 0;
+    function animate() {
+        t += 1/60;
+        // Simulate a gentle engine rev: rock the car up/down and a little side-to-side
+        const revAmount = Math.sin(t * 2.5) * 0.04; // up/down
+        const tiltAmount = Math.sin(t * 1.7) * 0.02; // side tilt
+        animatedModel.position.y = position.y + revAmount;
+        animatedModel.rotation.set(tiltAmount, animatedModel.rotation.y, 0);
+        if (animatedModel.userData.mixer) animatedModel.userData.mixer.update(1/60);
+        rollsRoyceIdleAnim = requestAnimationFrame(animate);
+    }
+    rollsRoyceIdleAnim = requestAnimationFrame(animate);
 }
-
-const originalStartPlayerTurn = startPlayerTurn;
-startPlayerTurn = function(player, ...args) {
-    const result = originalStartPlayerTurn.apply(this, [player, ...args]);
-    focusCameraOnCurrentPlayerToken();
-    return result;
-};
-
-// When user clicks the centerOnTokenBtn, update selectedToken to current player's token if enabling centering
-function addCenterOnTokenButton() {
-    if (centerOnTokenBtn) return;
-    centerOnTokenBtn = document.createElement('button');
-    centerOnTokenBtn.innerText = isCenteringOnToken ? 'Uncenter on Token' : 'Center on Token';
-    centerOnTokenBtn.style.position = 'fixed';
-    centerOnTokenBtn.style.bottom = '70px';
-    centerOnTokenBtn.style.right = '20px';
-    centerOnTokenBtn.style.zIndex = 1000;
-    centerOnTokenBtn.style.padding = '10px 18px';
-    centerOnTokenBtn.style.borderRadius = '8px';
-    centerOnTokenBtn.style.background = '#222';
-    centerOnTokenBtn.style.color = '#fff';
-    centerOnTokenBtn.style.border = 'none';
-    centerOnTokenBtn.style.fontSize = '16px';
-    centerOnTokenBtn.style.cursor = 'pointer';
-    centerOnTokenBtn.onclick = () => {
-        isCenteringOnToken = !isCenteringOnToken;
-        centerOnTokenBtn.innerText = isCenteringOnToken ? 'Uncenter on Token' : 'Center on Token';
-        if (isCenteringOnToken) {
-            // Always set selectedToken to the current player's token or animated model if helicopter is moving
-            const currentPlayer = players[currentPlayerIndex];
-            if (currentPlayer.selectedToken) {
-                // If helicopter is moving, use animated model if visible
-                if (
-                    currentPlayer.selectedToken.userData.tokenName === 'helicopter' &&
-                    currentPlayer.selectedToken.userData.animatedModel &&
-                    currentPlayer.selectedToken.userData.animatedModel.visible
-                ) {
-                    selectedToken = currentPlayer.selectedToken.userData.animatedModel;
-                } else {
-                    selectedToken = currentPlayer.selectedToken;
-                }
-            }
-        }
-    };
-    document.body.appendChild(centerOnTokenBtn);
-}
-
-if (!window._cameraPatchApplied) {
-    const originalEndTurn = endTurn;
-    endTurn = function(...args) {
-        allowedToRoll = true; // Reset dice rolling permission
-        const result = originalEndTurn.apply(this, args);
-        focusCameraOnCurrentPlayerToken();
-        return result;
-    };
-
-    const originalStartPlayerTurn = startPlayerTurn;
-    startPlayerTurn = function(player, ...args) {
-        const result = originalStartPlayerTurn.apply(this, [player, ...args]);
-        focusCameraOnCurrentPlayerToken();
-        return result;
-    };
-    window._cameraPatchApplied = true;
+function stopRollsRoyceIdle() {
+    if (rollsRoyceIdleAnim) {
+        cancelAnimationFrame(rollsRoyceIdleAnim);
+        rollsRoyceIdleAnim = null;
+    }
 }
