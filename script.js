@@ -601,7 +601,7 @@ const properties = [{
         special: true
     },
     {
-        name: "The Mirage",
+        name: "Hard Rock Hotel",
         price: 2500,
         rent: 200,
         owner: null,
@@ -826,7 +826,7 @@ const placeNames = [
     "Horseback Riding",
     "Resorts World Theatre",
     "Chance", // Second Chance
-    "The Mirage", // Changed from "Encore Theatre"
+    "Hard Rock hotel", // Changed from "Encore Theatre"
     "Wynn Las Vegas", // Changed from "South Point Casino" 
     "Shriners Children's Open", // Changed from "Golf Inst."
     "Sphere",
