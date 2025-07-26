@@ -91,6 +91,9 @@ let helicopterSound = new Audio('Sounds/helicopter-rotor-sound-effectpart-2-9579
 helicopterSound.loop = true;
 helicopterSound.volume = 0.7;
 
+let horseGallopingSound = new Audio('Sounds/horses-galloping-sound-effect-359257.mp3');
+horseGallopingSound.volume = 0.6;
+
 window.addEventListener('mousedown', onMouseDown);
 window.addEventListener('mousemove', onMouseMove);
 window.addEventListener('mouseup', onMouseUp);
@@ -167,7 +170,10 @@ const ticketProperties = [
     "Sphere",
     "Shriners Children's Open",
     "Resorts World Theatre",
-    "House of Blues"
+    "House of Blues",
+    "Bet MGM",
+    "Las Vegas Monorail",
+    "Speed Vegas Off Roading"
 ];
 
 const positions = [{
@@ -548,7 +554,7 @@ const properties = [{
         price: 2500,
         rent: 200,
         owner: null,
-        address: "3600 S Las Vegas Blvd, Las Vegas, NV 89109",
+        address: "3600 S Las Vegas Blvd, Las Vegas, NV 89115",
         color: "orange",
         mortgageValue: 150,
         housePrice: 200,
@@ -1121,10 +1127,18 @@ function handleAIPropertyDecision(property, callback = () => {}) {
     } else if (!property.owner) {
         const shouldBuy = makeAIBuyDecision(currentPlayer, property);
         if (shouldBuy && currentPlayer.money >= property.price) {
-            showAIPopup(`${currentPlayer.name} buys ${property.name} for $${property.price}`);
+            if (ticketProperties.includes(property.name)) {
+                showAIPopup(`${currentPlayer.name} buys a ticket for ${property.name} for $${property.price}`);
+            } else {
+                showAIPopup(`${currentPlayer.name} buys ${property.name} for $${property.price}`);
+            }
             buyProperty(currentPlayer, property, callback);
         } else {
-            showAIPopup(`${currentPlayer.name} skips buying ${property.name}`);
+            if (ticketProperties.includes(property.name)) {
+                showAIPopup(`${currentPlayer.name} skips buying a ticket for ${property.name}`);
+            } else {
+                showAIPopup(`${currentPlayer.name} skips buying ${property.name}`);
+            }
             setTimeout(callback, 1000);
         }
     } else if (property.owner !== currentPlayer) {
@@ -1138,6 +1152,9 @@ function handleAIPropertyDecision(property, callback = () => {}) {
                 showAIPopup(`${currentPlayer.name} cannot afford rent and is bankrupt!`);
                 handleBankruptcy(currentPlayer, property.owner);
             }
+        } else {
+            // Ticket properties don't charge rent
+            showAIPopup(`${currentPlayer.name} visits ${property.name} - no ticket required`);
         }
         setTimeout(callback, 1000);
     } else {
@@ -1230,6 +1247,13 @@ function executeAITurn() {
 }
 
 function handleAIPropertyLanding(player, property, callback) {
+    // Play horse galloping sound for Horseback Riding property
+    if (property.name === "Horseback Riding") {
+        horseGallopingSound.currentTime = 0;
+        horseGallopingSound.playbackRate = 0.6; // Slow down for serene effect
+        horseGallopingSound.play().catch(() => {});
+    }
+
     switch (property.name) {
         case "Chance":
             console.log("AI landed on Chance.");
@@ -2201,6 +2225,38 @@ function showPropertyUI(position) {
 
         videoContainer.appendChild(video);
 
+        // --- HORSEBACK RIDING: Sync galloping sound with video ---
+        if (property.name === "Horseback Riding") {
+            // Play sound when video starts playing
+            const playHorseSound = () => {
+                horseGallopingSound.currentTime = 0;
+                horseGallopingSound.playbackRate = 0.6; // Slow down for serene effect
+                horseGallopingSound.play().catch(() => {});
+            };
+            // Pause sound when video pauses
+            const pauseHorseSound = () => {
+                horseGallopingSound.pause();
+            };
+            // Sync on play/pause
+            video.addEventListener('play', playHorseSound);
+            video.addEventListener('pause', pauseHorseSound);
+            // If video ends, pause sound
+            video.addEventListener('ended', pauseHorseSound);
+            // If video is playing on load, play sound
+            video.addEventListener('canplay', () => {
+                if (!video.paused) playHorseSound();
+            });
+            // Pause sound if UI is closed
+            const observer = new MutationObserver(() => {
+                if (!document.body.contains(videoContainer)) {
+                    pauseHorseSound();
+                    observer.disconnect();
+                }
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+        }
+        // --- END HORSEBACK RIDING SYNC ---
+
         // Try to play and then unmute after play starts (loophole: user gesture)
         video.play().then(() => {
             setTimeout(() => {
@@ -2277,7 +2333,10 @@ function showPropertyUI(position) {
         "Sphere",
         "Shriners Children's Open",
         "Resorts World Theatre",
-        "House of Blues"
+        "House of Blues",
+        "Bet MGM",
+        "Las Vegas Monorail",
+        "Speed Vegas Off Roading"
     ];
 
     // Details content
@@ -2579,7 +2638,10 @@ function createButtonContainer(property) {
             "Sphere",
             "Shriners Children's Open",
             "Resorts World Theatre",
-            "House of Blues"
+            "House of Blues",
+            "Bet MGM",
+            "Las Vegas Monorail",
+            "Speed Vegas Off Roading"
         ];
 
         // Top buttons wrapper
@@ -4960,6 +5022,13 @@ function handlePropertyLanding(player, position) {
 
     console.log(`${player.name} landed on: ${property.name}`, property);
 
+    // Play horse galloping sound for Horseback Riding property
+    if (property.name === "Horseback Riding") {
+        horseGallopingSound.currentTime = 0;
+        horseGallopingSound.playbackRate = 0.6; // Slow down for serene effect
+        horseGallopingSound.play().catch(() => {});
+    }
+
     // Handle "JAIL" property
     if (property.name === "JAIL") {
         if (player.inJail) {
@@ -5075,7 +5144,7 @@ function handleSpecialSpace(player, property) {
             drawCard("Chance");
             break;
         case "Community Cards":
-            drawCard("Community Cards");
+            drawCard("Community Chest");
             break;
         case "Income Tax":
             handleIncomeTax(player);
@@ -5283,16 +5352,31 @@ function makeAIBuyDecision(player, property) {
     }
 
     try {
+        // Check if this is a ticket property
+        const isTicketProperty = ticketProperties.includes(property.name);
+        
         // Sophisticated AI decision making for purchasing properties
         const factors = {
             hasEnoughMoney: player.money >= (property.price || 0) * 2,
             isGoodValue: (property.price || 0) <= 200,
             hasMonopolyPotential: hasMonopolyPotential(player, property),
             isStrategicLocation: isStrategicLocation(property),
+            isTicketProperty: isTicketProperty,
             randomChance: Math.random() > 0.3
         };
 
-        // Weight different factors
+        // Special handling for ticket properties
+        if (isTicketProperty) {
+            // AI is more likely to buy ticket properties if they have enough money
+            // Ticket properties are experiences/entertainment, so AI should be more willing to buy them
+            const ticketScore = (factors.hasEnoughMoney ? 3 : 0) +
+                (factors.isGoodValue ? 2 : 0) +
+                (factors.randomChance ? 1 : 0);
+            
+            return ticketScore >= 3; // Lower threshold for ticket properties
+        }
+
+        // Regular property scoring
         const score = (factors.hasEnoughMoney ? 2 : 0) +
             (factors.isGoodValue ? 1.5 : 0) +
             (factors.hasMonopolyPotential ? 3 : 0) +
