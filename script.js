@@ -83,9 +83,13 @@ let draggedObject = null;
 let isPopupVisible = false;
 
 // --- Audio ---
-let accelerationSound = new Audio('');
+let accelerationSound = new Audio('Sounds/Rolls-Royce-Audio.mp3'); // Rolls Royce movement sound
 accelerationSound.preload = 'auto';
 accelerationSound.load();
+
+let helicopterSound = new Audio('Sounds/helicopter-rotor-sound-effectpart-2-95798.mp3');
+helicopterSound.loop = true;
+helicopterSound.volume = 0.7;
 
 window.addEventListener('mousedown', onMouseDown);
 window.addEventListener('mousemove', onMouseMove);
@@ -4375,6 +4379,10 @@ function driveWithRollsRoyceEffect(startPos, endPos, token, callback) {
 }
 
 function driveRollsRoyceAlongPath(token, path, callback) {
+    if (accelerationSound.paused) {
+        accelerationSound.currentTime = 0;
+        accelerationSound.play().catch(() => {});
+    }
     // Use animated model if available
     const animatedModel = token.userData.animatedModel || token;
     stopRollsRoyceIdle(); // Stop idle before moving
@@ -4428,10 +4436,20 @@ function driveRollsRoyceAlongPath(token, path, callback) {
     animate();
 }
 
+// --- Audio Distance Helper ---
+function updateTokenAudioVolume(token, audio, maxDistance = 40, minVolume = 0.05, maxVolume = 1.0) {
+    if (!token || !audio || !token.visible) return;
+    const distance = camera.position.distanceTo(token.position);
+    let volume = 1 - (distance / maxDistance);
+    volume = Math.max(minVolume, Math.min(maxVolume, volume));
+    audio.volume = volume;
+}
+
 function throwFootballAnimation(token, endPos, finalHeight, callback) {
     selectedToken = token;
     const startPos = token.position.clone();
     let endVec = (endPos instanceof THREE.Vector3) ? endPos : new THREE.Vector3(endPos.x, endPos.y, endPos.z);
+
     const duration = 1200; // Duration for the throw
     const arcHeight = 5; // Height of the arc
 
@@ -4678,6 +4696,9 @@ function flyWithHelicopterEffect(startPos, endPos, token, callback) {
         console.error("Invalid parameters passed to flyWithHelicopterEffect");
         return;
     }
+    // Start helicopter sound for movement
+    helicopterSound.currentTime = 0;
+    helicopterSound.play().catch(() => {});
 
     // Swap to animated model if available
     const animatedModel = token.userData.animatedModel;
@@ -7009,6 +7030,9 @@ function startHelicopterHover(animatedModel, position) {
     if (animatedModel.userData.actions) {
         animatedModel.userData.actions.forEach(action => action.play());
     }
+    // Start helicopter sound
+    helicopterSound.currentTime = 0;
+    helicopterSound.play().catch(() => {});
     let t = 0;
     const hoverRadius = 1.1 + Math.random() * 0.5; // Small circle
     const hoverSpeed = 0.7 + Math.random() * 0.3; // Slightly random speed
@@ -7044,10 +7068,16 @@ function stopHelicopterHover() {
         cancelAnimationFrame(helicopterHoverAnim);
         helicopterHoverAnim = null;
     }
+    // Stop helicopter sound
+    helicopterSound.pause();
+    helicopterSound.currentTime = 0;
 }
 
 function flyWithHelicopterEffectPath(path, token, callback) {
     stopHelicopterHover(); // Stop idle before moving
+    // Start helicopter sound for movement
+    helicopterSound.currentTime = 0;
+    helicopterSound.play().catch(() => {});
     // Always use animated model for helicopter if available
     const animatedModel = token.userData.animatedModel || token;
     let mixer, actions;
@@ -7180,10 +7210,19 @@ function animate() {
         if (object.userData.mixer) object.userData.mixer.update(delta);
     });
 
+    // --- Update audio volume for helicopter and Rolls Royce ---
+    let heliToken = null;
+    let rrToken = null;
+    scene.traverse((obj) => {
+        if (obj.userData && obj.userData.tokenName === 'helicopter') heliToken = obj;
+        if (obj.userData && obj.userData.tokenName === 'rolls royce') rrToken = obj;
+    });
+    updateTokenAudioVolume(heliToken, helicopterSound);
+    updateTokenAudioVolume(rrToken, accelerationSound);
+
     if (cameraFollowMode) {
         const token = getCurrentPlayerToken();
         if (token) {
-            // Debug log for camera follow
             if (DEBUG) {
                 console.log('[CameraFollow] Following token:', token.userData.tokenName, '| Player:', players[currentPlayerIndex].name);
             }
@@ -7223,10 +7262,14 @@ function startRollsRoyceIdle(animatedModel, position) {
     if (animatedModel.userData.actions) {
         animatedModel.userData.actions.forEach(action => action.play());
     }
+    // Start engine sound if not already playing
+    if (accelerationSound.paused) {
+        accelerationSound.currentTime = 0;
+        accelerationSound.play().catch(() => {});
+    }
     // Place the car at the stopped position
     animatedModel.position.set(position.x, position.y, position.z);
     let t = 0;
-
     function animate() {
         t += 1 / 60;
         // Simulate a gentle engine rev: rock the car up/down and a little side-to-side
@@ -7245,6 +7288,7 @@ function stopRollsRoyceIdle() {
         cancelAnimationFrame(rollsRoyceIdleAnim);
         rollsRoyceIdleAnim = null;
     }
+    // Do NOT stop accelerationSound here; let it play as long as the token is visible
 }
 
 function startHatIdle(token) {
