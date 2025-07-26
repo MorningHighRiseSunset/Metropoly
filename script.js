@@ -86,10 +86,11 @@ let isPopupVisible = false;
 let accelerationSound = new Audio('Sounds/Rolls-Royce-Audio.mp3'); // Rolls Royce movement sound
 accelerationSound.preload = 'auto';
 accelerationSound.load();
+accelerationSound.volume = 0.18; // Lowered from default (was 1.0)
 
 let helicopterSound = new Audio('Sounds/helicopter-rotor-sound-effectpart-2-95798.mp3');
 helicopterSound.loop = true;
-helicopterSound.volume = 0.7;
+helicopterSound.volume = 0.13; // Lowered from 0.7
 
 let horseGallopingSound = new Audio('Sounds/horses-galloping-sound-effect-359257.mp3');
 horseGallopingSound.volume = 0.6;
@@ -469,7 +470,12 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [80, 220, 600, 800],
         rentWithHotel: 1000,
-        videoUrls: [],
+        videoUrls: [
+            "Videos/LV GKnights 1.mp4",
+            "Videos/LV GKnights 2.mp4",
+            "Videos/LV GKnights 3.mp4",
+            "Videos/LV Golden Knights.mp4",
+        ],
         customBuyLabel: "Buy a ticket",
     },
     {
@@ -726,7 +732,6 @@ const properties = [{
     },
     {
         name: "Community Cards",
-
         type: "special",
         videoUrls: [],
         description: "Draw a Community Card!",
@@ -1833,9 +1838,41 @@ function drawCard(cardType) {
     const content = document.createElement('div');
     content.className = 'property-content';
 
+    // Add header with close button
     const header = document.createElement('div');
     header.className = 'popup-header';
+    header.style.position = 'relative';
     header.textContent = cardType;
+
+    // Add X close button to header
+    const closeButton = document.createElement('button');
+    closeButton.className = 'close-button';
+    closeButton.innerHTML = '&times;';
+    closeButton.style.position = 'absolute';
+    closeButton.style.right = '10px';
+    closeButton.style.top = '50%';
+    closeButton.style.transform = 'translateY(-50%)';
+    closeButton.style.background = 'none';
+    closeButton.style.border = 'none';
+    closeButton.style.color = 'white';
+    closeButton.style.fontSize = '24px';
+    closeButton.style.cursor = 'pointer';
+    closeButton.style.padding = '0';
+    closeButton.style.width = '30px';
+    closeButton.style.height = '30px';
+    closeButton.style.display = 'flex';
+    closeButton.style.alignItems = 'center';
+    closeButton.style.justifyContent = 'center';
+    closeButton.onclick = () => {
+        overlay.classList.add('fade-out');
+        setTimeout(() => {
+            document.body.removeChild(overlay);
+            handleCardEffect(selectedCard, currentPlayer, () => {
+                endTurn();
+            });
+        }, 300);
+    };
+    header.appendChild(closeButton);
 
     const cardText = document.createElement('div');
     cardText.className = 'card-prompt';
@@ -2264,9 +2301,18 @@ function showPropertyUI(position) {
             }, 200);
         }).catch(() => {});
 
-        video.onerror = () => {
+        video.onerror = (error) => {
+            console.error(`Failed to load video: ${selectedUrl}`, error);
             video.style.display = 'none';
             showImageFallback();
+        };
+
+        video.onloadstart = () => {
+            console.log(`Started loading video: ${selectedUrl}`);
+        };
+
+        video.oncanplay = () => {
+            console.log(`Video can play: ${selectedUrl}`);
         };
 
         content.appendChild(videoContainer);
@@ -2278,7 +2324,7 @@ function showPropertyUI(position) {
         showImageFallback();
     }
 
-    // --- Title under video ---
+    // --- Title under video with close button ---
     const titleDiv = document.createElement('div');
     titleDiv.className = 'popup-header';
     titleDiv.style.backgroundColor = "transparent";
@@ -2287,7 +2333,36 @@ function showPropertyUI(position) {
     titleDiv.style.margin = '0 0 4px 0';
     titleDiv.style.width = '100%';
     titleDiv.style.textAlign = 'center';
+    titleDiv.style.position = 'relative';
     titleDiv.textContent = property.name;
+
+    // Add X close button for owned properties
+    if (property.owner) {
+        const closeButton = document.createElement('button');
+        closeButton.className = 'close-button';
+        closeButton.innerHTML = '&times;';
+        closeButton.style.position = 'absolute';
+        closeButton.style.right = '5px';
+        closeButton.style.top = '50%';
+        closeButton.style.transform = 'translateY(-50%)';
+        closeButton.style.background = 'none';
+        closeButton.style.border = 'none';
+        closeButton.style.color = '#666';
+        closeButton.style.fontSize = '18px';
+        closeButton.style.cursor = 'pointer';
+        closeButton.style.padding = '0';
+        closeButton.style.width = '25px';
+        closeButton.style.height = '25px';
+        closeButton.style.display = 'flex';
+        closeButton.style.alignItems = 'center';
+        closeButton.style.justifyContent = 'center';
+        closeButton.onclick = () => {
+            hasHandledProperty = true;
+            document.body.removeChild(overlay);
+        };
+        titleDiv.appendChild(closeButton);
+    }
+
     content.appendChild(titleDiv);
 
     // --- Address under title (if present) ---
@@ -2403,6 +2478,11 @@ function showPropertyUI(position) {
     popup.appendChild(content);
     overlay.appendChild(popup);
     document.body.appendChild(overlay);
+
+    // Add fade-in animation
+    requestAnimationFrame(() => {
+        popup.classList.add('fade-in');
+    });
 }
 
 function showJailUI(player) {
@@ -2475,10 +2555,36 @@ function showJailUI(player) {
     const content = document.createElement('div');
     content.className = 'jail-content';
 
-    // Add header
+    // Add header with close button
     const header = document.createElement('div');
     header.className = 'popup-header';
     header.textContent = 'Jail';
+    header.style.position = 'relative';
+
+    // Add X close button to header
+    const jailHeaderCloseBtn = document.createElement('button');
+    jailHeaderCloseBtn.className = 'close-button';
+    jailHeaderCloseBtn.innerHTML = '&times;';
+    jailHeaderCloseBtn.style.position = 'absolute';
+    jailHeaderCloseBtn.style.right = '10px';
+    jailHeaderCloseBtn.style.top = '50%';
+    jailHeaderCloseBtn.style.transform = 'translateY(-50%)';
+    jailHeaderCloseBtn.style.background = 'none';
+    jailHeaderCloseBtn.style.border = 'none';
+    jailHeaderCloseBtn.style.color = 'white';
+    jailHeaderCloseBtn.style.fontSize = '24px';
+    jailHeaderCloseBtn.style.cursor = 'pointer';
+    jailHeaderCloseBtn.style.padding = '0';
+    jailHeaderCloseBtn.style.width = '30px';
+    jailHeaderCloseBtn.style.height = '30px';
+    jailHeaderCloseBtn.style.display = 'flex';
+    jailHeaderCloseBtn.style.alignItems = 'center';
+    jailHeaderCloseBtn.style.justifyContent = 'center';
+    jailHeaderCloseBtn.onclick = () => {
+        closePopup(overlay);
+        endTurn();
+    };
+    header.appendChild(jailHeaderCloseBtn);
 
     // Add message
     const message = document.createElement('div');
@@ -2610,7 +2716,7 @@ function createButtonContainer(property) {
         };
         buttonContainer.appendChild(rentButton);
     } else if (property.customBuyLabel) {
-        // For Monorail, Speed Vegas Off Roading, Resorts World Theatre, Sphere
+        // For Monorail, Speed Vegas Off Roading, Resorts World Theatre, Sphere, and all ticket/concert properties
         const buyButton = document.createElement('button');
         buyButton.className = 'action-button buy';
         buyButton.textContent = property.customBuyLabel;
@@ -2626,6 +2732,14 @@ function createButtonContainer(property) {
             }
         };
         buttonContainer.appendChild(buyButton);
+        // Always add a Close button for ticket/concert properties
+        const closeButton = document.createElement('button');
+        closeButton.className = 'action-button close';
+        closeButton.textContent = 'Close';
+        closeButton.onclick = () => {
+            closePropertyUI();
+        };
+        buttonContainer.appendChild(closeButton);
     } else {
         // List of properties that should use "Buy a Ticket" and have no rent
         const ticketProperties = [
@@ -4499,7 +4613,7 @@ function driveRollsRoyceAlongPath(token, path, callback) {
 }
 
 // --- Audio Distance Helper ---
-function updateTokenAudioVolume(token, audio, maxDistance = 40, minVolume = 0.05, maxVolume = 1.0) {
+function updateTokenAudioVolume(token, audio, maxDistance = 40, minVolume = 0.03, maxVolume = 0.18) {
     if (!token || !audio || !token.visible) return;
     const distance = camera.position.distanceTo(token.position);
     let volume = 1 - (distance / maxDistance);
@@ -5005,7 +5119,7 @@ function handleAISpecialProperty(property) {
             drawCard("Chance");
             break;
         case "Community Cards":
-            drawCard("Community Cards");
+            drawCard("Community Chest");
             break;
     }
 }
@@ -6667,7 +6781,7 @@ function showFreeParkingUI(player) {
     content.className = 'free-parking-content';
     content.style.flex = '1';
 
-    // Add header
+    // Add header with close button
     const header = document.createElement('div');
     header.className = 'popup-header';
     header.textContent = 'Free Parking';
@@ -6675,6 +6789,32 @@ function showFreeParkingUI(player) {
     header.style.color = 'white';
     header.style.padding = '15px';
     header.style.borderRadius = '8px 8px 0 0';
+    header.style.position = 'relative';
+
+    // Add X close button to header
+    const freeParkingHeaderCloseBtn = document.createElement('button');
+    freeParkingHeaderCloseBtn.className = 'close-button';
+    freeParkingHeaderCloseBtn.innerHTML = '&times;';
+    freeParkingHeaderCloseBtn.style.position = 'absolute';
+    freeParkingHeaderCloseBtn.style.right = '10px';
+    freeParkingHeaderCloseBtn.style.top = '50%';
+    freeParkingHeaderCloseBtn.style.transform = 'translateY(-50%)';
+    freeParkingHeaderCloseBtn.style.background = 'none';
+    freeParkingHeaderCloseBtn.style.border = 'none';
+    freeParkingHeaderCloseBtn.style.color = 'white';
+    freeParkingHeaderCloseBtn.style.fontSize = '24px';
+    freeParkingHeaderCloseBtn.style.cursor = 'pointer';
+    freeParkingHeaderCloseBtn.style.padding = '0';
+    freeParkingHeaderCloseBtn.style.width = '30px';
+    freeParkingHeaderCloseBtn.style.height = '30px';
+    freeParkingHeaderCloseBtn.style.display = 'flex';
+    freeParkingHeaderCloseBtn.style.alignItems = 'center';
+    freeParkingHeaderCloseBtn.style.justifyContent = 'center';
+    freeParkingHeaderCloseBtn.onclick = () => {
+        closePopup(overlay);
+        endTurn();
+    };
+    header.appendChild(freeParkingHeaderCloseBtn);
 
     // Add message
     const message = document.createElement('div');
