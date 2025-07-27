@@ -467,18 +467,20 @@ button:hover,
   }
   #properties-toggle-btn {
     position: fixed !important;
-    bottom: 14px !important;
     right: 10px !important;
     left: auto !important;
     top: auto !important;
-    z-index: 2002 !important;
-    width: 80px !important;
-    max-width: 90px !important;
-    min-width: 60px !important;
+    bottom: 14px !important;
+    transform: none !important;
+    z-index: 3001 !important;
+    width: auto !important;
+    min-width: 90px !important;
+    max-width: 130px !important;
     font-size: 15px !important;
-    padding: 8px 4px !important;
+    padding: 10px 14px !important;
     border-radius: 6px !important;
     text-align: center !important;
+    margin: 0 !important;
   }
   .dice-result {
     left: 50% !important;
@@ -497,15 +499,17 @@ button:hover,
   /* Token selection UI: smaller, 2 columns, 2 rows */
   .token-selection-ui,
   #token-selection-ui {
-    top: 60px !important;
+    top: 30px !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
-    width: 210px !important;
-    max-width: 98vw !important;
+    width: 170px !important;
+    max-width: 95vw !important;
     min-width: 0 !important;
-    padding: 10px 2vw 10px 2vw !important;
-    max-height: 240px !important;
+    padding: 8px 1vw 8px 1vw !important;
+    max-height: 160px !important;
     overflow-y: auto !important;
+    font-size: 13px !important;
+    border-radius: 10px !important;
   }
   .token-grid {
     display: grid !important;
@@ -523,6 +527,62 @@ button:hover,
   .token-button img {
     width: 48px !important;
     height: 48px !important;
+  }
+  #camera-follow-toggle,
+  #camera-follow-indicator,
+  #properties-toggle-btn {
+    width: 130px !important;
+    min-width: 130px !important;
+    max-width: 130px !important;
+    box-sizing: border-box !important;
+  }
+  #camera-follow-toggle {
+    position: fixed !important;
+    right: 10px !important;
+    left: auto !important;
+    top: auto !important;
+    bottom: 126px !important;
+    transform: none !important;
+    z-index: 3002 !important;
+    font-size: 15px !important;
+    padding: 10px 0 !important;
+    border-radius: 8px !important;
+    text-align: center !important;
+    margin: 0 !important;
+    opacity: 0.95 !important;
+  }
+  #camera-follow-indicator {
+    position: fixed !important;
+    right: 10px !important;
+    left: auto !important;
+    top: auto !important;
+    bottom: 70px !important;
+    transform: none !important;
+    z-index: 3002 !important;
+    font-size: 14px !important;
+    padding: 7px 0 !important;
+    border-radius: 8px !important;
+    text-align: center !important;
+    margin: 0 !important;
+    opacity: 0.92 !important;
+    background: #4caf50 !important;
+    color: #fff !important;
+    font-weight: bold !important;
+    display: none;
+  }
+  #properties-toggle-btn {
+    position: fixed !important;
+    right: 10px !important;
+    left: auto !important;
+    top: auto !important;
+    bottom: 14px !important;
+    transform: none !important;
+    z-index: 3001 !important;
+    font-size: 15px !important;
+    padding: 10px 0 !important;
+    border-radius: 6px !important;
+    text-align: center !important;
+    margin: 0 !important;
   }
 }
 

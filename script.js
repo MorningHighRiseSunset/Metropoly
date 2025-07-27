@@ -86,11 +86,10 @@ let isPopupVisible = false;
 let accelerationSound = new Audio('Sounds/Rolls-Royce-Audio.mp3'); // Rolls Royce movement sound
 accelerationSound.preload = 'auto';
 accelerationSound.load();
-accelerationSound.volume = 0.18; // Lowered from default (was 1.0)
 
 let helicopterSound = new Audio('Sounds/helicopter-rotor-sound-effectpart-2-95798.mp3');
 helicopterSound.loop = true;
-helicopterSound.volume = 0.13; // Lowered from 0.7
+helicopterSound.volume = 0.7;
 
 let horseGallopingSound = new Audio('Sounds/horses-galloping-sound-effect-359257.mp3');
 horseGallopingSound.volume = 0.6;
@@ -470,12 +469,7 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [80, 220, 600, 800],
         rentWithHotel: 1000,
-        videoUrls: [
-            "Videos/LV GKnights 1.mp4",
-            "Videos/LV GKnights 2.mp4",
-            "Videos/LV GKnights 3.mp4",
-            "Videos/LV Golden Knights.mp4",
-        ],
+        videoUrls: [],
         customBuyLabel: "Buy a ticket",
     },
     {
@@ -569,6 +563,7 @@ const properties = [{
         rentWithHotel: 2000,
         isPenthouse: true,
         videoUrls: [],
+        customBuyLabel: "Book a room",
     },
     {
         name: "Community Cards",
@@ -1568,6 +1563,17 @@ function createTokens(onAllLoaded) {
     tokenList.forEach(tokenInfo => {
         loader.load(tokenInfo.path, (gltf) => {
             const model = gltf.scene;
+            // Fix transparency issues for woman model
+            if (tokenInfo.name === 'woman') {
+                model.traverse((child) => {
+                    if (child.isMesh) {
+                        child.material.transparent = false;
+                        child.material.depthWrite = true;
+                        child.material.side = THREE.FrontSide; // or THREE.DoubleSide if needed
+                        child.material.alphaTest = 0;
+                    }
+                });
+            }
             model.scale.set(...tokenInfo.scale);
             model.visible = false;
             model.userData.isToken = true;
@@ -1576,36 +1582,35 @@ function createTokens(onAllLoaded) {
             scene.add(model);
 
             // Animation setup for tokens with animations
-            if (gltf.animations && gltf.animations.length > 0) {
+            if (tokenInfo.name === "woman") {
+                // Idle animation
+                const idleMixer = new THREE.AnimationMixer(model);
+                const idleAction = idleMixer.clipAction(gltf.animations[0]);
+                idleAction.clampWhenFinished = true;
+                idleAction.loop = THREE.LoopRepeat;
+                idleAction.play();
+                model.userData.idleMixer = idleMixer;
+                model.userData.idleAction = idleAction;
+
+                // Load walk animation from separate file
+                loader.load('Models/ModelWalkAnim/WhiteGirlBlackandRedOutfitWalk.gltf', function (walkGltf) {
+                    const walkMixer = new THREE.AnimationMixer(model);
+                    const walkAction = walkMixer.clipAction(walkGltf.animations[0]);
+                    walkAction.clampWhenFinished = true;
+                    walkAction.loop = THREE.LoopRepeat;
+                    model.userData.walkMixer = walkMixer;
+                    model.userData.walkAction = walkAction;
+                }, undefined, function (error) {
+                    console.error('Error loading woman walk animation:', error);
+                });
+            } else if (gltf.animations && gltf.animations.length > 0) {
                 model.userData.mixer = new THREE.AnimationMixer(model);
-            
-                // Woman: idle and walk
-                if (tokenInfo.name === "woman") {
-                    model.userData.idleAction = model.userData.mixer.clipAction(gltf.animations[0]);
-                    model.userData.idleAction.play();
-                    if (gltf.animations[1]) {
-                        model.userData.walkAction = model.userData.mixer.clipAction(gltf.animations[1]);
-                    }
-                }
-                // Rolls Royce & Helicopter: play all animations (wheels/rotors spinning)
-                else if (tokenInfo.name === "rolls royce" || tokenInfo.name === "helicopter") {
-                    model.userData.mixer = new THREE.AnimationMixer(model);
-                    model.userData.actions = [];
-                    gltf.animations.forEach(anim => {
-                        const action = model.userData.mixer.clipAction(anim);
-                        action.play();
-                        model.userData.actions.push(action);
-                    });
-                }
-                // Other tokens: play all animations (if any)
-                else {
-                    model.userData.actions = [];
-                    gltf.animations.forEach(anim => {
-                        const action = model.userData.mixer.clipAction(anim);
-                        action.play();
-                        model.userData.actions.push(action);
-                    });
-                }
+                model.userData.actions = [];
+                gltf.animations.forEach(anim => {
+                    const action = model.userData.mixer.clipAction(anim);
+                    action.play();
+                    model.userData.actions.push(action);
+                });
             }
 
             window.loadedTokenModels[tokenInfo.name] = model;
@@ -1739,18 +1744,18 @@ function playWalkAnimation(token) {
         if (token.userData.idleAction) {
             token.userData.idleAction.stop();
         }
-
         // Play the walking animation
-        token.userData.walkAction.play();
-
-        // --- Play walking sound for the woman token ---
+        if (token.userData.walkAction && token.userData.walkMixer) {
+            token.userData.walkAction.reset().play();
+            token.userData.walkMixer.update(0);
+        }
+        // Play walking audio
         if (!token.userData.walkSound) {
-            const walkSound = new Audio('Sounds/steps-high-heels-beautiful-fashion-shopping-mall-walking-movie-and-tv-sound-effects.mp3');
+            const walkSound = new Audio('Sounds/walking-in-heels-95578.mp3');
             walkSound.loop = true;
             walkSound.volume = 0.7;
             token.userData.walkSound = walkSound;
         }
-        // Only play if not already playing
         if (token.userData.walkSound.paused) {
             token.userData.walkSound.currentTime = 0;
             token.userData.walkSound.play().catch(() => {});
@@ -1761,14 +1766,15 @@ function playWalkAnimation(token) {
 function stopWalkAnimation(token) {
     if (token.userData.tokenName === "woman" && token.userData.walkAction) {
         // Stop the walking animation
-        token.userData.walkAction.stop();
-
+        if (token.userData.walkAction) {
+            token.userData.walkAction.stop();
+        }
         // Resume idle animation
         if (token.userData.idleAction) {
-            token.userData.idleAction.play();
+            token.userData.idleAction.reset().play();
+            if (token.userData.idleMixer) token.userData.idleMixer.update(0);
         }
-
-        // --- Stop walking sound for the woman token ---
+        // Stop walking audio
         if (token.userData.walkSound) {
             token.userData.walkSound.pause();
             token.userData.walkSound.currentTime = 0;
@@ -1838,41 +1844,9 @@ function drawCard(cardType) {
     const content = document.createElement('div');
     content.className = 'property-content';
 
-    // Add header with close button
     const header = document.createElement('div');
     header.className = 'popup-header';
-    header.style.position = 'relative';
     header.textContent = cardType;
-
-    // Add X close button to header
-    const closeButton = document.createElement('button');
-    closeButton.className = 'close-button';
-    closeButton.innerHTML = '&times;';
-    closeButton.style.position = 'absolute';
-    closeButton.style.right = '10px';
-    closeButton.style.top = '50%';
-    closeButton.style.transform = 'translateY(-50%)';
-    closeButton.style.background = 'none';
-    closeButton.style.border = 'none';
-    closeButton.style.color = 'white';
-    closeButton.style.fontSize = '24px';
-    closeButton.style.cursor = 'pointer';
-    closeButton.style.padding = '0';
-    closeButton.style.width = '30px';
-    closeButton.style.height = '30px';
-    closeButton.style.display = 'flex';
-    closeButton.style.alignItems = 'center';
-    closeButton.style.justifyContent = 'center';
-    closeButton.onclick = () => {
-        overlay.classList.add('fade-out');
-        setTimeout(() => {
-            document.body.removeChild(overlay);
-            handleCardEffect(selectedCard, currentPlayer, () => {
-                endTurn();
-            });
-        }, 300);
-    };
-    header.appendChild(closeButton);
 
     const cardText = document.createElement('div');
     cardText.className = 'card-prompt';
@@ -1894,7 +1868,18 @@ function drawCard(cardType) {
         }, 300);
     };
 
+    const closeButton = document.createElement('button');
+    closeButton.className = 'action-button close';
+    closeButton.textContent = 'Close';
+    closeButton.onclick = () => {
+        overlay.classList.add('fade-out');
+        setTimeout(() => {
+            document.body.removeChild(overlay);
+        }, 300);
+    };
+
     buttonContainer.appendChild(proceedButton);
+    buttonContainer.appendChild(closeButton);
     content.appendChild(header);
     content.appendChild(cardText);
     content.appendChild(buttonContainer);
@@ -2162,6 +2147,9 @@ function showPropertyUI(position) {
     const overlay = document.createElement('div');
     overlay.className = 'property-overlay';
 
+    // Lower helicopter audio when UI is shown
+    pauseHelicopterAudio();
+
     const popup = document.createElement('div');
     popup.className = 'property-popup';
     popup.style.width = '340px';
@@ -2259,6 +2247,16 @@ function showPropertyUI(position) {
         video.preload = 'metadata';
         video.poster = '';
         video.src = selectedUrl;
+        video.style.width = '100%';
+        video.style.height = '100%';
+        video.style.objectFit = 'cover';
+        video.style.borderRadius = '8px';
+
+        // Unmute the video when it is loaded (like jail video logic)
+        video.addEventListener('loadeddata', () => {
+            video.muted = false;
+            video.play().catch(error => console.error("Failed to play property video:", error));
+        });
 
         videoContainer.appendChild(video);
 
@@ -2294,25 +2292,9 @@ function showPropertyUI(position) {
         }
         // --- END HORSEBACK RIDING SYNC ---
 
-        // Try to play and then unmute after play starts (loophole: user gesture)
-        video.play().then(() => {
-            setTimeout(() => {
-                video.muted = false;
-            }, 200);
-        }).catch(() => {});
-
-        video.onerror = (error) => {
-            console.error(`Failed to load video: ${selectedUrl}`, error);
+        video.onerror = () => {
             video.style.display = 'none';
             showImageFallback();
-        };
-
-        video.onloadstart = () => {
-            console.log(`Started loading video: ${selectedUrl}`);
-        };
-
-        video.oncanplay = () => {
-            console.log(`Video can play: ${selectedUrl}`);
         };
 
         content.appendChild(videoContainer);
@@ -2324,7 +2306,7 @@ function showPropertyUI(position) {
         showImageFallback();
     }
 
-    // --- Title under video with close button ---
+    // --- Title under video ---
     const titleDiv = document.createElement('div');
     titleDiv.className = 'popup-header';
     titleDiv.style.backgroundColor = "transparent";
@@ -2333,36 +2315,7 @@ function showPropertyUI(position) {
     titleDiv.style.margin = '0 0 4px 0';
     titleDiv.style.width = '100%';
     titleDiv.style.textAlign = 'center';
-    titleDiv.style.position = 'relative';
     titleDiv.textContent = property.name;
-
-    // Add X close button for owned properties
-    if (property.owner) {
-        const closeButton = document.createElement('button');
-        closeButton.className = 'close-button';
-        closeButton.innerHTML = '&times;';
-        closeButton.style.position = 'absolute';
-        closeButton.style.right = '5px';
-        closeButton.style.top = '50%';
-        closeButton.style.transform = 'translateY(-50%)';
-        closeButton.style.background = 'none';
-        closeButton.style.border = 'none';
-        closeButton.style.color = '#666';
-        closeButton.style.fontSize = '18px';
-        closeButton.style.cursor = 'pointer';
-        closeButton.style.padding = '0';
-        closeButton.style.width = '25px';
-        closeButton.style.height = '25px';
-        closeButton.style.display = 'flex';
-        closeButton.style.alignItems = 'center';
-        closeButton.style.justifyContent = 'center';
-        closeButton.onclick = () => {
-            hasHandledProperty = true;
-            document.body.removeChild(overlay);
-        };
-        titleDiv.appendChild(closeButton);
-    }
-
     content.appendChild(titleDiv);
 
     // --- Address under title (if present) ---
@@ -2483,6 +2436,14 @@ function showPropertyUI(position) {
     requestAnimationFrame(() => {
         popup.classList.add('fade-in');
     });
+
+    // Restore helicopter audio when UI is closed
+    overlay.addEventListener('transitionend', function restoreHeliAudio(e) {
+        if (e.propertyName === 'opacity' && overlay.classList.contains('fade-out')) {
+            resumeHelicopterAudio();
+            overlay.removeEventListener('transitionend', restoreHeliAudio);
+        }
+    });
 }
 
 function showJailUI(player) {
@@ -2500,6 +2461,9 @@ function showJailUI(player) {
     // Create the overlay
     const overlay = document.createElement('div');
     overlay.className = 'jail-overlay';
+
+    // Lower helicopter audio when UI is shown
+    pauseHelicopterAudio();
 
     // Create the popup
     const popup = document.createElement('div');
@@ -2555,36 +2519,10 @@ function showJailUI(player) {
     const content = document.createElement('div');
     content.className = 'jail-content';
 
-    // Add header with close button
+    // Add header
     const header = document.createElement('div');
     header.className = 'popup-header';
     header.textContent = 'Jail';
-    header.style.position = 'relative';
-
-    // Add X close button to header
-    const jailHeaderCloseBtn = document.createElement('button');
-    jailHeaderCloseBtn.className = 'close-button';
-    jailHeaderCloseBtn.innerHTML = '&times;';
-    jailHeaderCloseBtn.style.position = 'absolute';
-    jailHeaderCloseBtn.style.right = '10px';
-    jailHeaderCloseBtn.style.top = '50%';
-    jailHeaderCloseBtn.style.transform = 'translateY(-50%)';
-    jailHeaderCloseBtn.style.background = 'none';
-    jailHeaderCloseBtn.style.border = 'none';
-    jailHeaderCloseBtn.style.color = 'white';
-    jailHeaderCloseBtn.style.fontSize = '24px';
-    jailHeaderCloseBtn.style.cursor = 'pointer';
-    jailHeaderCloseBtn.style.padding = '0';
-    jailHeaderCloseBtn.style.width = '30px';
-    jailHeaderCloseBtn.style.height = '30px';
-    jailHeaderCloseBtn.style.display = 'flex';
-    jailHeaderCloseBtn.style.alignItems = 'center';
-    jailHeaderCloseBtn.style.justifyContent = 'center';
-    jailHeaderCloseBtn.onclick = () => {
-        closePopup(overlay);
-        endTurn();
-    };
-    header.appendChild(jailHeaderCloseBtn);
 
     // Add message
     const message = document.createElement('div');
@@ -2671,6 +2609,14 @@ function showJailUI(player) {
     requestAnimationFrame(() => {
         popup.classList.add('fade-in');
     });
+
+    // Restore helicopter audio when UI is closed
+    overlay.addEventListener('transitionend', function restoreHeliAudio(e) {
+        if (e.propertyName === 'opacity' && overlay.classList.contains('fade-out')) {
+            resumeHelicopterAudio();
+            overlay.removeEventListener('transitionend', restoreHeliAudio);
+        }
+    });
 }
 
 function createButtonContainer(property) {
@@ -2716,7 +2662,7 @@ function createButtonContainer(property) {
         };
         buttonContainer.appendChild(rentButton);
     } else if (property.customBuyLabel) {
-        // For Monorail, Speed Vegas Off Roading, Resorts World Theatre, Sphere, and all ticket/concert properties
+        // For Monorail, Speed Vegas Off Roading, Resorts World Theatre, Sphere, Maverick Helicopter Rides, etc.
         const buyButton = document.createElement('button');
         buyButton.className = 'action-button buy';
         buyButton.textContent = property.customBuyLabel;
@@ -2732,14 +2678,6 @@ function createButtonContainer(property) {
             }
         };
         buttonContainer.appendChild(buyButton);
-        // Always add a Close button for ticket/concert properties
-        const closeButton = document.createElement('button');
-        closeButton.className = 'action-button close';
-        closeButton.textContent = 'Close';
-        closeButton.onclick = () => {
-            closePropertyUI();
-        };
-        buttonContainer.appendChild(closeButton);
     } else {
         // List of properties that should use "Buy a Ticket" and have no rent
         const ticketProperties = [
@@ -2817,13 +2755,12 @@ function createButtonContainer(property) {
     spacer.style.minHeight = '0';
     buttonContainer.appendChild(spacer);
 
-    // Close button at the bottom, moved up a bit
+    // Always add close button at the bottom
     const closeButton = document.createElement('button');
     closeButton.className = 'action-button close';
     closeButton.textContent = 'Close';
     closeButton.onclick = () => {
         closePropertyUI();
-        // Do NOT call endTurn() here for human players
     };
     closeButton.style.marginTop = '0';
     closeButton.style.marginBottom = '20px'; // Move the button up from the bottom
@@ -2835,18 +2772,20 @@ function createButtonContainer(property) {
 
 function closePropertyUI() {
     const overlay = document.querySelector('.property-overlay');
-    if (!overlay) return;
-
+    if (!overlay) {
+        resumeHelicopterAudio();
+        return;
+    }
     const popup = overlay.querySelector('.property-popup');
     if (popup) {
         popup.classList.remove('show');
         popup.classList.add('hide');
     }
-
     setTimeout(() => {
         if (overlay && overlay.parentElement) {
             overlay.parentElement.removeChild(overlay);
         }
+        resumeHelicopterAudio();
     }, 300);
 }
 
@@ -3590,6 +3529,12 @@ function initializePlayers() {
 function createPlayerTokenSelectionUI(playerIndex) {
     if (initialSelectionComplete) return;
 
+    // SAFETY: Remove any stray play/start game button from previous page
+    const playBtn = document.getElementById('play-button');
+    if (playBtn) playBtn.remove();
+    const startBtn = document.getElementById('start-game');
+    if (startBtn) startBtn.remove();
+
     tokenSelectionUI = document.createElement("div");
     tokenSelectionUI.style.position = "fixed";
     tokenSelectionUI.style.top = "10px";
@@ -3629,6 +3574,7 @@ function createPlayerTokenSelectionUI(playerIndex) {
     });
 
     const startButton = document.createElement("button");
+    startButton.id = "start-game"; // Ensure only one exists
     startButton.textContent = "Start Game";
     startButton.className = "action-button";
     startButton.style.marginTop = "15px";
@@ -4613,7 +4559,7 @@ function driveRollsRoyceAlongPath(token, path, callback) {
 }
 
 // --- Audio Distance Helper ---
-function updateTokenAudioVolume(token, audio, maxDistance = 40, minVolume = 0.03, maxVolume = 0.18) {
+function updateTokenAudioVolume(token, audio, maxDistance = 40, minVolume = 0.05, maxVolume = 1.0) {
     if (!token || !audio || !token.visible) return;
     const distance = camera.position.distanceTo(token.position);
     let volume = 1 - (distance / maxDistance);
@@ -5119,7 +5065,7 @@ function handleAISpecialProperty(property) {
             drawCard("Chance");
             break;
         case "Community Cards":
-            drawCard("Community Chest");
+            drawCard("Community Cards");
             break;
     }
 }
@@ -6781,7 +6727,7 @@ function showFreeParkingUI(player) {
     content.className = 'free-parking-content';
     content.style.flex = '1';
 
-    // Add header with close button
+    // Add header
     const header = document.createElement('div');
     header.className = 'popup-header';
     header.textContent = 'Free Parking';
@@ -6789,32 +6735,6 @@ function showFreeParkingUI(player) {
     header.style.color = 'white';
     header.style.padding = '15px';
     header.style.borderRadius = '8px 8px 0 0';
-    header.style.position = 'relative';
-
-    // Add X close button to header
-    const freeParkingHeaderCloseBtn = document.createElement('button');
-    freeParkingHeaderCloseBtn.className = 'close-button';
-    freeParkingHeaderCloseBtn.innerHTML = '&times;';
-    freeParkingHeaderCloseBtn.style.position = 'absolute';
-    freeParkingHeaderCloseBtn.style.right = '10px';
-    freeParkingHeaderCloseBtn.style.top = '50%';
-    freeParkingHeaderCloseBtn.style.transform = 'translateY(-50%)';
-    freeParkingHeaderCloseBtn.style.background = 'none';
-    freeParkingHeaderCloseBtn.style.border = 'none';
-    freeParkingHeaderCloseBtn.style.color = 'white';
-    freeParkingHeaderCloseBtn.style.fontSize = '24px';
-    freeParkingHeaderCloseBtn.style.cursor = 'pointer';
-    freeParkingHeaderCloseBtn.style.padding = '0';
-    freeParkingHeaderCloseBtn.style.width = '30px';
-    freeParkingHeaderCloseBtn.style.height = '30px';
-    freeParkingHeaderCloseBtn.style.display = 'flex';
-    freeParkingHeaderCloseBtn.style.alignItems = 'center';
-    freeParkingHeaderCloseBtn.style.justifyContent = 'center';
-    freeParkingHeaderCloseBtn.onclick = () => {
-        closePopup(overlay);
-        endTurn();
-    };
-    header.appendChild(freeParkingHeaderCloseBtn);
 
     // Add message
     const message = document.createElement('div');
@@ -6924,8 +6844,17 @@ function handleLuxuryTax(player) {
             endTurn(); // End the turn after the player makes a decision
         };
 
-        // Add button to the container
+        // Add close button
+        const closeButton = document.createElement('button');
+        closeButton.className = 'action-button close';
+        closeButton.textContent = 'Close';
+        closeButton.onclick = () => {
+            closePopup(overlay);
+        };
+
+        // Add buttons to the container
         buttonContainer.appendChild(payButton);
+        buttonContainer.appendChild(closeButton);
 
         // Add header, message, and buttons to the popup
         popup.appendChild(header);
