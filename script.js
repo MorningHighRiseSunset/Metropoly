@@ -91,6 +91,19 @@ let helicopterSound = new Audio('Sounds/helicopter-rotor-sound-effectpart-2-9579
 helicopterSound.loop = true;
 helicopterSound.volume = 0.7;
 
+// Helicopter audio control functions
+function pauseHelicopterAudio() {
+    if (helicopterSound && !helicopterSound.paused) {
+        helicopterSound.pause();
+    }
+}
+
+function resumeHelicopterAudio() {
+    if (helicopterSound && helicopterSound.paused) {
+        helicopterSound.play().catch(error => console.error("Failed to resume helicopter audio:", error));
+    }
+}
+
 let horseGallopingSound = new Audio('Sounds/horses-galloping-sound-effect-359257.mp3');
 horseGallopingSound.volume = 0.6;
 
@@ -2392,37 +2405,9 @@ function showPropertyUI(position) {
     buttonsContainer.style.justifyContent = 'flex-start';
     buttonsContainer.style.height = '100%';
 
-    // Add Buy/Rent/Close buttons
-    if (!property.owner) {
-        const buyButton = document.createElement('button');
-        buyButton.className = 'action-button buy';
-        buyButton.textContent = property.customBuyLabel || `Buy for $${property.price}`;
-        buyButton.onclick = () => {
-            buyProperty(players[currentPlayerIndex], property);
-            hasHandledProperty = true;
-            document.body.removeChild(overlay);
-        };
-        buttonsContainer.appendChild(buyButton);
-    } else if (property.owner !== players[currentPlayerIndex]) {
-        const payRentButton = document.createElement('button');
-        payRentButton.className = 'action-button pay-rent';
-        payRentButton.textContent = property.customRentLabel || `Pay Rent ($${calculateRent(property)})`;
-        payRentButton.onclick = () => {
-            handleRentPayment(players[currentPlayerIndex], property);
-            hasHandledProperty = true;
-            document.body.removeChild(overlay);
-        };
-        buttonsContainer.appendChild(payRentButton);
-    } else {
-        const closeButton = document.createElement('button');
-        closeButton.className = 'action-button close';
-        closeButton.textContent = "Close";
-        closeButton.onclick = () => {
-            hasHandledProperty = true;
-            document.body.removeChild(overlay);
-        };
-        buttonsContainer.appendChild(closeButton);
-    }
+    // Use the createButtonContainer function to get proper buttons with close button
+    const buttonContainer = createButtonContainer(property);
+    buttonsContainer.appendChild(buttonContainer);
 
     rowContainer.appendChild(detailsContainer);
     rowContainer.appendChild(buttonsContainer);
@@ -2678,7 +2663,10 @@ function createButtonContainer(property) {
             }
         };
         buttonContainer.appendChild(buyButton);
-    } else {
+    }
+
+    // Handle the else case for regular properties (those without customBuyLabel and not Brothel)
+    if (property.name !== 'Brothel' && !property.customBuyLabel) {
         // List of properties that should use "Buy a Ticket" and have no rent
         const ticketProperties = [
             "Las Vegas Grand Prix",
@@ -2749,7 +2737,7 @@ function createButtonContainer(property) {
         buttonContainer.appendChild(topButtons);
     }
 
-    // Spacer to push close button to the bottom
+    // Add spacer and close button for ALL cases (Brothel, customBuyLabel, and regular properties)
     const spacer = document.createElement('div');
     spacer.style.flex = '1 1 auto';
     spacer.style.minHeight = '0';
@@ -2761,6 +2749,10 @@ function createButtonContainer(property) {
     closeButton.textContent = 'Close';
     closeButton.onclick = () => {
         closePropertyUI();
+        // End the turn when close button is pressed
+        setTimeout(() => {
+            endTurn();
+        }, 300); // Small delay to allow the UI to close first
     };
     closeButton.style.marginTop = '0';
     closeButton.style.marginBottom = '20px'; // Move the button up from the bottom
