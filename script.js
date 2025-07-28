@@ -482,7 +482,11 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [80, 220, 600, 800],
         rentWithHotel: 1000,
-        videoUrls: [],
+        videoUrls: [
+            "Videos/LV GKnights 1.mp4",
+            "Videos/LV GKnights 2.mp4",
+            "Videos/LV GKnights 3.mp4",
+        ],
         customBuyLabel: "Buy a ticket",
     },
     {
@@ -509,7 +513,7 @@ const properties = [{
         rentWithHouse: [110, 330, 800, 975],
         rentWithHotel: 1150,
         videoUrls: [
-            "Videos/MavHeli1.mp4",
+            "Videos/MavHeli1.mp4.mp4",
             "Videos/MavHeli2.mp4",
             "Videos/MavHeli3.mp4",
         ],
@@ -758,6 +762,7 @@ const properties = [{
         rentWithHouse: [210, 625, 1450, 1750],
         rentWithHotel: 2050,
         videoUrls: [
+            "Videos/WNBA.mp4",
             "Videos/WNBAHL1.mp4",
             "Videos/WNBAHL2.mp4",
             "Videos/WNBAHL3.mp4",
@@ -776,7 +781,9 @@ const properties = [{
         hotelPrice: 250,
         rentWithHouse: [230, 700, 1500, 1850],
         rentWithHotel: 2100,
-        videoUrls: [],
+        videoUrls: [
+            "Videos/Eagles_Highlights_Compressed.mp4",
+        ],
         customBuyLabel: "Buy a ticket for 300",
         noRent: true
     },
@@ -1764,7 +1771,7 @@ function playWalkAnimation(token) {
         }
         // Play walking audio
         if (!token.userData.walkSound) {
-            const walkSound = new Audio('Sounds/walking-in-heels-95578.mp3');
+            const walkSound = new Audio('Sounds/steps-high-heels-beautiful-fashion-shopping-mall-walking-movie-and-tv-sound-effects.mp3');
             walkSound.loop = true;
             walkSound.volume = 0.7;
             token.userData.walkSound = walkSound;
@@ -1888,6 +1895,7 @@ function drawCard(cardType) {
         overlay.classList.add('fade-out');
         setTimeout(() => {
             document.body.removeChild(overlay);
+            endTurn(); // End the turn when close button is clicked
         }, 300);
     };
 
@@ -2249,26 +2257,36 @@ function showPropertyUI(position) {
         const selectedUrl = property.videoUrls[randomIndex];
 
         const video = document.createElement('video');
-        video.muted = true;
-        video.setAttribute('muted', '');
+        video.src = selectedUrl;
+        video.controls = true;
+        video.autoplay = true;
+        video.muted = true; // Start muted like jail videos
         video.playsInline = true;
         video.setAttribute('playsinline', '');
         video.setAttribute('webkit-playsinline', '');
-        video.autoplay = true;
-        video.setAttribute('autoplay', '');
-        video.controls = true;
         video.preload = 'metadata';
-        video.poster = '';
-        video.src = selectedUrl;
         video.style.width = '100%';
         video.style.height = '100%';
         video.style.objectFit = 'cover';
         video.style.borderRadius = '8px';
 
-        // Unmute the video when it is loaded (like jail video logic)
+        // Unmute the video when it is loaded (exactly like jail video logic)
         video.addEventListener('loadeddata', () => {
             video.muted = false;
             video.play().catch(error => console.error("Failed to play property video:", error));
+        });
+
+        // Add timeout to ensure video loads within reasonable time
+        const videoLoadTimeout = setTimeout(() => {
+            if (video.readyState < 2) { // HAVE_CURRENT_DATA
+                console.warn(`Video load timeout for ${selectedUrl}, falling back to image`);
+                video.style.display = 'none';
+                showImageFallback();
+            }
+        }, 3000); // 3 second timeout
+
+        video.addEventListener('loadeddata', () => {
+            clearTimeout(videoLoadTimeout);
         });
 
         videoContainer.appendChild(video);
@@ -2305,10 +2323,19 @@ function showPropertyUI(position) {
         }
         // --- END HORSEBACK RIDING SYNC ---
 
+        // Better error handling - try to load video, fallback to image if it fails
         video.onerror = () => {
+            console.warn(`Failed to load video: ${selectedUrl}, falling back to image`);
             video.style.display = 'none';
             showImageFallback();
         };
+
+        // Additional error handling for network issues
+        video.addEventListener('error', (e) => {
+            console.warn(`Video error for ${selectedUrl}:`, e);
+            video.style.display = 'none';
+            showImageFallback();
+        });
 
         content.appendChild(videoContainer);
         mediaShown = true;
@@ -2317,6 +2344,17 @@ function showPropertyUI(position) {
     // If no video, show image immediately
     if (!mediaShown) {
         showImageFallback();
+    }
+
+    // Add video preloading for better reliability
+    if (property.videoUrls && property.videoUrls.length > 0) {
+        property.videoUrls.forEach(url => {
+            const link = document.createElement('link');
+            link.rel = 'preload';
+            link.as = 'video';
+            link.href = url;
+            document.head.appendChild(link);
+        });
     }
 
     // --- Title under video ---
@@ -2778,6 +2816,7 @@ function closePropertyUI() {
             overlay.parentElement.removeChild(overlay);
         }
         resumeHelicopterAudio();
+        endTurn(); // End the turn when property UI is closed
     }, 300);
 }
 
