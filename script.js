@@ -4086,7 +4086,7 @@ function moveTokenWithJump(startPos, endPos, token) {
 function getTokenHeight(tokenName, baseHeight) {
     const heightOffsets = {
         hat: 0.5, // Offset for the "hat" token
-        woman: 0.1, // Reduced offset for the "woman" token to prevent levitating
+        woman: 0.2, // Balanced height for the "woman" token - not too high, not too low
         // Add offsets for other tokens as needed
     };
 
@@ -4160,7 +4160,7 @@ function moveToken(startPos, endPos, token, callback) {
             }
         );
     } else if (tokenName === "woman") {
-        const womanHeight = 0.1; // Reduced height to match getTokenHeight
+        const womanHeight = 0.3; // Slightly higher during movement to prevent feet clipping
         const adjustedStartPos = {
             ...startPos,
             y: startPos.y + womanHeight
