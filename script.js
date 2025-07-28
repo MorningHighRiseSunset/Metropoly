@@ -93,13 +93,18 @@ helicopterSound.volume = 0.7;
 
 // Helicopter audio control functions
 function pauseHelicopterAudio() {
+    // Only pause helicopter audio if it's currently playing
     if (helicopterSound && !helicopterSound.paused) {
         helicopterSound.pause();
     }
 }
 
 function resumeHelicopterAudio() {
-    if (helicopterSound && helicopterSound.paused) {
+    // Only resume helicopter audio if a helicopter token is currently being used
+    const currentPlayer = players[currentPlayerIndex];
+    if (currentPlayer && currentPlayer.selectedToken && 
+        currentPlayer.selectedToken.userData.tokenName === "helicopter" &&
+        helicopterSound && helicopterSound.paused) {
         helicopterSound.play().catch(error => console.error("Failed to resume helicopter audio:", error));
     }
 }
@@ -762,7 +767,7 @@ const properties = [{
         rentWithHouse: [210, 625, 1450, 1750],
         rentWithHotel: 2050,
         videoUrls: [
-            "Videos/WNBA.mp4",
+            "",
             "Videos/WNBAHL1.mp4",
             "Videos/WNBAHL2.mp4",
             "Videos/WNBAHL3.mp4",
@@ -1772,12 +1777,12 @@ function playWalkAnimation(token) {
         // Play walking audio
         if (!token.userData.walkSound) {
             const walkSound = new Audio('Sounds/steps-high-heels-beautiful-fashion-shopping-mall-walking-movie-and-tv-sound-effects.mp3');
-            walkSound.loop = true;
+            walkSound.loop = true;  
             walkSound.volume = 0.7;
             token.userData.walkSound = walkSound;
         }
         if (token.userData.walkSound.paused) {
-            token.userData.walkSound.currentTime = 0;
+            // Don't reset currentTime - let it continue from where it left off
             token.userData.walkSound.play().catch(() => {});
         }
     }
@@ -1797,7 +1802,7 @@ function stopWalkAnimation(token) {
         // Stop walking audio
         if (token.userData.walkSound) {
             token.userData.walkSound.pause();
-            token.userData.walkSound.currentTime = 0;
+            // Don't reset currentTime - let it resume from where it left off
         }
     }
 }
@@ -4081,7 +4086,7 @@ function moveTokenWithJump(startPos, endPos, token) {
 function getTokenHeight(tokenName, baseHeight) {
     const heightOffsets = {
         hat: 0.5, // Offset for the "hat" token
-        woman: 0.5, // Offset for the "woman" token
+        woman: 0.1, // Reduced offset for the "woman" token to prevent levitating
         // Add offsets for other tokens as needed
     };
 
@@ -4155,7 +4160,7 @@ function moveToken(startPos, endPos, token, callback) {
             }
         );
     } else if (tokenName === "woman") {
-        const womanHeight = 0.5;
+        const womanHeight = 0.1; // Reduced height to match getTokenHeight
         const adjustedStartPos = {
             ...startPos,
             y: startPos.y + womanHeight
@@ -4202,8 +4207,36 @@ function moveToken(startPos, endPos, token, callback) {
         // Rolls Royce handled by driveWithRollsRoyceEffect or driveRollsRoyceAlongPath
         finalizeMove(token, endPos, callback);
     } else if (tokenName === "helicopter") {
-        // Helicopter handled by flyWithHelicopterEffectPath
-        finalizeMove(token, endPos, callback);
+        // Helicopter should use proper helicopter movement functions
+        // This should be handled by moveHelicopterToNewPosition instead
+        // For now, use a simple movement to avoid helicopter sound issues
+        const duration = 1000;
+        const startTime = Date.now();
+
+        function animate() {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+
+            const currentX = startPos.x + (endPos.x - startPos.x) * progress;
+            const currentZ = startPos.z + (endPos.z - startPos.z) * progress;
+
+            token.position.set(currentX, startPos.y, currentZ);
+
+            const directionVector = new THREE.Vector3(
+                endPos.x - startPos.x,
+                0,
+                endPos.z - startPos.z
+            ).normalize();
+            token.rotation.set(0, Math.atan2(directionVector.x, directionVector.z), 0);
+
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                finalizeMove(token, endPos, callback);
+            }
+        }
+
+        animate();
     } else {
         // Default movement for other tokens
         const duration = 1000;
@@ -4596,6 +4629,7 @@ function updateTokenAudioVolume(token, audio, maxDistance = 40, minVolume = 0.05
     let volume = 1 - (distance / maxDistance);
     volume = Math.max(minVolume, Math.min(maxVolume, volume));
     audio.volume = volume;
+    // Don't start playing the audio here - only adjust volume if it's already playing
 }
 
 function throwFootballAnimation(token, endPos, finalHeight, callback) {
@@ -4849,9 +4883,11 @@ function flyWithHelicopterEffect(startPos, endPos, token, callback) {
         console.error("Invalid parameters passed to flyWithHelicopterEffect");
         return;
     }
-    // Start helicopter sound for movement
-    helicopterSound.currentTime = 0;
-    helicopterSound.play().catch(() => {});
+    // Start helicopter sound for movement only if this is a helicopter token
+    if (token.userData.tokenName === "helicopter") {
+        helicopterSound.currentTime = 0;
+        helicopterSound.play().catch(() => {});
+    }
 
     // Swap to animated model if available
     const animatedModel = token.userData.animatedModel;
@@ -7214,9 +7250,11 @@ function startHelicopterHover(animatedModel, position) {
     if (animatedModel.userData.actions) {
         animatedModel.userData.actions.forEach(action => action.play());
     }
-    // Start helicopter sound
-    helicopterSound.currentTime = 0;
-    helicopterSound.play().catch(() => {});
+    // Start helicopter sound only if this is actually a helicopter token
+    if (animatedModel.userData.tokenName === "helicopter") {
+        helicopterSound.currentTime = 0;
+        helicopterSound.play().catch(() => {});
+    }
     let t = 0;
     const hoverRadius = 1.1 + Math.random() * 0.5; // Small circle
     const hoverSpeed = 0.7 + Math.random() * 0.3; // Slightly random speed
@@ -7252,16 +7290,20 @@ function stopHelicopterHover() {
         cancelAnimationFrame(helicopterHoverAnim);
         helicopterHoverAnim = null;
     }
-    // Stop helicopter sound
-    helicopterSound.pause();
-    helicopterSound.currentTime = 0;
+    // Stop helicopter sound only if it's currently playing
+    if (helicopterSound && !helicopterSound.paused) {
+        helicopterSound.pause();
+        helicopterSound.currentTime = 0;
+    }
 }
 
 function flyWithHelicopterEffectPath(path, token, callback) {
     stopHelicopterHover(); // Stop idle before moving
-    // Start helicopter sound for movement
-    helicopterSound.currentTime = 0;
-    helicopterSound.play().catch(() => {});
+    // Start helicopter sound for movement only if this is a helicopter token
+    if (token.userData.tokenName === "helicopter") {
+        helicopterSound.currentTime = 0;
+        helicopterSound.play().catch(() => {});
+    }
     // Always use animated model for helicopter if available
     const animatedModel = token.userData.animatedModel || token;
     let mixer, actions;
