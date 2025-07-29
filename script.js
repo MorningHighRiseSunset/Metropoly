@@ -597,7 +597,7 @@ const properties = [{
     {
         name: "FREE PARKING",
         type: "special",
-        imageUrls: ["Images/free parking.jpg"],
+        imageUrls: ["Images/free parking-Photoroom.png"],
         description: "Take a break! No fee to park here.",
         special: true
     },
@@ -2217,7 +2217,8 @@ function showPropertyUI(position) {
             img.src = imageUrl;
             img.style.width = '100%';
             img.style.height = '100%';
-            img.style.objectFit = 'cover';
+            img.style.objectFit = 'contain';
+            img.style.objectPosition = 'top';
             img.style.borderRadius = '8px';
             imageContainer.appendChild(img);
             content.appendChild(imageContainer);
@@ -6770,7 +6771,8 @@ function showFreeParkingUI(player) {
     img.src = imageUrl;
     img.style.width = '100%';
     img.style.height = '100%';
-    img.style.objectFit = 'cover';
+    img.style.objectFit = 'contain';
+    img.style.objectPosition = 'top';
     img.style.borderRadius = '8px';
     // Move Water Works image down to show more of the top
     imageContainer.appendChild(img);
