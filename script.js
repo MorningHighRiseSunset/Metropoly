@@ -490,7 +490,7 @@ const properties = [{
         videoUrls: [
             "Videos/LV GKnights 1.mp4",
             "Videos/LV GKnights 2.mp4",
-            "Videos/LV GKnights 3.mp4",
+            "Videos/Gknights 1 New.mp4",
         ],
         customBuyLabel: "Buy a ticket",
     },
