@@ -4482,6 +4482,11 @@ function driveWithRollsRoyceEffect(startPos, endPos, token, callback) {
         console.error("Invalid parameters passed to driveWithRollsRoyceEffect");
         return;
     }
+    
+    // Set movement flags for camera following
+    currentlyMovingToken = token;
+    isTokenMoving = true;
+    
     // Use animated model if available
     const animatedModel = token.userData.animatedModel;
     let mixer, actions;
@@ -4552,6 +4557,10 @@ function driveWithRollsRoyceEffect(startPos, endPos, token, callback) {
             requestAnimationFrame(animate);
         } else {
             // End: keep animated model visible and start idle anim
+            // Clear movement flags for camera following
+            isTokenMoving = false;
+            currentlyMovingToken = null;
+            
             if (animatedModel) {
                 startRollsRoyceIdle(animatedModel, {
                     x: mainPos.x,
@@ -4610,6 +4619,10 @@ function driveRollsRoyceAlongPath(token, path, callback) {
             requestAnimationFrame(animate);
         } else {
             // End: keep animated model visible and start idle anim
+            // Clear movement flags for camera following
+            isTokenMoving = false;
+            currentlyMovingToken = null;
+            
             if (animatedModel) {
                 startRollsRoyceIdle(animatedModel, {
                     x: pos.x,
@@ -4634,6 +4647,10 @@ function updateTokenAudioVolume(token, audio, maxDistance = 40, minVolume = 0.05
 }
 
 function throwFootballAnimation(token, endPos, finalHeight, callback) {
+    // Set movement flags for camera following
+    currentlyMovingToken = token;
+    isTokenMoving = true;
+    
     selectedToken = token;
     const startPos = token.position.clone();
     let endVec = (endPos instanceof THREE.Vector3) ? endPos : new THREE.Vector3(endPos.x, endPos.y, endPos.z);
@@ -4696,6 +4713,9 @@ function throwFootballAnimation(token, endPos, finalHeight, callback) {
             const finalDir = endVec.clone().sub(startPos).normalize();
             const finalQuat = new THREE.Quaternion().setFromUnitVectors(forward, finalDir);
             token.quaternion.copy(finalQuat);
+            // Clear movement flags for camera following
+            isTokenMoving = false;
+            currentlyMovingToken = null;
             startFootballIdleAnimation(token);
             if (callback) callback();
         }
@@ -4790,6 +4810,9 @@ function jumpWithHatEffect(startPos, endPos, token, callback) {
             // Snap to final position and orientation
             token.position.set(endPos.x, endPos.y, endPos.z);
             token.rotation.set(0, uprightAngle, 0);
+            // Clear movement flags for camera following
+            isTokenMoving = false;
+            currentlyMovingToken = null;
             if (callback) callback();
         }
     }
@@ -4827,8 +4850,11 @@ function driveWithDefaultEffect(startPos, endPos, token, callback) {
 
         if (progress < 1) {
             requestAnimationFrame(animate);
-        } else if (callback) {
-            callback();
+        } else {
+            // Clear movement flags for camera following
+            isTokenMoving = false;
+            currentlyMovingToken = null;
+            if (callback) callback();
         }
     }
 
@@ -4840,6 +4866,10 @@ function driveWithSpeedboatEffect(startPos, endPos, token, callback) {
         console.error("Invalid parameters passed to driveWithSpeedboatEffect");
         return;
     }
+    
+    // Set movement flags for camera following
+    currentlyMovingToken = token;
+    isTokenMoving = true;
 
     const duration = 1000; // Reduced from 2000 to 1000 (1 second)
     const startTime = Date.now();
@@ -4867,8 +4897,11 @@ function driveWithSpeedboatEffect(startPos, endPos, token, callback) {
 
         if (progress < 1) {
             requestAnimationFrame(animate);
-        } else if (callback) {
-            callback();
+        } else {
+            // Clear movement flags for camera following
+            isTokenMoving = false;
+            currentlyMovingToken = null;
+            if (callback) callback();
         }
     }
 
@@ -4884,6 +4917,10 @@ function flyWithHelicopterEffect(startPos, endPos, token, callback) {
         console.error("Invalid parameters passed to flyWithHelicopterEffect");
         return;
     }
+    
+    // Set movement flags for camera following
+    currentlyMovingToken = token;
+    isTokenMoving = true;
     // Start helicopter sound for movement only if this is a helicopter token
     if (token.userData.tokenName === "helicopter") {
         helicopterSound.currentTime = 0;
@@ -4964,6 +5001,9 @@ function flyWithHelicopterEffect(startPos, endPos, token, callback) {
                 token.position.set(endPos.x, 1.5, endPos.z);
                 token.rotation.set(0, angle + modelOffsetAngle, 0);
             }
+            // Clear movement flags for camera following
+            isTokenMoving = false;
+            currentlyMovingToken = null;
             if (callback) callback();
         }
     }
@@ -7300,6 +7340,10 @@ function stopHelicopterHover() {
 }
 
 function flyWithHelicopterEffectPath(path, token, callback) {
+    // Set movement flags for camera following
+    currentlyMovingToken = token;
+    isTokenMoving = true;
+    
     stopHelicopterHover(); // Stop idle before moving
     // Start helicopter sound for movement only if this is a helicopter token
     if (token.userData.tokenName === "helicopter") {
@@ -7389,6 +7433,9 @@ function flyWithHelicopterEffectPath(path, token, callback) {
                 token.position.set(pos.x, hoverHeight, pos.z);
                 token.rotation.set(0, angle + modelOffsetAngle, 0);
             }
+            // Clear movement flags for camera following
+            isTokenMoving = false;
+            currentlyMovingToken = null;
             if (callback) callback();
         }
     }
@@ -7448,28 +7495,53 @@ function animate() {
     updateTokenAudioVolume(heliToken, helicopterSound);
     updateTokenAudioVolume(rrToken, accelerationSound);
 
-    if (cameraFollowMode) {
-        const token = getCurrentPlayerToken();
-        if (token) {
-            if (DEBUG) {
-                console.log('[CameraFollow] Following token:', token.userData.tokenName, '| Player:', players[currentPlayerIndex].name);
+    // --- Automatic Camera Behavior ---
+    // Follow token when moving, return to overhead view when not moving
+    if (isTokenMoving && currentlyMovingToken) {
+        // Follow the moving token
+        if (DEBUG) {
+            console.log('[CameraFollow] Following moving token:', currentlyMovingToken.userData.tokenName);
+        }
+        controls.target.copy(currentlyMovingToken.position);
+        if (!userIsMovingCamera) {
+            const desiredPos = new THREE.Vector3(
+                currentlyMovingToken.position.x + 4,
+                currentlyMovingToken.position.y + 7,
+                currentlyMovingToken.position.z + 4
+            );
+            camera.position.lerp(desiredPos, 0.18);
+        }
+        controls.update();
+    } else {
+        // Return to default overhead view when no token is moving
+        if (!userIsMovingCamera) {
+            const defaultPosition = new THREE.Vector3(0, 40, 0);
+            const defaultTarget = new THREE.Vector3(0, 0, 0);
+            
+            // Use a slower, smoother transition to avoid glitches
+            const transitionSpeed = 0.02;
+            
+            // Smoothly transition back to overhead view
+            camera.position.lerp(defaultPosition, transitionSpeed);
+            controls.target.lerp(defaultTarget, transitionSpeed);
+            
+            // Only adjust rotation if we're close to the target position to avoid sudden jumps
+            const distanceToTarget = camera.position.distanceTo(defaultPosition);
+            if (distanceToTarget < 5) {
+                // Smoothly transition camera rotation to overhead view
+                const targetRotationX = -Math.PI / 2;
+                const targetRotationY = 0;
+                const targetRotationZ = 0;
+                
+                camera.rotation.x = THREE.MathUtils.lerp(camera.rotation.x, targetRotationX, transitionSpeed);
+                camera.rotation.y = THREE.MathUtils.lerp(camera.rotation.y, targetRotationY, transitionSpeed);
+                camera.rotation.z = THREE.MathUtils.lerp(camera.rotation.z, targetRotationZ, transitionSpeed);
             }
-            controls.target.copy(token.position);
-            if (!userIsMovingCamera) {
-                const desiredPos = new THREE.Vector3(
-                    token.position.x + 4,
-                    token.position.y + 7,
-                    token.position.z + 4
-                );
-                camera.position.lerp(desiredPos, 0.18);
-            }
+            
             controls.update();
-        } else {
-            if (DEBUG) {
-                console.warn('[CameraFollow] No valid token for player', currentPlayerIndex, players[currentPlayerIndex]);
-            }
         }
     }
+
     renderer.render(scene, camera);
 }
 
