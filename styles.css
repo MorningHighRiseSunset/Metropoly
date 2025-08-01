@@ -712,7 +712,7 @@ button:hover,
 /* Main Toggle Button */
 .video-chat-toggle-btn {
   position: fixed;
-  top: 120px;
+  top: 250px;
   right: 20px;
   width: 120px;
   height: 40px;
@@ -751,7 +751,7 @@ button:hover,
 /* Video Chat Container */
 .video-chat-container {
   position: fixed;
-  top: 200px;
+  top: 300px;
   right: 20px;
   width: 320px;
   background: rgba(35, 42, 54, 0.95);
@@ -958,7 +958,7 @@ button:hover,
   .video-chat-container {
     width: 280px;
     right: 10px;
-    top: 160px;
+    top: 260px;
   }
   
   .video-grid {
@@ -980,7 +980,7 @@ button:hover,
     width: 100px;
     height: 35px;
     font-size: 12px;
-    top: 100px;
+    top: 230px;
     right: 15px;
   }
 }
