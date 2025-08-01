@@ -8297,7 +8297,7 @@ function stopVideoChat() {
 
         // Reset toggle button
         videoChatToggleBtn.classList.remove('active');
-        videoChatToggleBtn.textContent = '📹';
+        videoChatToggleBtn.textContent = 'Video Chat';
         videoChatToggleBtn.title = 'Start Video Chat';
 
         // Reset states
@@ -8552,7 +8552,7 @@ function handleVideoError(error) {
     // Reset toggle button
     if (videoChatToggleBtn) {
         videoChatToggleBtn.classList.remove('active');
-        videoChatToggleBtn.textContent = '📹';
+        videoChatToggleBtn.textContent = 'Video Chat';
         videoChatToggleBtn.title = 'Start Video Chat';
     }
 }
