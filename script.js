@@ -82,6 +82,28 @@ let editMode = false;
 let draggedObject = null;
 let isPopupVisible = false;
 
+// ===== VIDEO CHAT SYSTEM =====
+// Video Chat State Variables - Declare at top level
+let videoChat = null;
+let localStream = null;
+let peerConnection = null;
+let isVideoEnabled = true;
+let isAudioEnabled = true;
+let isMinimized = false;
+let videoChatActive = false;
+let videoBoxes = []; // Array to store all video boxes
+let currentPlayerCount = 0; // Track current number of players
+
+// Video Chat Elements - Declare at top level
+let videoChatToggleBtn = null;
+let videoChatContainer = null;
+let videoGrid = null;
+let toggleVideoBtn = null;
+let toggleAudioBtn = null;
+let leaveBtn = null;
+let minimizeBtn = null;
+let videoStatus = null;
+
 // --- Audio ---
 let accelerationSound = new Audio('Sounds/Rolls-Royce-Audio.mp3'); // Rolls Royce movement sound
 accelerationSound.preload = 'auto';
@@ -1080,6 +1102,11 @@ function toggleAI(token, button) {
         }
 
         updateStartButtonVisibility();
+        
+        // Update video chat if it's active
+        if (typeof updateVideoChatForGameState === 'function') {
+            updateVideoChatForGameState();
+        }
     }
 }
 
@@ -1252,7 +1279,7 @@ function executeAITurn() {
         showDiceResult(diceRoll, roll1, roll2);
         hasRolledDice = true;
 
-        moveTokenToNewPosition(diceRoll, () => {
+        moveTokenToNewPositionWithCollisionAvoidance(diceRoll, () => {
             hasMovedToken = true;
             const propertyName = placeNames[currentPlayer.currentPosition];
             const property = properties.find(p => p.name === propertyName);
@@ -1936,13 +1963,13 @@ function handleCardEffect(card, player, callback) {
         }
     } else if (card.includes("Move forward")) {
         const spaces = parseInt(card.match(regex)[0]);
-        moveTokenToNewPosition(spaces, () => {
+        moveTokenToNewPositionWithCollisionAvoidance(spaces, () => {
             handlePropertyLanding(player, player.currentPosition);
             if (callback) callback(); // Ensure callback is invoked
         });
     } else if (card.includes("Move backward")) {
         const spaces = parseInt(card.match(regex)[0]);
-        moveTokenToNewPosition(-spaces, () => {
+        moveTokenToNewPositionWithCollisionAvoidance(-spaces, () => {
             handlePropertyLanding(player, player.currentPosition);
             if (callback) callback(); // Ensure callback is invoked
         });
@@ -1996,10 +2023,10 @@ function handleAICardEffect(selectedCard) {
         }
     } else if (selectedCard.includes("Move forward")) {
         const spaces = parseInt(selectedCard.match(regex)[0]);
-        moveTokenToNewPosition(spaces); // Move forward the specified number of spaces
+        moveTokenToNewPositionWithCollisionAvoidance(spaces); // Move forward the specified number of spaces
     } else if (selectedCard.includes("Move backward")) {
         const spaces = parseInt(selectedCard.match(regex)[0]);
-        moveTokenToNewPosition(-spaces); // Move backward the specified number of spaces
+        moveTokenToNewPositionWithCollisionAvoidance(-spaces); // Move backward the specified number of spaces
     } else if (selectedCard.includes("Collect") || selectedCard.includes("Receive")) {
         amount = parseInt(selectedCard.match(regex));
         currentPlayer.money += amount;
@@ -2017,7 +2044,7 @@ function handleAICardEffect(selectedCard) {
         currentPlayer.cards.push(selectedCard);
         showAIDecision("AI received Get Out of Jail Free card");
     } else if (selectedCard.includes("Go back three spaces")) {
-        moveTokenToNewPosition(-3); // Move backward 3 spaces
+        moveTokenToNewPositionWithCollisionAvoidance(-3); // Move backward 3 spaces
         showAIDecision("AI moved back 3 spaces");
     }
 
@@ -2035,12 +2062,12 @@ function applyCardEffect(selectedCard) {
         goToJail(currentPlayer);
     } else if (selectedCard.includes("Move forward")) {
         const spaces = parseInt(selectedCard.match(/\d+/)[0]);
-        moveTokenToNewPosition(spaces, () => {
+        moveTokenToNewPositionWithCollisionAvoidance(spaces, () => {
             handlePropertyLanding(currentPlayer, currentPlayer.currentPosition);
         });
     } else if (selectedCard.includes("Move backward")) {
         const spaces = parseInt(selectedCard.match(/\d+/)[0]);
-        moveTokenToNewPosition(-spaces, () => {
+        moveTokenToNewPositionWithCollisionAvoidance(-spaces, () => {
             handlePropertyLanding(currentPlayer, currentPlayer.currentPosition);
         });
     } else if (selectedCard.includes("Collect") || selectedCard.includes("Receive")) {
@@ -3764,6 +3791,13 @@ function finalizePlayerSelection() {
         allowedToRoll = true;
     }
 
+    // Initialize token positions for pathfinding
+    players.forEach((player, index) => {
+        if (player.selectedToken) {
+            updateTokenPosition(player.selectedToken, 0);
+        }
+    });
+
     // Debug log
     console.log('Game started with players:', players.map(p => ({
         name: p.name,
@@ -3773,6 +3807,11 @@ function finalizePlayerSelection() {
         hasToken: !!p.selectedToken
     })));
     selectedToken = null;
+    
+    // Update video chat if it's active
+    if (typeof updateVideoChatForGameState === 'function') {
+        updateVideoChatForGameState();
+    }
 }
 
 function isJailCorner(startPos, endPos) {
@@ -5710,6 +5749,11 @@ function selectToken(tokenName) {
     }
 
     nextPlayer(); // Call next player here
+    
+    // Update video chat if it's active
+    if (typeof updateVideoChatForGameState === 'function') {
+        updateVideoChatForGameState();
+    }
 }
 
 function init() {
@@ -5744,7 +5788,7 @@ function init() {
         btn.id = 'camera-follow-toggle';
         btn.innerText = 'Follow Token (F)';
         btn.style.position = 'fixed';
-        btn.style.top = '20px';
+        btn.style.top = '80px';
         btn.style.left = '50%';
         btn.style.transform = 'translateX(-50%)';
         btn.style.zIndex = '2002';
@@ -5764,7 +5808,7 @@ function init() {
         indicator.id = 'camera-follow-indicator';
         indicator.innerText = 'FOLLOWING TOKEN';
         indicator.style.position = 'fixed';
-        indicator.style.top = '60px';
+        indicator.style.top = '120px';
         indicator.style.left = '50%';
         indicator.style.transform = 'translateX(-50%)';
         indicator.style.zIndex = '2002';
@@ -5780,6 +5824,9 @@ function init() {
         document.body.appendChild(indicator);
     }
 
+    // Initialize the advanced pathfinding system
+    initializePathfinding();
+    
     setupLighting();
     createBoard();
     createTokens();
@@ -5808,6 +5855,9 @@ function init() {
     animate();
     initializePlayers();
     validateGameState();
+    
+    // Initialize video chat system
+    initVideoChat();
     createPlayerTokenSelectionUI(currentPlayerIndex);
     createDiceButton();
     startGameTimer();
@@ -6002,6 +6052,11 @@ function goToJail(player) {
     player.currentPosition = jailPosition;
     player.inJail = true;
     player.jailTurns = 2; // Stay in jail for 2 turns
+
+    // Update token position tracking for pathfinding
+    if (player.selectedToken) {
+        updateTokenPosition(player.selectedToken, jailPosition);
+    }
 
     showFeedback(`${player.name} is sent to Jail!`);
     endTurn(); // End the turn immediately
@@ -6313,7 +6368,7 @@ function rollDice() {
             setTimeout(() => {
                 scene.remove(dice1);
                 scene.remove(dice2);
-                moveTokenToNewPosition(total, () => {
+                moveTokenToNewPositionWithCollisionAvoidance(total, () => {
                     isTurnInProgress = false;
                 });
             }, 1500); // Shorter delay
@@ -6346,7 +6401,326 @@ function handlePlayerInJail(player) {
     }
 }
 
-function moveTokenToNewPosition(spaces, callback) {
+// Advanced Pathfinding System
+let tokenPositions = new Map(); // Track where each token is currently positioned
+let occupiedSpaces = new Set(); // Track which board spaces are occupied
+let pathfindingGrid = []; // Grid for A* pathfinding
+let gridSize = 40; // Size of the pathfinding grid
+
+// Initialize the pathfinding system
+function initializePathfinding() {
+    // Create a grid for pathfinding
+    pathfindingGrid = [];
+    for (let i = 0; i < gridSize; i++) {
+        pathfindingGrid[i] = [];
+        for (let j = 0; j < gridSize; j++) {
+            pathfindingGrid[i][j] = {
+                walkable: true,
+                occupied: false,
+                token: null
+            };
+        }
+    }
+    
+    // Mark board spaces as walkable
+    positions.forEach((pos, index) => {
+        const gridX = Math.floor((pos.x + 32.4) / 1.62); // Convert to grid coordinates
+        const gridZ = Math.floor((pos.z + 32.4) / 1.62);
+        if (gridX >= 0 && gridX < gridSize && gridZ >= 0 && gridZ < gridSize) {
+            pathfindingGrid[gridX][gridZ].walkable = true;
+        }
+    });
+}
+
+// Update token positions tracking
+function updateTokenPosition(token, position) {
+    const playerIndex = players.findIndex(p => p.selectedToken === token);
+    if (playerIndex !== -1) {
+        tokenPositions.set(playerIndex, position);
+        updateOccupiedSpaces();
+    }
+}
+
+// Update which spaces are occupied
+function updateOccupiedSpaces() {
+    occupiedSpaces.clear();
+    tokenPositions.forEach((position, playerIndex) => {
+        if (position !== null) {
+            occupiedSpaces.add(position);
+        }
+    });
+}
+
+// Check if a space is occupied by another token
+function isSpaceOccupied(spaceIndex, excludePlayerIndex = null) {
+    let occupied = false;
+    tokenPositions.forEach((position, playerIndex) => {
+        if (playerIndex !== excludePlayerIndex && position === spaceIndex) {
+            occupied = true;
+        }
+    });
+    
+    // Debug logging for collision detection
+    if (occupied && DEBUG) {
+        console.log(`Space ${spaceIndex} is occupied by player ${Array.from(tokenPositions.entries()).find(([idx, pos]) => pos === spaceIndex && idx !== excludePlayerIndex)?.[0]}`);
+    }
+    
+    return occupied;
+}
+
+// Get nearby alternative positions when a space is occupied
+function getAlternativePositions(spaceIndex, radius = 2) {
+    const alternatives = [];
+    const centerPos = positions[spaceIndex];
+    
+    // Check positions in a radius around the occupied space
+    for (let i = Math.max(0, spaceIndex - radius); i <= Math.min(positions.length - 1, spaceIndex + radius); i++) {
+        if (i !== spaceIndex && !isSpaceOccupied(i)) {
+            const pos = positions[i];
+            const distance = Math.sqrt(
+                Math.pow(pos.x - centerPos.x, 2) + 
+                Math.pow(pos.z - centerPos.z, 2)
+            );
+            if (distance <= radius * 7.2) { // 7.2 is the distance between board spaces
+                alternatives.push({
+                    index: i,
+                    position: pos,
+                    distance: distance
+                });
+            }
+        }
+    }
+    
+    // Sort by distance
+    alternatives.sort((a, b) => a.distance - b.distance);
+    return alternatives;
+}
+
+// A* Pathfinding algorithm
+function findPath(startIndex, endIndex, avoidSpaces = []) {
+    const openSet = [startIndex];
+    const closedSet = new Set();
+    const cameFrom = new Map();
+    const gScore = new Map();
+    const fScore = new Map();
+    
+    gScore.set(startIndex, 0);
+    fScore.set(startIndex, heuristic(startIndex, endIndex));
+    
+    while (openSet.length > 0) {
+        // Find node with lowest fScore
+        let current = openSet[0];
+        let currentIndex = 0;
+        for (let i = 1; i < openSet.length; i++) {
+            if (fScore.get(openSet[i]) < fScore.get(current)) {
+                current = openSet[i];
+                currentIndex = i;
+            }
+        }
+        
+        if (current === endIndex) {
+            // Reconstruct path
+            const path = [];
+            while (cameFrom.has(current)) {
+                path.unshift(current);
+                current = cameFrom.get(current);
+            }
+            path.unshift(startIndex);
+            return path;
+        }
+        
+        openSet.splice(currentIndex, 1);
+        closedSet.add(current);
+        
+        // Get neighbors
+        const neighbors = getNeighbors(current);
+        for (const neighbor of neighbors) {
+            if (closedSet.has(neighbor) || avoidSpaces.includes(neighbor)) {
+                continue;
+            }
+            
+            const tentativeGScore = gScore.get(current) + 1;
+            
+            if (!openSet.includes(neighbor)) {
+                openSet.push(neighbor);
+            } else if (tentativeGScore >= gScore.get(neighbor)) {
+                continue;
+            }
+            
+            cameFrom.set(neighbor, current);
+            gScore.set(neighbor, tentativeGScore);
+            fScore.set(neighbor, tentativeGScore + heuristic(neighbor, endIndex));
+        }
+    }
+    
+    // No path found, return direct path
+    return [startIndex, endIndex];
+}
+
+// Heuristic function for A* (Manhattan distance)
+function heuristic(a, b) {
+    const posA = positions[a];
+    const posB = positions[b];
+    return Math.abs(posA.x - posB.x) + Math.abs(posA.z - posB.z);
+}
+
+// Get neighboring spaces
+function getNeighbors(spaceIndex) {
+    const neighbors = [];
+    const totalSpaces = positions.length;
+    
+    // Add adjacent spaces
+    neighbors.push((spaceIndex + 1) % totalSpaces);
+    neighbors.push((spaceIndex - 1 + totalSpaces) % totalSpaces);
+    
+    // Add diagonal spaces for more pathfinding options
+    neighbors.push((spaceIndex + 2) % totalSpaces);
+    neighbors.push((spaceIndex - 2 + totalSpaces) % totalSpaces);
+    
+    return neighbors.filter(n => n >= 0 && n < totalSpaces);
+}
+
+// Calculate path with collision avoidance
+function calculatePathWithCollisionAvoidance(startIndex, endIndex, movingPlayerIndex) {
+    const directPath = [];
+    let current = startIndex;
+    
+    while (current !== endIndex) {
+        const next = (current + 1) % positions.length;
+        directPath.push(next);
+        current = next;
+    }
+    
+    // Check for collisions along the path
+    const collisionPoints = [];
+    directPath.forEach((spaceIndex, pathIndex) => {
+        if (isSpaceOccupied(spaceIndex, movingPlayerIndex)) {
+            collisionPoints.push({
+                spaceIndex: spaceIndex,
+                pathIndex: pathIndex
+            });
+        }
+    });
+    
+    if (collisionPoints.length === 0) {
+        // No collisions, use direct path
+        if (DEBUG) console.log(`No collisions detected, using direct path from ${startIndex} to ${endIndex}`);
+        return [startIndex, ...directPath];
+    }
+    
+    if (DEBUG) console.log(`Collision detected! Player ${movingPlayerIndex} needs to avoid ${collisionPoints.length} occupied spaces`);
+    
+    // Handle collisions by finding alternative routes
+    const finalPath = [];
+    let currentSpace = startIndex;
+    
+    for (const collision of collisionPoints) {
+        // Add path up to collision point
+        while (currentSpace !== collision.spaceIndex) {
+            const next = (currentSpace + 1) % positions.length;
+            finalPath.push(next);
+            currentSpace = next;
+        }
+        
+        // Find alternative route around collision
+        const alternatives = getAlternativePositions(collision.spaceIndex);
+        if (alternatives.length > 0) {
+            // Use the closest alternative
+            const alternative = alternatives[0];
+            if (DEBUG) console.log(`Using alternative position ${alternative.index} to avoid collision at ${collision.spaceIndex}`);
+            finalPath.push(alternative.index);
+            currentSpace = alternative.index;
+        }
+    }
+    
+    // Add remaining path to destination
+    while (currentSpace !== endIndex) {
+        const next = (currentSpace + 1) % positions.length;
+        finalPath.push(next);
+        currentSpace = next;
+    }
+    
+    if (DEBUG) console.log(`Final path with collision avoidance: [${startIndex}, ${finalPath.join(', ')}]`);
+    return [startIndex, ...finalPath];
+}
+
+// Enhanced moveToken function with collision avoidance
+function moveTokenWithCollisionAvoidance(startPos, endPos, token, callback) {
+    const playerIndex = players.findIndex(p => p.selectedToken === token);
+    if (playerIndex === -1) {
+        console.error("Token not found for any player");
+        return;
+    }
+    
+    // Find start and end indices
+    const startIndex = positions.findIndex(pos => 
+        Math.abs(pos.x - startPos.x) < 0.1 && Math.abs(pos.z - startPos.z) < 0.1
+    );
+    const endIndex = positions.findIndex(pos => 
+        Math.abs(pos.x - endPos.x) < 0.1 && Math.abs(pos.z - endPos.z) < 0.1
+    );
+    
+    if (startIndex === -1 || endIndex === -1) {
+        console.error("Could not find position indices");
+        return;
+    }
+    
+    // Calculate path with collision avoidance
+    const path = calculatePathWithCollisionAvoidance(startIndex, endIndex, playerIndex);
+    
+    // Move along the calculated path
+    moveTokenAlongPath(path, token, callback);
+}
+
+// Move token along a calculated path
+function moveTokenAlongPath(path, token, callback) {
+    if (path.length <= 1) {
+        if (callback) callback();
+        return;
+    }
+    
+    let currentPathIndex = 0;
+    
+    function moveToNextPosition() {
+        if (currentPathIndex >= path.length - 1) {
+            if (callback) callback();
+            return;
+        }
+        
+        const currentIndex = path[currentPathIndex];
+        const nextIndex = path[currentPathIndex + 1];
+        const startPos = positions[currentIndex];
+        const endPos = positions[nextIndex];
+        
+        // Check if the next position is occupied
+        if (isSpaceOccupied(nextIndex)) {
+            // Find an alternative position
+            const alternatives = getAlternativePositions(nextIndex);
+            if (alternatives.length > 0) {
+                const alternative = alternatives[0];
+                const alternativePos = alternative.position;
+                
+                // Move to alternative position first
+                moveToken(startPos, alternativePos, token, () => {
+                    currentPathIndex++;
+                    moveToNextPosition();
+                });
+                return;
+            }
+        }
+        
+        // Move to next position normally
+        moveToken(startPos, endPos, token, () => {
+            currentPathIndex++;
+            moveToNextPosition();
+        });
+    }
+    
+    moveToNextPosition();
+}
+
+// Enhanced moveTokenToNewPosition with collision avoidance
+function moveTokenToNewPositionWithCollisionAvoidance(spaces, callback) {
     const currentPlayer = players[currentPlayerIndex];
 
     if (!currentPlayer.selectedToken) {
@@ -6360,6 +6734,9 @@ function moveTokenToNewPosition(spaces, callback) {
 
     const token = currentPlayer.selectedToken;
     const tokenName = token.userData.tokenName;
+
+    // Update token position tracking
+    updateTokenPosition(token, oldPosition);
 
     // --- Make token and all children visible on first move ---
     if (!token.visible) {
@@ -6376,66 +6753,45 @@ function moveTokenToNewPosition(spaces, callback) {
         const endPos = positions[newPosition];
         const finalHeight = getTokenHeight(tokenName, endPos.y) + 1.0;
         throwFootballAnimation(token, endPos, finalHeight, () => {
+            updateTokenPosition(token, newPosition);
             finishMove(currentPlayer, newPosition, oldPosition + spaces >= propertiesCount);
             if (callback) callback();
         });
         return;
     }
 
-    // --- ROLLS ROYCE: drive directly to destination ---
+    // --- ROLLS ROYCE: drive with collision avoidance ---
     if (tokenName === "rolls royce") {
-        const path = [];
-        let current = oldPosition;
-        while (current !== newPosition) {
-            const next = (current + 1) % positions.length;
-            path.push(positions[next]);
-            current = next;
-        }
-        driveRollsRoyceAlongPath(token, [positions[oldPosition], ...path], () => {
+        const path = calculatePathWithCollisionAvoidance(oldPosition, newPosition, currentPlayerIndex);
+        const pathPositions = path.map(index => positions[index]);
+        driveRollsRoyceAlongPath(token, pathPositions, () => {
+            updateTokenPosition(token, newPosition);
             finishMove(currentPlayer, newPosition, oldPosition + spaces >= propertiesCount);
             if (callback) callback();
         });
         return;
     }
 
-    // --- HELICOPTER: fly smoothly along the whole path ---
+    // --- HELICOPTER: fly with collision avoidance ---
     if (tokenName === "helicopter") {
-        let path = [];
-        let current = oldPosition;
-        while (current !== newPosition) {
-            path.push(positions[current]);
-            current = (current + 1) % propertiesCount;
-        }
-        path.push(positions[newPosition]);
-        flyWithHelicopterEffectPath(path, token, () => {
+        const path = calculatePathWithCollisionAvoidance(oldPosition, newPosition, currentPlayerIndex);
+        const pathPositions = path.map(index => positions[index]);
+        flyWithHelicopterEffectPath(pathPositions, token, () => {
+            updateTokenPosition(token, newPosition);
             finishMove(currentPlayer, newPosition, oldPosition + spaces >= propertiesCount);
             if (callback) callback();
         });
         return;
     }
 
-    // --- All other tokens: move square by square ---
-    let currentSpace = oldPosition;
-
-    function moveOneSpace() {
-        if (currentSpace === newPosition) {
-            finishMove(currentPlayer, newPosition, oldPosition + spaces >= propertiesCount);
-            if (isWoman) stopWalkAnimation(token);
-            if (callback) callback();
-            return;
-        }
-
-        const nextSpace = (currentSpace + 1) % propertiesCount;
-        const startPos = positions[currentSpace];
-        const endPos = positions[nextSpace];
-
-        moveToken(startPos, endPos, token, () => {
-            currentSpace = nextSpace;
-            moveOneSpace();
-        });
-    }
-
-    moveOneSpace();
+    // --- All other tokens: move with collision avoidance ---
+    const path = calculatePathWithCollisionAvoidance(oldPosition, newPosition, currentPlayerIndex);
+    moveTokenAlongPath(path, token, () => {
+        updateTokenPosition(token, newPosition);
+        finishMove(currentPlayer, newPosition, oldPosition + spaces >= propertiesCount);
+        if (isWoman) stopWalkAnimation(token);
+        if (callback) callback();
+    });
 }
 
 function showDiceResult(total, roll1, roll2) {
@@ -7672,3 +8028,628 @@ function stopNikeIdle() {
         nikeIdleAnim = null;
     }
 }
+
+// ===== VIDEO CHAT SYSTEM =====
+
+// Initialize Video Chat System
+function initVideoChat() {
+    try {
+        // Get DOM elements
+        videoChatToggleBtn = document.getElementById('video-chat-toggle-btn');
+        videoChatContainer = document.getElementById('video-chat-container');
+        videoGrid = document.getElementById('video-grid');
+        toggleVideoBtn = document.getElementById('toggle-video-btn');
+        toggleAudioBtn = document.getElementById('toggle-audio-btn');
+        leaveBtn = document.getElementById('leave-btn');
+        minimizeBtn = document.getElementById('minimize-btn');
+        videoStatus = document.getElementById('video-status');
+
+        // Check if video chat elements exist (only in game.html)
+        if (!videoChatToggleBtn || !videoChatContainer) {
+            console.log('Video chat elements not found - not in game.html');
+            return;
+        }
+
+        // Add event listeners
+        if (videoChatToggleBtn) {
+            videoChatToggleBtn.addEventListener('click', toggleVideoChat);
+        }
+        if (toggleVideoBtn) {
+            toggleVideoBtn.addEventListener('click', toggleVideo);
+        }
+        if (toggleAudioBtn) {
+            toggleAudioBtn.addEventListener('click', toggleAudio);
+        }
+        if (leaveBtn) {
+            leaveBtn.addEventListener('click', leaveVideoChat);
+        }
+        if (minimizeBtn) {
+            minimizeBtn.addEventListener('click', toggleMinimize);
+        }
+
+        console.log('Video chat system initialized');
+    } catch (error) {
+        console.log('Video chat initialization failed:', error.message);
+    }
+}
+
+// Create Video Box for a Player
+function createVideoBox(playerIndex, playerName, isLocal = false) {
+    if (typeof playerIndex === 'undefined' || playerIndex === null) {
+        console.error('Invalid player index for video box creation');
+        return null;
+    }
+    
+    const videoBox = document.createElement('div');
+    videoBox.className = `video-box ${isLocal ? 'local-video-box' : 'remote-video-box'}`;
+    videoBox.id = `video-box-${playerIndex}`;
+    
+    const video = document.createElement('video');
+    video.id = `video-${playerIndex}`;
+    video.autoplay = true;
+    video.playsinline = true;
+    if (isLocal) video.muted = true;
+    
+    const placeholder = document.createElement('div');
+    placeholder.className = 'video-placeholder';
+    placeholder.id = `placeholder-${playerIndex}`;
+    
+    const placeholderContent = document.createElement('div');
+    placeholderContent.className = 'placeholder-content';
+    
+    const placeholderIcon = document.createElement('span');
+    placeholderIcon.className = 'placeholder-icon';
+    placeholderIcon.textContent = '👤';
+    
+    const placeholderText = document.createElement('span');
+    placeholderText.className = 'placeholder-text';
+    placeholderText.textContent = isLocal ? 'You' : `Player ${playerIndex + 1}`;
+    
+    placeholderContent.appendChild(placeholderIcon);
+    placeholderContent.appendChild(placeholderText);
+    placeholder.appendChild(placeholderContent);
+    
+    const videoLabel = document.createElement('div');
+    videoLabel.className = 'video-label';
+    videoLabel.textContent = isLocal ? 'You' : playerName || `Player ${playerIndex + 1}`;
+    
+    videoBox.appendChild(video);
+    videoBox.appendChild(placeholder);
+    videoBox.appendChild(videoLabel);
+    
+    return videoBox;
+}
+
+// Update Video Grid Layout
+function updateVideoGridLayout(playerCount) {
+    if (!videoGrid || typeof playerCount === 'undefined' || playerCount < 1) {
+        console.log('Cannot update video grid layout - missing elements or invalid player count');
+        return;
+    }
+    
+    // Clear existing video boxes
+    videoGrid.innerHTML = '';
+    videoBoxes = [];
+    
+    // Remove existing grid classes
+    videoGrid.className = 'video-grid';
+    
+    // Add appropriate grid class
+    if (playerCount >= 2 && playerCount <= 8) {
+        videoGrid.classList.add(`grid-${playerCount}`);
+    } else {
+        videoGrid.classList.add('grid-2'); // Default fallback
+    }
+    
+    // Create video boxes for each player
+    for (let i = 0; i < playerCount; i++) {
+        const isLocal = i === 0; // First player is local
+        const playerName = players[i] ? players[i].name : `Player ${i + 1}`;
+        const videoBox = createVideoBox(i, playerName, isLocal);
+        
+        if (videoBox) {
+            videoGrid.appendChild(videoBox);
+            videoBoxes.push(videoBox);
+        }
+    }
+    
+    currentPlayerCount = playerCount;
+    console.log(`Created ${playerCount} video boxes`);
+}
+
+// Get Video Elements by Index
+function getVideoElement(playerIndex) {
+    if (typeof playerIndex === 'undefined' || playerIndex === null) return null;
+    return document.getElementById(`video-${playerIndex}`);
+}
+
+function getPlaceholderElement(playerIndex) {
+    if (typeof playerIndex === 'undefined' || playerIndex === null) return null;
+    return document.getElementById(`placeholder-${playerIndex}`);
+}
+
+// Main Toggle Function
+async function toggleVideoChat() {
+    if (typeof videoChatActive === 'undefined' || !videoChatActive) {
+        await startVideoChat();
+    } else {
+        stopVideoChat();
+    }
+}
+
+// Start Video Chat
+async function startVideoChat() {
+    try {
+        // Check if video chat elements exist
+        if (!videoChatContainer || !videoChatToggleBtn) {
+            console.log('Video chat elements not found');
+            return;
+        }
+        
+        updateVideoStatus('Connecting...');
+        
+        // Determine player count (use actual game state)
+        const playerCount = Math.max(2, players.filter(p => p.selectedToken !== null).length);
+        
+        // Update video grid layout based on player count
+        updateVideoGridLayout(playerCount);
+
+        // Check if getUserMedia is supported
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            console.log('getUserMedia not supported, using demo mode');
+            updateVideoStatus('Browser does not support camera access - using demo mode');
+            localStream = createSimulatedStream();
+        } else {
+            // Try to get user media with fallback options
+            let mediaConstraints = {
+                video: true,
+                audio: true
+            };
+
+            try {
+                // First try with video and audio
+                localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+        } catch (videoError) {
+            console.log('Video/audio failed, trying audio only...');
+            updateVideoStatus('Camera not found, trying audio only...');
+            try {
+                // Try audio only
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: false,
+                    audio: true
+                });
+                updateVideoStatus('Audio only mode - camera not available');
+            } catch (audioError) {
+                console.log('Audio failed, creating simulated stream...');
+                updateVideoStatus('Creating demo mode - no devices found');
+                // Create a simulated stream for demo purposes
+                localStream = createSimulatedStream();
+                updateVideoStatus('Demo mode active - simulated video stream');
+            }
+        }
+        }
+
+        // Display local video (player 0)
+        const localVideo = getVideoElement(0);
+        const localPlaceholder = getPlaceholderElement(0);
+        
+        if (localVideo && localPlaceholder) {
+            localVideo.srcObject = localStream;
+            localVideo.classList.add('active');
+            localPlaceholder.classList.add('hidden');
+        }
+
+        // Show video chat container
+        videoChatContainer.classList.add('show');
+        
+        // Update toggle button
+        videoChatToggleBtn.classList.add('active');
+        videoChatToggleBtn.textContent = '🔴';
+        videoChatToggleBtn.title = 'Stop Video Chat';
+
+        // Initialize peer connection (simulated for demo)
+        initializePeerConnection(playerCount);
+
+        videoChatActive = true;
+        updateVideoStatus(`Waiting for ${playerCount - 1} opponent(s)...`);
+        
+        console.log(`Video chat started successfully with ${playerCount} players`);
+        
+    } catch (error) {
+        console.error('Error starting video chat:', error);
+        handleVideoError(error);
+    }
+}
+
+// Stop Video Chat
+function stopVideoChat() {
+    try {
+        // Check if video chat elements exist
+        if (!videoChatContainer || !videoChatToggleBtn) {
+            console.log('Video chat elements not found');
+            return;
+        }
+        
+        // Stop all tracks
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+            localStream = null;
+        }
+
+        // Close peer connection
+        if (peerConnection) {
+            peerConnection.close();
+            peerConnection = null;
+        }
+
+        // Hide all videos and show placeholders
+        for (let i = 0; i < currentPlayerCount; i++) {
+            const video = getVideoElement(i);
+            const placeholder = getPlaceholderElement(i);
+            
+            if (video) video.classList.remove('active');
+            if (placeholder) placeholder.classList.remove('hidden');
+        }
+
+        // Hide container
+        videoChatContainer.classList.remove('show');
+        videoChatContainer.classList.remove('minimized');
+
+        // Reset toggle button
+        videoChatToggleBtn.classList.remove('active');
+        videoChatToggleBtn.textContent = '📹';
+        videoChatToggleBtn.title = 'Start Video Chat';
+
+        // Reset states
+        videoChatActive = false;
+        isMinimized = false;
+        isVideoEnabled = true;
+        isAudioEnabled = true;
+
+        // Reset button states
+        updateVideoButtonState();
+        updateAudioButtonState();
+
+        updateVideoStatus('Disconnected');
+        
+        console.log('Video chat stopped');
+        
+    } catch (error) {
+        console.error('Error stopping video chat:', error);
+    }
+}
+
+// Initialize Peer Connection (Simulated)
+function initializePeerConnection(playerCount) {
+    // This is a simplified implementation
+    // In a real app, you'd use WebRTC with a signaling server
+    
+    // Simulate opponents joining after 2 seconds
+    setTimeout(() => {
+        if (videoChatActive) {
+            simulateOpponentsJoin(playerCount);
+        }
+    }, 2000);
+}
+
+// Simulate Opponents Joining
+function simulateOpponentsJoin(playerCount) {
+    if (!videoChatActive) return;
+    
+    // Simulate each opponent joining with a delay
+    for (let i = 1; i < playerCount; i++) {
+        setTimeout(() => {
+            if (videoChatActive) {
+                simulateOpponentJoin(i);
+            }
+        }, i * 1000); // Stagger the joins
+    }
+}
+
+// Simulate Single Opponent Joining
+function simulateOpponentJoin(playerIndex) {
+    if (!videoChatActive) return;
+    
+    // Create a simulated remote stream (black video with text)
+    const canvas = document.createElement('canvas');
+    canvas.width = 320;
+    canvas.height = 240;
+    const ctx = canvas.getContext('2d');
+    
+    // Draw a simulated video frame
+    ctx.fillStyle = '#2a2a2a';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#fff';
+    ctx.font = '24px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(`Player ${playerIndex + 1} Video`, canvas.width / 2, canvas.height / 2);
+    
+    // Create a stream from the canvas
+    const stream = canvas.captureStream(30);
+    
+    // Display remote video
+    const remoteVideo = getVideoElement(playerIndex);
+    const remotePlaceholder = getPlaceholderElement(playerIndex);
+    
+    if (remoteVideo && remotePlaceholder) {
+        remoteVideo.srcObject = stream;
+        remoteVideo.classList.add('active');
+        remotePlaceholder.classList.add('hidden');
+    }
+    
+    const connectedCount = videoBoxes.filter(box => 
+        box.querySelector('video.active')
+    ).length;
+    
+    updateVideoStatus(`${connectedCount}/${currentPlayerCount} players connected`);
+    
+    console.log(`Simulated player ${playerIndex + 1} joined`);
+}
+
+// Toggle Video
+function toggleVideo() {
+    if (!localStream) return;
+    
+    const videoTrack = localStream.getVideoTracks()[0];
+    if (videoTrack) {
+        isVideoEnabled = !isVideoEnabled;
+        videoTrack.enabled = isVideoEnabled;
+        updateVideoButtonState();
+        
+        console.log('Video toggled:', isVideoEnabled ? 'ON' : 'OFF');
+    }
+}
+
+// Toggle Audio
+function toggleAudio() {
+    if (!localStream) return;
+    
+    const audioTrack = localStream.getAudioTracks()[0];
+    if (audioTrack) {
+        isAudioEnabled = !isAudioEnabled;
+        audioTrack.enabled = isAudioEnabled;
+        updateAudioButtonState();
+        
+        console.log('Audio toggled:', isAudioEnabled ? 'ON' : 'OFF');
+    }
+}
+
+// Leave Video Chat
+function leaveVideoChat() {
+    stopVideoChat();
+}
+
+// Toggle Minimize
+function toggleMinimize() {
+    isMinimized = !isMinimized;
+    
+    if (isMinimized) {
+        videoChatContainer.classList.add('minimized');
+        minimizeBtn.textContent = '+';
+        minimizeBtn.title = 'Expand';
+    } else {
+        videoChatContainer.classList.remove('minimized');
+        minimizeBtn.textContent = '−';
+        minimizeBtn.title = 'Minimize';
+    }
+}
+
+// Update Video Button State
+function updateVideoButtonState() {
+    if (!toggleVideoBtn) return;
+    
+    if (isVideoEnabled) {
+        toggleVideoBtn.textContent = '🔴';
+        toggleVideoBtn.title = 'Turn Video Off';
+        toggleVideoBtn.classList.remove('muted');
+    } else {
+        toggleVideoBtn.textContent = '📹';
+        toggleVideoBtn.title = 'Turn Video On';
+        toggleVideoBtn.classList.add('muted');
+    }
+}
+
+// Update Audio Button State
+function updateAudioButtonState() {
+    if (!toggleAudioBtn) return;
+    
+    if (isAudioEnabled) {
+        toggleAudioBtn.textContent = '🔊';
+        toggleAudioBtn.title = 'Mute Audio';
+        toggleAudioBtn.classList.remove('muted');
+    } else {
+        toggleAudioBtn.textContent = '🔇';
+        toggleAudioBtn.title = 'Unmute Audio';
+        toggleAudioBtn.classList.add('muted');
+    }
+}
+
+// Update Video Status
+function updateVideoStatus(message) {
+    if (videoStatus && typeof message === 'string') {
+        videoStatus.textContent = message;
+    }
+}
+
+// Create Simulated Stream for Demo
+function createSimulatedStream() {
+    // Create a canvas element
+    const canvas = document.createElement('canvas');
+    canvas.width = 640;
+    canvas.height = 480;
+    const ctx = canvas.getContext('2d');
+    
+    // Create a simple animated pattern
+    let frame = 0;
+    function drawFrame() {
+        // Clear canvas
+        ctx.fillStyle = '#2c3e50';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw animated circles
+        const time = Date.now() * 0.001;
+        for (let i = 0; i < 5; i++) {
+            const x = canvas.width / 2 + Math.cos(time + i) * 100;
+            const y = canvas.height / 2 + Math.sin(time + i * 0.7) * 100;
+            const radius = 20 + Math.sin(time * 2 + i) * 10;
+            
+            ctx.fillStyle = `hsl(${120 + i * 60}, 70%, 60%)`;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Add text
+        ctx.fillStyle = '#ecf0f1';
+        ctx.font = '24px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Demo Video Stream', canvas.width / 2, canvas.height - 50);
+        ctx.fillText('Camera not available', canvas.width / 2, canvas.height - 20);
+        
+        frame++;
+        requestAnimationFrame(drawFrame);
+    }
+    
+    drawFrame();
+    
+    // Convert canvas to stream
+    const stream = canvas.captureStream(30); // 30 FPS
+    
+    // Add a silent audio track to make it a valid MediaStream
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const destination = audioContext.createMediaStreamDestination();
+    oscillator.connect(destination);
+    oscillator.frequency.setValueAtTime(0, audioContext.currentTime); // Silent
+    oscillator.start();
+    
+    // Combine video and audio streams
+    const combinedStream = new MediaStream([
+        ...stream.getVideoTracks(),
+        ...destination.stream.getAudioTracks()
+    ]);
+    
+    return combinedStream;
+}
+
+// Handle Video Errors
+function handleVideoError(error) {
+    let errorMessage = 'An error occurred';
+    
+    if (error && error.name === 'NotAllowedError') {
+        errorMessage = 'Camera/microphone access denied';
+    } else if (error && error.name === 'NotFoundError') {
+        errorMessage = 'No camera/microphone found - using demo mode';
+    } else if (error && error.name === 'NotReadableError') {
+        errorMessage = 'Camera/microphone is busy';
+    } else if (error && error.name === 'OverconstrainedError') {
+        errorMessage = 'Camera/microphone not supported';
+    }
+    
+    updateVideoStatus(errorMessage);
+    console.error('Video chat error:', error);
+    
+    // Reset toggle button
+    if (videoChatToggleBtn) {
+        videoChatToggleBtn.classList.remove('active');
+        videoChatToggleBtn.textContent = '📹';
+        videoChatToggleBtn.title = 'Start Video Chat';
+    }
+}
+
+// Create Placeholder Video
+function createPlaceholderVideo() {
+    // This is handled by the HTML structure
+    // Placeholders are already created and shown by default
+}
+
+// Remove Placeholder Video
+function removePlaceholderVideo(playerIndex) {
+    const placeholder = getPlaceholderElement(playerIndex);
+    if (placeholder) {
+        placeholder.classList.add('hidden');
+    }
+}
+
+// Handle Remote Stream
+function handleRemoteStream(stream, playerIndex) {
+    const video = getVideoElement(playerIndex);
+    if (video) {
+        video.srcObject = stream;
+        video.classList.add('active');
+        removePlaceholderVideo(playerIndex);
+        
+        const connectedCount = videoBoxes.filter(box => 
+            box.querySelector('video.active')
+        ).length;
+        
+        updateVideoStatus(`${connectedCount}/${currentPlayerCount} players connected`);
+    }
+}
+
+// Remove Peer Connection
+function removePeerConnection(playerIndex) {
+    if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+    }
+    
+    // Show placeholder for the specific player
+    const video = getVideoElement(playerIndex);
+    const placeholder = getPlaceholderElement(playerIndex);
+    
+    if (video) video.classList.remove('active');
+    if (placeholder) placeholder.classList.remove('hidden');
+    
+    const connectedCount = videoBoxes.filter(box => 
+        box.querySelector('video.active')
+    ).length;
+    
+    updateVideoStatus(`${connectedCount}/${currentPlayerCount} players connected`);
+}
+
+// Video chat is initialized from the main init() function
+// No need for additional initialization here
+
+// Update Video Chat for Game State Changes
+function updateVideoChatForGameState() {
+    // Check if video chat is available and active
+    if (typeof videoChatActive !== 'undefined' && videoChatActive && videoChatContainer) {
+        const playerCount = Math.max(2, players.filter(p => p.selectedToken !== null).length);
+        
+        if (playerCount !== currentPlayerCount) {
+            console.log(`Updating video chat from ${currentPlayerCount} to ${playerCount} players`);
+            updateVideoGridLayout(playerCount);
+            
+            // Re-display local video if it exists
+            if (localStream) {
+                const localVideo = getVideoElement(0);
+                const localPlaceholder = getPlaceholderElement(0);
+                
+                if (localVideo && localPlaceholder) {
+                    localVideo.srcObject = localStream;
+                    localVideo.classList.add('active');
+                    localPlaceholder.classList.add('hidden');
+                }
+            }
+            
+            // Re-simulate opponents if needed
+            setTimeout(() => {
+                if (videoChatActive) {
+                    simulateOpponentsJoin(playerCount);
+                }
+            }, 1000);
+        }
+    }
+}
+
+// Export functions for potential external use
+window.VideoChat = {
+    start: startVideoChat,
+    stop: stopVideoChat,
+    toggleVideo: toggleVideo,
+    toggleAudio: toggleAudio,
+    leave: leaveVideoChat,
+    minimize: toggleMinimize,
+    updateForGameState: updateVideoChatForGameState
+};

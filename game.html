@@ -42,6 +42,38 @@
   <h2>Other Players' Properties</h2>
   <div id="other-players-list"></div>
 </div>
+
+<!-- Video Chat Toggle Button -->
+<button id="video-chat-toggle-btn" class="video-chat-toggle-btn" title="Start Video Chat">
+    📹
+</button>
+
+<!-- Video Chat Container -->
+<div id="video-chat-container" class="video-chat-container">
+    <div class="video-chat-header">
+        <span class="video-chat-title">Video Chat</span>
+        <div class="video-chat-controls">
+            <button id="minimize-btn" class="video-control-btn minimize-btn" title="Minimize">−</button>
+            <button id="leave-btn" class="video-control-btn danger" title="Leave Chat">❌</button>
+        </div>
+    </div>
+    
+    <div class="video-chat-content">
+        <div class="video-grid" id="video-grid">
+            <!-- Video boxes will be dynamically created here based on player count -->
+        </div>
+        
+        <div class="video-controls-bar">
+            <button id="toggle-video-btn" class="video-control-btn" title="Toggle Video">🔴</button>
+            <button id="toggle-audio-btn" class="video-control-btn" title="Toggle Audio">🔊</button>
+        </div>
+        
+        <div class="video-status" id="video-status">
+            Connecting...
+        </div>
+    </div>
+</div>
+
 <body>
     <!-- Your main script -->
     <script src="libs/gifler.min.js"></script>
