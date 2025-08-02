@@ -136,11 +136,18 @@
         // Instructions logic for modal
         function setVegasTokenInstructions() {
             window.vegasTokenInstructions =
-                "Pick 2, 3, or 4 tokens to play. Tokens can be assigned to a human or AI player.\n\n" +
-                "Single player: Select a token for Player One, then enable at least one AI token. Click 'Start Game' to begin.\n\n" +
-                "For multiplayer: Click 'Enable PC' on any token to assign it to a computer.\n\n" +
-                "Assign human or AI players to tokens for Players 2, 3, and 4 as needed.\n\n" +
-                "Once 2 to 4 tokens are selected, click 'Start Game' to begin.";
+                "Welcome to Vegas Metropoly - Multiplayer Edition!\n\n" +
+                "🎮 How to Play:\n" +
+                "• Click 'Play' to enter the multiplayer lobby\n" +
+                "• Create a new game or join an existing one\n" +
+                "• Select your token and wait for other players\n" +
+                "• The host can start the game when ready\n\n" +
+                "🎯 Game Features:\n" +
+                "• Real-time multiplayer with 2-8 players\n" +
+                "• Las Vegas themed properties and locations\n" +
+                "• 3D graphics and animations\n" +
+                "• Chat system for communication\n" +
+                "• Automatic reconnection if disconnected";
         }
 
         function setupInstructionsModal() {
@@ -163,7 +170,20 @@
             }
         }
 
-        window.addEventListener('DOMContentLoaded', setupInstructionsModal);
+        // Setup play button to redirect to lobby
+        function setupPlayButton() {
+            const playButton = document.getElementById('play-button');
+            if (playButton) {
+                playButton.onclick = () => {
+                    window.location.href = 'lobby.html';
+                };
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', function() {
+            setupInstructionsModal();
+            setupPlayButton();
+        });
     </script>
 </body>
 </html>
