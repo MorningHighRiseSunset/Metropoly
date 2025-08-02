@@ -731,7 +731,6 @@ process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully');
   server.close(() => {
     console.log('Server closed');
-    redis.quit();
     process.exit(0);
   });
 });
@@ -740,7 +739,6 @@ process.on('SIGINT', () => {
   console.log('SIGINT received, shutting down gracefully');
   server.close(() => {
     console.log('Server closed');
-    redis.quit();
     process.exit(0);
   });
 }); 
