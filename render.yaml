@@ -9,14 +9,4 @@ services:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 10000
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: metropoly-redis
-          property: connectionString
-
-databases:
-  - name: metropoly-redis
-    databaseName: metropoly
-    plan: starter 
+        value: 10000 

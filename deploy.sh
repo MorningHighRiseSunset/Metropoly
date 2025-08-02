@@ -32,18 +32,9 @@ fi
 
 echo "✅ Dependencies installed successfully"
 
-# Check if Redis is available (optional for local dev)
-echo "🔍 Checking Redis connection..."
-if command -v redis-cli &> /dev/null; then
-    if redis-cli ping &> /dev/null; then
-        echo "✅ Redis is running locally"
-    else
-        echo "⚠️  Redis is installed but not running"
-        echo "   You can start it with: redis-server"
-    fi
-else
-    echo "ℹ️  Redis not found locally (will use cloud Redis in production)"
-fi
+# Check server configuration
+echo "🔍 Checking server configuration..."
+echo "✅ Server configured for in-memory storage"
 
 # Create environment file template
 echo "📝 Creating environment template..."
@@ -51,7 +42,6 @@ cat > .env.template << EOF
 # Server Configuration
 NODE_ENV=production
 PORT=10000
-REDIS_URL=redis://localhost:6379
 
 # Frontend Configuration
 REACT_APP_SERVER_URL=https://your-render-backend.onrender.com

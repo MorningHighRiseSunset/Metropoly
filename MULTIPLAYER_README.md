@@ -22,14 +22,13 @@ A real-time multiplayer version of Monopoly built with Node.js, Socket.IO, and T
 
 ### Backend (Render)
 - `server.js` - Express + Socket.IO server
-- Redis for session management and game state
+- In-memory session management and game state
 - Real-time WebSocket communication
 
 ## Setup Instructions
 
 ### Prerequisites
 - Node.js 16+ 
-- Redis (for production)
 - Netlify account (for frontend)
 - Render account (for backend)
 
@@ -46,13 +45,8 @@ A real-time multiplayer version of Monopoly built with Node.js, Socket.IO, and T
    npm install
    ```
 
-3. **Set up Redis (optional for local dev)**
-   ```bash
-   # Install Redis locally or use Docker
-   docker run -d -p 6379:6379 redis:alpine
-   ```
+3. **Start the server**
 
-4. **Start the server**
    ```bash
    npm run dev
    ```
@@ -84,12 +78,6 @@ A real-time multiplayer version of Monopoly built with Node.js, Socket.IO, and T
    - Add environment variables:
      - `NODE_ENV=production`
      - `PORT=10000`
-     - `REDIS_URL` (from Redis service)
-
-4. **Create Redis service**
-   - Create a new Redis service on Render
-   - Copy the connection string
-   - Add it as `REDIS_URL` environment variable
 
 #### Frontend (Netlify)
 
@@ -169,7 +157,6 @@ A real-time multiplayer version of Monopoly built with Node.js, Socket.IO, and T
 # Server
 NODE_ENV=production
 PORT=10000
-REDIS_URL=redis://localhost:6379
 
 # Frontend
 REACT_APP_SERVER_URL=https://your-backend.onrender.com
@@ -205,8 +192,7 @@ const GAME_CONFIG = {
    - Ensure WebSocket support
 
 2. **Game State Sync Issues**
-   - Check Redis connection
-   - Verify server logs
+   - Check server logs
    - Clear browser cache
 
 3. **Player Disconnections**
@@ -231,8 +217,7 @@ Check Render logs for backend issues:
 
 ## Performance Optimization
 
-- **Redis Caching**: Game state cached in Redis
-- **Connection Pooling**: Efficient database connections
+- **In-Memory Caching**: Game state cached in server memory
 - **Memory Management**: Automatic cleanup of inactive games
 - **CDN**: Static assets served via Netlify CDN
 

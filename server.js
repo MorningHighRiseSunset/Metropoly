@@ -1,7 +1,6 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
-const Redis = require('ioredis');
 const path = require('path');
 const cors = require('cors');
 
@@ -13,9 +12,6 @@ const io = socketIo(server, {
     methods: ["GET", "POST"]
   }
 });
-
-// Redis configuration
-const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 
 // Middleware
 app.use(cors());

@@ -6,7 +6,7 @@
 - **Status**: ✅ Complete
 - **Features**:
   - Express.js server with Socket.IO for real-time communication
-  - Redis integration for session management
+  - In-memory session management
   - Game state management with `GameState` class
   - Lobby management with `Lobby` class
   - Support for 2-8 players per game
@@ -71,7 +71,7 @@
 - **Dependencies Added**:
   - `express`: Web server framework
   - `socket.io`: Real-time communication
-  - `ioredis`: Redis client
+  - `cors`: Cross-origin resource sharing
   - `cors`: Cross-origin resource sharing
   - `nodemon`: Development server
 
@@ -79,7 +79,7 @@
 - **Status**: ✅ Complete
 - **Features**:
   - Backend service configuration
-  - Redis database service
+  - In-memory data storage
   - Environment variables setup
   - Build and start commands
 
@@ -154,7 +154,7 @@ A comprehensive test page has been created to verify:
 1. Push code to GitHub
 2. Connect repository to Render
 3. Deploy using `render.yaml` configuration
-4. Set environment variables (REDIS_URL will be auto-provided)
+4. Set environment variables
 
 ### Frontend (Netlify):
 1. Push code to GitHub
@@ -173,7 +173,7 @@ A comprehensive test page has been created to verify:
 ### Environment Variables:
 - `NODE_ENV`: Environment (development/production)
 - `PORT`: Server port (auto-set by Render)
-- `REDIS_URL`: Redis connection string (auto-provided by Render)
+- `PORT`: Server port (10000)
 
 ## ⚠️ Known Issues & Fixes
 
@@ -208,7 +208,7 @@ A comprehensive test page has been created to verify:
 
 4. **Monitor and Debug**:
    - Check server logs on Render
-   - Monitor Redis usage
+   - Monitor memory usage
    - Test player reconnection scenarios
 
 ## 🎯 Success Criteria
@@ -229,7 +229,7 @@ If issues arise:
 2. Use `test-lobby.html` to diagnose connection issues
 3. Verify all files are present and properly configured
 4. Check browser console for JavaScript errors
-5. Ensure Redis is running and accessible
+5. Ensure server is running and accessible
 
 ---
 
