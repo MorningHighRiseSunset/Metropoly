@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: metropoly-backend
+    name: metropoly
     env: node
     plan: starter
     buildCommand: npm install

@@ -4,7 +4,7 @@ const DEBUG = false;
 // Server configuration
 const SERVER_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:3000' 
-    : 'https://metropoly-backend.onrender.com';
+    : 'https://metropoly.onrender.com';
 
 // Multiplayer state
 let socket = null;
