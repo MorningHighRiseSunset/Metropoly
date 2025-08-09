@@ -6203,10 +6203,7 @@ function init() {
         btn.id = 'camera-follow-toggle';
         btn.innerText = 'Follow Token (F)';
         btn.style.position = 'fixed';
-        btn.style.top = '80px';
-        btn.style.left = '50%';
-        btn.style.transform = 'translateX(-50%)';
-        btn.style.zIndex = '2002';
+        btn.style.zIndex = '10002';
         btn.style.background = '#222';
         btn.style.color = '#fff';
         btn.style.padding = '10px 18px';
@@ -6223,10 +6220,7 @@ function init() {
         indicator.id = 'camera-follow-indicator';
         indicator.innerText = 'FOLLOWING TOKEN';
         indicator.style.position = 'fixed';
-        indicator.style.top = '120px';
-        indicator.style.left = '50%';
-        indicator.style.transform = 'translateX(-50%)';
-        indicator.style.zIndex = '2002';
+        indicator.style.zIndex = '10002';
         indicator.style.background = '#4caf50';
         indicator.style.color = '#fff';
         indicator.style.padding = '6px 18px';
@@ -6237,6 +6231,43 @@ function init() {
         indicator.style.display = 'none';
         indicator.style.boxShadow = '0 2px 8px rgba(0,0,0,0.18)';
         document.body.appendChild(indicator);
+
+        function positionFollowUI() {
+            const mpRoot = document.getElementById('multiplayer-ui')
+                || document.getElementById('players-list')
+                || document.getElementById('multiplayer-players');
+            let top = 120;
+            let right = 10;
+            if (mpRoot) {
+                const r = mpRoot.getBoundingClientRect();
+                top = Math.max(10, Math.floor(r.bottom + 10));
+                right = Math.max(10, Math.floor(window.innerWidth - r.right + 10));
+            }
+            // Position the follow button directly under the multiplayer UI (right-aligned)
+            btn.style.top = top + 'px';
+            btn.style.right = right + 'px';
+            btn.style.left = '';
+            btn.style.transform = '';
+
+            // Place the green indicator just below the button, same right offset
+            const btnRect = btn.getBoundingClientRect();
+            const indicatorTop = Math.floor(btnRect.bottom + 6);
+            indicator.style.top = indicatorTop + 'px';
+            indicator.style.right = right + 'px';
+            indicator.style.left = '';
+            indicator.style.transform = '';
+        }
+
+        // Initial position and on resize
+        positionFollowUI();
+        window.addEventListener('resize', positionFollowUI);
+
+        // Reposition when multiplayer UI is added/changes
+        const mo = new MutationObserver(positionFollowUI);
+        mo.observe(document.body, { childList: true, subtree: true });
+
+        // Reflect current follow state immediately (shows green box when active)
+        updateCameraFollowUI();
     }
 
     // Initialize the advanced pathfinding system
