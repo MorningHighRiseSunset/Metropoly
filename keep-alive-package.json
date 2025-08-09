@@ -1,0 +1,26 @@
+{
+  "name": "metropoly-keep-alive",
+  "version": "1.0.0",
+  "description": "Keep-alive service for Metropoly multiplayer server",
+  "main": "keep-alive.js",
+  "scripts": {
+    "start": "node keep-alive.js",
+    "dev": "nodemon keep-alive.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "keywords": [
+    "keep-alive",
+    "health-check",
+    "server-monitoring",
+    "metropoly"
+  ],
+  "author": "Metropoly Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}

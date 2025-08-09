@@ -120,7 +120,15 @@ class MultiplayerGame {
                 console.log('Connected to multiplayer server');
                 this.updateConnectionStatus(true);
                 this.connectionAttempts = 0; // Reset on successful connection
-                this.rejoinGame();
+                
+                // Only try to rejoin if we have valid session data
+                if (this.roomId && this.playerId && this.storedGameState) {
+                    console.log('Valid session data found, attempting to rejoin game');
+                    this.rejoinGame();
+                } else {
+                    console.log('No valid session data, waiting for room join or creation');
+                    // Don't automatically rejoin - wait for user to create/join a room
+                }
             };
             
             // Add connection timeout
@@ -170,6 +178,18 @@ class MultiplayerGame {
     rejoinGame() {
         console.log('Attempting to rejoin game...');
         
+        // Check if we have valid room and player IDs
+        if (!this.roomId || !this.playerId) {
+            console.log('No valid room or player ID, cannot rejoin');
+            this.showNotification('Invalid game session. Please create or join a new room.', 'warning');
+            setTimeout(() => {
+                if (window.location.pathname.includes('game.html')) {
+                    window.location.href = 'lobby.html';
+                }
+            }, 2000);
+            return;
+        }
+        
         // Use stored game state if available
         const rejoinData = {
             type: 'rejoin_game',
@@ -217,6 +237,13 @@ class MultiplayerGame {
         switch (data.type) {
             case 'joined_room':
                 console.log('Joined room successfully');
+                // If we don't have room/player IDs yet, this might be a fresh connection
+                if (!this.roomId || !this.playerId) {
+                    console.log('No room/player IDs set, requesting room info');
+                    this.sendMessage({
+                        type: 'request_room_info'
+                    });
+                }
                 break;
                 
             case 'player_joined':
@@ -318,6 +345,39 @@ class MultiplayerGame {
                 this.handleServerError(data.message);
                 break;
                 
+            case 'room_info':
+                console.log('Received room info:', data);
+                if (data.roomId && data.playerId) {
+                    this.roomId = data.roomId;
+                    this.playerId = data.playerId;
+                    console.log('Room and player IDs set from server');
+                }
+                break;
+                
+            case 'room_not_found':
+                console.log('Room not found, clearing session data');
+                this.clearAllSessionData();
+                this.showNotification('Room not found. Please create or join a new room.', 'warning');
+                break;
+                
+            case 'player_not_found':
+                console.log('Player not found in room, clearing session data');
+                this.clearAllSessionData();
+                this.showNotification('Player not found in room. Please create or join a new room.', 'warning');
+                break;
+                
+            case 'game_not_found':
+                console.log('Game not found, clearing session data');
+                this.clearAllSessionData();
+                this.showNotification('Game not found. Please create or join a new room.', 'warning');
+                break;
+                
+            case 'game_state_not_found':
+                console.log('Game state not found, clearing session data');
+                this.clearAllSessionData();
+                this.showNotification('Game state not found. Please create or join a new room.', 'warning');
+                break;
+                
             default:
                 console.log('Unknown message type:', data.type);
         }
@@ -326,17 +386,60 @@ class MultiplayerGame {
     handleServerError(message) {
         if (message.includes('not found')) {
             console.log('Player/room not found, this might be expected for new connections');
-            // Retry requesting game state after a delay
-            setTimeout(() => {
-                console.log('Retrying game state request...');
-                this.sendMessage({
-                    type: 'request_game_state',
-                    roomId: this.roomId,
-                    playerId: this.playerId
-                });
-            }, 2000);
+            
+            // Check if we've tried too many times
+            if (!this.retryCount) {
+                this.retryCount = 0;
+            }
+            
+            this.retryCount++;
+            
+            if (this.retryCount <= 3) {
+                // Retry requesting game state after a delay
+                setTimeout(() => {
+                    console.log(`Retrying game state request (attempt ${this.retryCount})...`);
+                    this.sendMessage({
+                        type: 'request_game_state',
+                        roomId: this.roomId,
+                        playerId: this.playerId
+                    });
+                }, 2000);
+            } else {
+                console.log('Max retry attempts reached, clearing session and starting fresh');
+                this.clearSessionAndStartFresh();
+            }
         } else {
             this.showNotification(`Server error: ${message}`, 'error');
+        }
+    }
+
+    clearSessionAndStartFresh() {
+        console.log('Clearing session storage and starting fresh...');
+        
+        try {
+            // Clear session storage
+            sessionStorage.removeItem('metropoly_game_state');
+            this.storedGameState = null;
+            
+            // Reset retry count
+            this.retryCount = 0;
+            
+            // Clear room and player IDs
+            this.roomId = null;
+            this.playerId = null;
+            
+            // Show user-friendly message
+            this.showNotification('Previous game session expired. Please create or join a new room.', 'info');
+            
+            // Optionally redirect to lobby or show room creation UI
+            setTimeout(() => {
+                if (window.location.pathname.includes('game.html')) {
+                    window.location.href = 'lobby.html';
+                }
+            }, 3000);
+            
+        } catch (error) {
+            console.error('Error clearing session:', error);
         }
     }
 
@@ -2361,6 +2464,54 @@ class MultiplayerGame {
             }
         } else {
             console.error(`No token found for player ${playerId} during testing`);
+        }
+    }
+
+    // Method to create or join a room
+    createOrJoinRoom(roomId, playerId, playerName) {
+        console.log(`Creating/joining room: ${roomId} as player: ${playerId} (${playerName})`);
+        
+        // Set the room and player IDs
+        this.roomId = roomId;
+        this.playerId = playerId;
+        
+        // Store basic game state
+        const basicState = {
+            roomId: roomId,
+            playerId: playerId,
+            playerName: playerName,
+            timestamp: Date.now()
+        };
+        
+        try {
+            sessionStorage.setItem('metropoly_game_state', JSON.stringify(basicState));
+            this.storedGameState = basicState;
+            console.log('Stored basic game state');
+        } catch (error) {
+            console.error('Error storing game state:', error);
+        }
+        
+        // Send join room message
+        this.sendMessage({
+            type: 'join_room',
+            roomId: roomId,
+            playerId: playerId,
+            playerName: playerName
+        });
+    }
+
+    // Method to clear all session data
+    clearAllSessionData() {
+        console.log('Clearing all session data...');
+        try {
+            sessionStorage.removeItem('metropoly_game_state');
+            this.storedGameState = null;
+            this.roomId = null;
+            this.playerId = null;
+            this.retryCount = 0;
+            console.log('Session data cleared successfully');
+        } catch (error) {
+            console.error('Error clearing session data:', error);
         }
     }
 }

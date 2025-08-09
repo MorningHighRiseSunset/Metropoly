@@ -1217,12 +1217,37 @@ app.get('/health', (req, res) => {
     }
 });
 
+// Enhanced keep-alive endpoint for external services
+app.get('/keep-alive', (req, res) => {
+    try {
+        const keepAliveData = {
+            status: 'awake',
+            message: 'Server is active and responding',
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime(),
+            memory: process.memoryUsage(),
+            rooms: rooms.size,
+            players: players.size
+        };
+        console.log('Keep-alive ping received:', keepAliveData);
+        res.json(keepAliveData);
+    } catch (error) {
+        console.error('Error in keep-alive:', error);
+        res.status(500).json({ error: 'Keep-alive failed' });
+    }
+});
+
+// Simple ping endpoint for lightweight health checks
+app.get('/ping', (req, res) => {
+    res.status(200).send('pong');
+});
+
 // Root endpoint
 app.get('/', (req, res) => {
     res.json({ 
         message: 'Vegas Metropoly Server is running',
         version: '1.0.0',
-        endpoints: ['/api/rooms', '/api/room/:roomId', '/health']
+        endpoints: ['/api/rooms', '/api/room/:roomId', '/health', '/keep-alive', '/ping']
     });
 });
 
