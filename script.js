@@ -9288,6 +9288,12 @@ function startMultiplayerGame() {
         return;
     }
     
+    // Check if multiplayer game is already initialized
+    if (window.multiplayerGame) {
+        console.log('MultiplayerGame already initialized in script.js, skipping...');
+        return;
+    }
+    
     try {
         multiplayerGame = new window.MultiplayerGame(currentRoomId, currentPlayerId);
         window.multiplayerGame = multiplayerGame; // Set it on window object

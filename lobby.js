@@ -325,6 +325,23 @@ class LobbyManager {
             console.error('Failed to store game state:', error);
         }
         
+        // Store lobby data with all players for the game to use
+        if (this.currentRoomInfo) {
+            const lobbyData = {
+                rooms: {
+                    [roomId]: this.currentRoomInfo
+                },
+                timestamp: Date.now()
+            };
+            
+            try {
+                sessionStorage.setItem('metropoly_lobby_data', JSON.stringify(lobbyData));
+                console.log('Lobby data stored in session storage:', lobbyData);
+            } catch (error) {
+                console.error('Failed to store lobby data:', error);
+            }
+        }
+        
         // Send a final message to ensure server has all data
         this.sendMessage({
             type: 'game_transition_ready',

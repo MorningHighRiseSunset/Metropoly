@@ -396,6 +396,13 @@
             
             function waitForMultiplayerGame() {
                 if (window.MultiplayerGame) {
+                    // Check if multiplayer game is already initialized
+                    if (window.multiplayerGame) {
+                        console.log('MultiplayerGame already initialized, skipping...');
+                        waitForGameLoad();
+                        return;
+                    }
+                    
                     console.log('MultiplayerGame class loaded, initializing...');
                     multiplayerGame = new MultiplayerGame(roomId, playerId);
                     window.multiplayerGame = multiplayerGame; // Set it on window object
@@ -415,8 +422,9 @@
                     
                     // Wait a moment for multiplayer to initialize, then start the game
                     setTimeout(() => {
-                        if (multiplayerGame) {
+                        if (multiplayerGame && !multiplayerGame.gameStarted) {
                             console.log('Starting multiplayer game...');
+                            multiplayerGame.gameStarted = true; // Prevent multiple starts
                             multiplayerGame.setupGame();
                         }
                     }, 500);

@@ -1,6 +1,12 @@
 // Multiplayer game management for Metropoly
 class MultiplayerGame {
     constructor(roomId, playerId) {
+        // Singleton pattern: prevent multiple instances
+        if (window.multiplayerGame) {
+            console.log('MultiplayerGame already exists, returning existing instance');
+            return window.multiplayerGame;
+        }
+        
         // Debug logging for constructor
         console.log('=== MULTIPLAYER GAME CONSTRUCTOR DEBUG ===');
         console.log('Received roomId:', roomId);
@@ -42,6 +48,8 @@ class MultiplayerGame {
         this.players = [];
         this.currentPlayerIndex = 0;
         this.isMyTurn = false;
+        this.gameStarted = false; // Flag to prevent multiple starts
+        this.waitingForGameLoad = false; // Flag to prevent multiple waitForGameLoad calls
         this.serverUrl = this.getServerUrl();
         this.connectionAttempts = 0;
         this.maxConnectionAttempts = 5;
@@ -55,6 +63,9 @@ class MultiplayerGame {
         
         // Check for session storage data
         this.checkSessionStorage();
+        
+        // Try to get player data from lobby session storage
+        this.loadLobbyPlayerData();
         
         console.log('Final roomId:', this.roomId);
         console.log('Final playerId:', this.playerId);
@@ -100,6 +111,30 @@ class MultiplayerGame {
         } catch (error) {
             console.error('Error reading session storage:', error);
             sessionStorage.removeItem('metropoly_game_state');
+        }
+    }
+    
+    loadLobbyPlayerData() {
+        try {
+            // Try to get player data from lobby session storage
+            const lobbyData = sessionStorage.getItem('metropoly_lobby_data');
+            if (lobbyData) {
+                const lobby = JSON.parse(lobbyData);
+                console.log('Found lobby data:', lobby);
+                
+                // Check if this room exists in lobby data
+                if (lobby.rooms && lobby.rooms[this.roomId]) {
+                    const room = lobby.rooms[this.roomId];
+                    if (room.players && room.players.length > 0) {
+                        console.log('Loading players from lobby data:', room.players);
+                        this.players = this.normalizePlayers(room.players);
+                        console.log('Players loaded from lobby:', this.players);
+                        this.updatePlayersDisplay();
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error loading lobby player data:', error);
         }
     }
 
@@ -255,6 +290,22 @@ class MultiplayerGame {
                         type: 'request_room_info'
                     });
                 }
+                
+                // Check if joined_room includes player data
+                if (data.players && Array.isArray(data.players)) {
+                    console.log('Joined room includes players:', data.players);
+                    this.players = this.normalizePlayers(data.players);
+                    
+                    // If game modules are ready, initialize or update immediately
+                    if (window.scene && window.players && window.createTokens && window.init) {
+                        if (window.players && window.players.length === 0) {
+                            console.log('Game modules ready, initializing multiplayer players with joined room data');
+                            this.initializeMultiplayerPlayers();
+                        } else {
+                            this.updatePlayersDisplay();
+                        }
+                    }
+                }
                 break;
                 
             case 'room_info':
@@ -270,14 +321,58 @@ class MultiplayerGame {
                         this.rejoinGame();
                     }
                 }
+                
+                // Check if room info includes player data
+                if (data.players && Array.isArray(data.players)) {
+                    console.log('Room info includes players:', data.players);
+                    this.players = this.normalizePlayers(data.players);
+                    
+                    // If game modules are ready, initialize or update immediately
+                    if (window.scene && window.players && window.createTokens && window.init) {
+                        if (window.players && window.players.length === 0) {
+                            console.log('Game modules ready, initializing multiplayer players with room info');
+                            this.initializeMultiplayerPlayers();
+                        } else {
+                            this.updatePlayersDisplay();
+                        }
+                    }
+                }
                 break;
                 
             case 'session_valid':
                 console.log('Session validated successfully');
                 this.showNotification('Session recovered successfully!', 'success');
                 this.retryCount = 0;
-                // Try to rejoin the game
-                this.rejoinGame();
+                
+                // Check if session_valid includes player data
+                if (data.players && Array.isArray(data.players)) {
+                    console.log('Session valid includes players:', data.players);
+                    this.players = this.normalizePlayers(data.players);
+                    
+                    // If game modules are ready, initialize immediately
+                    if (window.scene && window.players && window.createTokens && window.init) {
+                        console.log('Game modules ready, initializing multiplayer players with session valid data');
+                        this.initializeMultiplayerPlayers();
+                    }
+                } else {
+                    // Try to rejoin the game
+                    this.rejoinGame();
+                }
+                break;
+                
+            case 'rejoin_game':
+                console.log('Rejoin game message received:', data);
+                // Check if rejoin_game includes player data
+                if (data.players && Array.isArray(data.players)) {
+                    console.log('Rejoin game includes players:', data.players);
+                    this.players = this.normalizePlayers(data.players);
+                    
+                    // If game modules are ready, initialize immediately
+                    if (window.scene && window.players && window.createTokens && window.init) {
+                        console.log('Game modules ready, initializing multiplayer players with rejoin game data');
+                        this.initializeMultiplayerPlayers();
+                    }
+                }
                 break;
                 
             case 'session_invalid':
@@ -288,28 +383,146 @@ class MultiplayerGame {
                 
             case 'session_pong':
                 console.log('Session health check successful');
+                // Check if session_pong includes player data
+                if (data.players && Array.isArray(data.players)) {
+                    console.log('Session pong includes players:', data.players);
+                    this.players = this.normalizePlayers(data.players);
+                    
+                    // If game modules are ready, initialize immediately
+                    if (window.scene && window.players && window.createTokens && window.init) {
+                        console.log('Game modules ready, initializing multiplayer players with session pong data');
+                        this.initializeMultiplayerPlayers();
+                    }
+                }
                 break;
             case 'ready_for_game_transition_ack':
                 console.log('Server acknowledged game transition readiness');
+                // Check if transition ack includes player data
+                if (data.players && Array.isArray(data.players)) {
+                    console.log('Transition ack includes players:', data.players);
+                    this.players = this.normalizePlayers(data.players);
+                    
+                    // If game modules are ready, initialize immediately
+                    if (window.scene && window.players && window.createTokens && window.init) {
+                        console.log('Game modules ready, initializing multiplayer players with transition ack data');
+                        this.initializeMultiplayerPlayers();
+                    }
+                }
                 break;
             case 'player_reconnected':
                 console.log('Player reconnected successfully:', data);
+                // Check if player_reconnected includes player data
+                if (data.players && Array.isArray(data.players)) {
+                    console.log('Player reconnected includes players:', data.players);
+                    this.players = this.normalizePlayers(data.players);
+                    
+                    // If game modules are ready, initialize immediately
+                    if (window.scene && window.players && window.createTokens && window.init) {
+                        console.log('Game modules ready, initializing multiplayer players with player reconnected data');
+                        this.initializeMultiplayerPlayers();
+                    }
+                }
                 break;
                 
             case 'player_joined':
                 console.log('Player joined:', data.playerName);
+                // Check if player_joined includes updated player list
+                if (data.players && Array.isArray(data.players)) {
+                    console.log('Player joined includes updated players:', data.players);
+                    this.players = this.normalizePlayers(data.players);
+                    
+                    // If game modules are ready, update the display
+                    if (window.scene && window.players && window.createTokens && window.init) {
+                        console.log('Game modules ready, updating multiplayer players with player joined data');
+                        this.updatePlayersDisplay();
+                    }
+                }
                 break;
                 
             case 'player_left':
                 console.log('Player left:', data.playerId);
+                // Check if player_left includes updated player list
+                if (data.players && Array.isArray(data.players)) {
+                    console.log('Player left includes updated players:', data.players);
+                    this.players = this.normalizePlayers(data.players);
+                    
+                    // If game modules are ready, update the display
+                    if (window.scene && window.players && window.createTokens && window.init) {
+                        console.log('Game modules ready, updating multiplayer players with player left data');
+                        this.updatePlayersDisplay();
+                    }
+                }
                 break;
                 
             case 'game_started':
-                this.handleGameStarted(data);
+                console.log('Game started message received:', data);
+                this.handleGameStarted({
+                    ...data,
+                    players: this.normalizePlayers(data.players || [])
+                });
+                
+                // Check if game_started includes player data
+                if (data.players && Array.isArray(data.players)) {
+                    console.log('Game started includes players:', data.players);
+                    this.players = this.normalizePlayers(data.players);
+                    
+                    // If game modules are ready, initialize immediately
+                    if (window.scene && window.players && window.createTokens && window.init) {
+                        console.log('Game modules ready, initializing multiplayer players with game started data');
+                        this.initializeMultiplayerPlayers();
+                    }
+                }
                 break;
                 
             case 'game_state_update':
                 this.handleGameStateUpdate(data);
+                break;
+                
+            case 'game_state_response':
+                // Handle direct response to request_game_state
+                console.log('Received game state response:', data);
+                this.handleGameStateUpdate({
+                    ...data,
+                    players: this.normalizePlayers(data.players || [])
+                });
+                break;
+                
+            case 'players_list':
+                // Handle direct players list from server
+                console.log('Received players list:', data);
+                if (data.players && Array.isArray(data.players)) {
+                    this.players = this.normalizePlayers(data.players);
+                    console.log('Players list updated:', this.players);
+                    
+                    // If game modules are ready, initialize or update immediately
+                    if (window.scene && window.players && window.createTokens && window.init) {
+                        if (window.players && window.players.length === 0) {
+                            console.log('Game modules ready, initializing multiplayer players with players list');
+                            this.initializeMultiplayerPlayers();
+                        } else {
+                            this.updatePlayersDisplay();
+                        }
+                    }
+                }
+                break;
+                
+            case 'players_list_response':
+                // Handle response to request_players_list
+                console.log('Received players list response:', data);
+                if (data.players && Array.isArray(data.players)) {
+                    this.players = this.normalizePlayers(data.players);
+                    console.log('Players list updated from response:', this.players);
+                    
+                    // If game modules are ready, initialize or update immediately
+                    if (window.scene && window.players && window.createTokens && window.init) {
+                        if (window.players && window.players.length === 0) {
+                            console.log('Game modules ready, initializing multiplayer players with players list response');
+                            this.initializeMultiplayerPlayers();
+                        } else {
+                            this.updatePlayersDisplay();
+                        }
+                    }
+                }
                 break;
                 
             case 'player_turn':
@@ -551,7 +764,7 @@ class MultiplayerGame {
         console.log('Previous players count:', this.players.length);
         
         this.gameState = data.gameState;
-        this.players = data.players || [];
+        this.players = this.normalizePlayers(data.players || []);
         this.currentPlayerIndex = data.currentPlayerIndex || 0;
         this.isMyTurn = data.currentPlayerId === this.playerId;
         
@@ -608,6 +821,19 @@ class MultiplayerGame {
                     console.log('Game modules still not loaded, will retry in waitForGameLoad');
                 }
             }, 1000);
+        }
+        
+        // If we have players but game modules aren't ready, trigger waitForGameLoad
+        if (this.players.length > 0 && (!window.scene || !window.players || !window.createTokens || !window.init)) {
+            console.log('Players available but game modules not ready, triggering waitForGameLoad');
+            this.waitCount = 0; // Reset counter
+            this.waitForGameLoad();
+        }
+        
+        // If we have players and game modules are ready, initialize immediately
+        if (this.players.length > 0 && window.scene && window.players && window.createTokens && window.init) {
+            console.log('Players and game modules ready, initializing multiplayer players immediately');
+            this.initializeMultiplayerPlayers();
         }
         
         // Enable/disable controls based on turn
@@ -914,7 +1140,14 @@ class MultiplayerGame {
 
     // Game integration methods
     setupGame() {
+        // Prevent multiple setups
+        if (this.gameStarted) {
+            console.log('Multiplayer game already set up, skipping...');
+            return;
+        }
+        
         console.log('Setting up multiplayer game...');
+        this.gameStarted = true;
         
         // Override global game functions for multiplayer
         this.overrideGameFunctions();
@@ -1186,22 +1419,53 @@ class MultiplayerGame {
     setupMultiplayerGame() {
         console.log('Setting up multiplayer game...');
         this.disableTokenSelectionUI();
-        this.waitForGameLoad();
         
-        // Add a timeout to prevent infinite waiting
-        setTimeout(() => {
-            if (this.waitCount > 0 && this.players.length === 0) {
-                console.log('Timeout reached, attempting to request game state...');
-                this.sendMessage({
-                    type: 'request_game_state',
-                    roomId: this.roomId,
-                    playerId: this.playerId
-                });
-            }
-        }, 10000); // 10 second timeout
+        // If we already have players from game state, don't wait
+        if (this.players.length > 0) {
+            console.log('Players already available, skipping waitForGameLoad');
+            this.initializeMultiplayerPlayers();
+        } else {
+            // Also request game state immediately if we don't have players
+            console.log('No players available, requesting game state from server...');
+            this.sendMessage({
+                type: 'request_game_state',
+                roomId: this.roomId,
+                playerId: this.playerId
+            });
+            
+            // Also try to request players list directly
+            this.sendMessage({
+                type: 'request_players_list',
+                roomId: this.roomId,
+                playerId: this.playerId
+            });
+            
+            // Wait for the game to be fully loaded before proceeding
+            this.waitForGameLoad();
+            
+            // Add a timeout to prevent infinite waiting
+            setTimeout(() => {
+                if (this.waitCount > 0 && this.players.length === 0) {
+                    console.log('Timeout reached, attempting to request game state again...');
+                    this.sendMessage({
+                        type: 'request_game_state',
+                        roomId: this.roomId,
+                        playerId: this.playerId
+                    });
+                }
+            }, 10000); // 10 second timeout
+        }
     }
 
     waitForGameLoad() {
+        // Prevent multiple simultaneous calls
+        if (this.waitingForGameLoad) {
+            console.log('Already waiting for game load, skipping duplicate call');
+            return;
+        }
+        
+        this.waitingForGameLoad = true;
+        
         // Add a static counter to prevent infinite loops
         if (!this.waitCount) this.waitCount = 0;
         this.waitCount++;
@@ -1217,33 +1481,30 @@ class MultiplayerGame {
         // Check if the game is ready
         if (window.scene && window.players && window.createTokens && window.init) {
             console.log('All game modules loaded, initializing multiplayer players...');
+            this.waitingForGameLoad = false; // Reset flag
+            
             // Game is loaded, initialize multiplayer players
             if (this.players.length > 0) {
                 this.initializeMultiplayerPlayers();
             } else {
                 console.log('No players available yet, waiting for game state...');
                 // Only continue waiting if we haven't exceeded max attempts
-                if (this.waitCount < 50) {
+                if (this.waitCount < 20) { // Reduced from 50 to 20
                     setTimeout(() => this.waitForGameLoad(), 500);
                 } else {
-                    console.error('Timeout waiting for players to be available. Creating fallback players...');
-                    // Create fallback players for debugging
-                    this.players = [{
-                        id: this.playerId,
-                        name: 'Player 1',
-                        token: 'rolls royce',
-                        money: 1500,
-                        position: 0
-                    }];
-                    this.initializeMultiplayerPlayers();
+                    console.log('Reached max attempts, stopping wait loop. Players will be initialized when game state arrives.');
+                    // Don't create fallback players - wait for actual game state
+                    this.waitCount = 0; // Reset for next time
+                    this.waitingForGameLoad = false; // Reset flag
                 }
             }
         } else {
             // Wait a bit and try again, but limit attempts
-            if (this.waitCount < 100) {
+            if (this.waitCount < 50) { // Reduced from 100 to 50
                 setTimeout(() => this.waitForGameLoad(), 200);
             } else {
                 console.error('Timeout waiting for game modules to load');
+                this.waitingForGameLoad = false; // Reset flag
                 // Try to proceed anyway to avoid infinite loop
                 this.initializeMultiplayerPlayers();
             }
@@ -1544,6 +1805,18 @@ class MultiplayerGame {
 
     getPlayerById(playerId) {
         return this.players.find(p => p.id === playerId);
+    }
+
+    normalizePlayers(playersList) {
+        if (!Array.isArray(playersList)) return [];
+        return playersList.map((p, index) => {
+            const id = p.id || p.playerId || p._id || `${index}`;
+            const name = p.name || p.playerName || `Player ${index + 1}`;
+            const token = p.token || p.tokenName || (p.selectedToken && (p.selectedToken.name || p.selectedToken)) || p.token_name || 'No token';
+            const position = (p.position ?? p.currentPosition ?? 0);
+            const money = (p.money ?? 5000);
+            return { id, name, token, position, money, selectedToken: p.selectedToken || null };
+        });
     }
 
     getPlayerToken(playerId) {
