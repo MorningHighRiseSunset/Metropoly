@@ -2427,6 +2427,8 @@ function showPropertyUI(position) {
     }
 
     console.log(`Creating property UI for ${property.name}`);
+    // Also render right-side activity for featured properties
+    try { window.showSpecialActivityForProperty?.(property); } catch(_){}
     
     // Create overlay and popup
     const overlay = document.createElement('div');
@@ -3703,6 +3705,15 @@ function endTurn() {
     console.log(`Ending turn for Player ${currentPlayerIndex + 1} (${players[currentPlayerIndex].name})`);
 
     try {
+        // Ensure any special activity UI is closed between turns
+        try {
+            if (window.hideSpecialActivityWidget) {
+                window.hideSpecialActivityWidget();
+            } else {
+                const saw = document.getElementById('special-activity-widget');
+                if (saw) saw.remove();
+            }
+        } catch (e) { /* ignore */ }
         // Reset all turn-related flags
         isTurnInProgress = true; // Temporarily set to true during transition
         hasTakenAction = false;
@@ -5593,6 +5604,12 @@ function handlePropertyLanding(player, position) {
     }
 
     console.log(`${player.name} landed on: ${property.name}`, property);
+    // Show special activity widget for select landmark properties (human players only)
+    try {
+        if (!isCurrentPlayerAI()) {
+            window.showSpecialActivityForProperty?.(property);
+        }
+    } catch (_) { /* non-fatal */ }
 
     // Play horse galloping sound for Horseback Riding property
     if (property.name === "Horseback Riding") {
@@ -6256,6 +6273,274 @@ function init() {
     window.addEventListener("click", onTokenClick);
     window.addEventListener("resize", onWindowResize, false);
     window.addEventListener("click", onPropertyClick);
+    
+    // Install special activities UI helpers
+    (function installSpecialActivities() {
+        if (window.showSpecialActivityForProperty) return;
+
+        const FEATURED = {
+            "Hard Rock Hotel": { kind: 'slots' },
+            "Bellagio": { kind: 'poker' },
+            "Caesars Palace": { kind: 'craps' },
+            "Santa Fe Hotel and Casino": { kind: 'low_poker' },
+            "Wynn Las Vegas": { kind: 'baccarat' },
+            "The Cosmopolitan": { kind: 'blackjack' }
+        };
+
+        function computeTopOffset() {
+            const mp = document.getElementById('multiplayer-ui');
+            if (!mp) return 120;
+            const r = mp.getBoundingClientRect();
+            return Math.max(10, r.bottom + 10);
+        }
+
+        function ensureRoot(property) {
+            let root = document.getElementById('special-activity-widget');
+            if (!root) {
+                root = document.createElement('div');
+                root.id = 'special-activity-widget';
+                document.body.appendChild(root);
+            }
+            root.style.top = computeTopOffset() + 'px';
+            root.classList.add('show');
+            root.setAttribute('data-property', property?.name || '');
+            return root;
+        }
+
+        function hideWidget() {
+            const root = document.getElementById('special-activity-widget');
+            if (root) root.remove();
+        }
+
+        function awardMoneyToCurrentPlayer(amount, note) {
+            const current = players[currentPlayerIndex];
+            if (!current) return;
+
+            // Singleplayer immediate update
+            current.money += amount;
+            updateMoneyDisplay?.();
+
+            // Multiplayer sync to server and others
+            try {
+                const isMulti = window.isMultiplayerMode && window.multiplayerGame && window.multiplayerGame.ws && window.multiplayerGame.ws.readyState === WebSocket.OPEN;
+                if (isMulti) {
+                    window.multiplayerGame.sendMessage({
+                        type: 'game_action',
+                        action: 'special_reward',
+                        data: {
+                            playerId: window.multiplayerGame.playerId,
+                            amount,
+                            note: note || 'Special activity reward'
+                        }
+                    });
+                }
+            } catch(_) {}
+        }
+
+        function renderSlots(property) {
+            const root = ensureRoot(property);
+            root.innerHTML = '';
+            const header = document.createElement('div');
+            header.className = 'saw-header';
+            header.innerHTML = '🎰 Hard Rock Slots';
+
+            const body = document.createElement('div');
+            body.className = 'saw-body';
+
+            const title = document.createElement('div');
+            title.className = 'saw-title';
+            title.textContent = 'Spin the reels!';
+
+            const instructions = document.createElement('div');
+            instructions.className = 'saw-instructions';
+            instructions.textContent = 'Tap or click Spin. Small chance to hit a payout and earn money.';
+
+            const anim = document.createElement('div');
+            anim.className = 'saw-anim';
+
+            const tiles = [0,1,2].map(() => {
+                const t = document.createElement('div');
+                t.className = 'saw-tile';
+                t.textContent = '—';
+                return t;
+            });
+            tiles.forEach(t => anim.appendChild(t));
+
+            const btn = document.createElement('button');
+            btn.className = 'saw-action-btn';
+            btn.textContent = 'Spin';
+
+            let spinning = false;
+            function doSpin() {
+                if (spinning) return;
+                spinning = true;
+                btn.disabled = true;
+                // Mobile friendly: support pointer events
+                const symbols = ['🍒','🍋','🔔','⭐','💎','7'];
+                const spinDuration = 900;
+                const start = performance.now();
+                const raf = () => {
+                    const now = performance.now();
+                    const p = Math.min(1, (now - start) / spinDuration);
+                    tiles.forEach((t, idx) => {
+                        if (Math.random() < 0.6) t.textContent = symbols[Math.floor(Math.random()*symbols.length)];
+                    });
+                    if (p < 1) {
+                        requestAnimationFrame(raf);
+                    } else {
+                        // Final result
+                        const result = tiles.map(() => symbols[Math.floor(Math.random()*symbols.length)]);
+                        tiles.forEach((t, i) => t.textContent = result[i]);
+                        // Determine payout
+                        let payout = 0;
+                        if (result[0] === result[1] && result[1] === result[2]) {
+                            payout = result[0] === '7' ? 300 : 150;
+                        } else if (result.some(v => v === '💎')) {
+                            payout = 50;
+                        } else if (new Set(result).size === 2) {
+                            payout = 25;
+                        }
+                        if (payout > 0) {
+                            showFeedback(`You won $${payout} at the slots!`);
+                            awardMoneyToCurrentPlayer(payout, 'Slots win');
+                        } else {
+                            showFeedback('No win this time.');
+                        }
+                        spinning = false;
+                        btn.disabled = false;
+                    }
+                };
+                requestAnimationFrame(raf);
+            }
+            btn.addEventListener('click', doSpin, { passive: true });
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); doSpin(); }, { passive: false });
+
+            const close = document.createElement('button');
+            close.className = 'saw-close';
+            close.textContent = 'Close';
+            close.addEventListener('click', hideWidget, { passive: true });
+            close.addEventListener('touchstart', (e) => { e.preventDefault(); hideWidget(); }, { passive: false });
+
+            body.appendChild(title);
+            body.appendChild(instructions);
+            body.appendChild(anim);
+            body.appendChild(btn);
+            body.appendChild(close);
+            root.appendChild(header);
+            root.appendChild(body);
+        }
+
+        function renderSimpleActivity(property, label, icon, chanceConfig) {
+            const root = ensureRoot(property);
+            root.innerHTML = '';
+            const header = document.createElement('div');
+            header.className = 'saw-header';
+            header.textContent = `${icon} ${label}`;
+
+            const body = document.createElement('div');
+            body.className = 'saw-body';
+            const title = document.createElement('div');
+            title.className = 'saw-title';
+            title.textContent = 'Try your luck!';
+            const instructions = document.createElement('div');
+            instructions.className = 'saw-instructions';
+            instructions.textContent = 'Tap or click Play for a chance to earn money.';
+            const anim = document.createElement('div');
+            anim.className = 'saw-anim';
+            const tile = document.createElement('div');
+            tile.className = 'saw-tile';
+            tile.textContent = icon;
+            anim.appendChild(tile);
+            const btn = document.createElement('button');
+            btn.className = 'saw-action-btn';
+            btn.textContent = 'Play';
+
+            let busy = false;
+            function playOnce() {
+                if (busy) return; busy = true; btn.disabled = true;
+                const duration = 800; const start = performance.now();
+                const raf = () => {
+                    const now = performance.now(); const p = Math.min(1, (now - start)/duration);
+                    if (Math.random() < 0.7) tile.textContent = icon;
+                    if (p < 1) requestAnimationFrame(raf); else {
+                        const roll = Math.random();
+                        let payout = 0;
+                        for (const band of chanceConfig) {
+                            if (roll < band.threshold) { payout = band.payout; break; }
+                        }
+                        if (payout > 0) {
+                            showFeedback(`You won $${payout}!`);
+                            awardMoneyToCurrentPlayer(payout, `${label} win`);
+                        } else {
+                            showFeedback('Unlucky this time.');
+                        }
+                        busy = false; btn.disabled = false;
+                    }
+                };
+                requestAnimationFrame(raf);
+            }
+            btn.addEventListener('click', playOnce, { passive: true });
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); playOnce(); }, { passive: false });
+
+            const close = document.createElement('button');
+            close.className = 'saw-close';
+            close.textContent = 'Close';
+            close.addEventListener('click', hideWidget, { passive: true });
+            close.addEventListener('touchstart', (e) => { e.preventDefault(); hideWidget(); }, { passive: false });
+
+            body.appendChild(title);
+            body.appendChild(instructions);
+            body.appendChild(anim);
+            body.appendChild(btn);
+            body.appendChild(close);
+            root.appendChild(header);
+            root.appendChild(body);
+        }
+
+        function showForProperty(property) {
+            if (!property) return;
+            const conf = FEATURED[property.name];
+            if (!conf) return;
+            if (conf.kind === 'slots') return renderSlots(property);
+            if (conf.kind === 'poker') return renderSimpleActivity(property, 'Bellagio Poker', '♠️', [
+                { threshold: 0.05, payout: 300 },
+                { threshold: 0.15, payout: 120 },
+                { threshold: 0.35, payout: 50 },
+                { threshold: 1.00, payout: 0 }
+            ]);
+            if (conf.kind === 'craps') return renderSimpleActivity(property, 'Caesars Craps', '🎲', [
+                { threshold: 0.07, payout: 250 },
+                { threshold: 0.17, payout: 100 },
+                { threshold: 0.40, payout: 40 },
+                { threshold: 1.00, payout: 0 }
+            ]);
+            if (conf.kind === 'low_poker') return renderSimpleActivity(property, 'Santa Fe Low Stakes', '🃏', [
+                { threshold: 0.10, payout: 120 },
+                { threshold: 0.25, payout: 60 },
+                { threshold: 0.50, payout: 25 },
+                { threshold: 1.00, payout: 0 }
+            ]);
+            if (conf.kind === 'baccarat') return renderSimpleActivity(property, 'Wynn Baccarat', '🎴', [
+                { threshold: 0.06, payout: 280 },
+                { threshold: 0.16, payout: 110 },
+                { threshold: 0.38, payout: 45 },
+                { threshold: 1.00, payout: 0 }
+            ]);
+            if (conf.kind === 'blackjack') return renderSimpleActivity(property, 'Cosmo Blackjack', '🂡', [
+                { threshold: 0.08, payout: 220 },
+                { threshold: 0.20, payout: 90 },
+                { threshold: 0.42, payout: 35 },
+                { threshold: 1.00, payout: 0 }
+            ]);
+        }
+
+        window.showSpecialActivityForProperty = showForProperty;
+        window.hideSpecialActivityWidget = hideWidget;
+        window.addEventListener('resize', () => {
+            const root = document.getElementById('special-activity-widget');
+            if (root) root.style.top = computeTopOffset() + 'px';
+        });
+    })();
 
     // Main animation loop
     function animate() {

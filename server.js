@@ -806,6 +806,26 @@ function handleGameAction(ws, data, playerId) {
         case 'pay_rent':
             handlePayRent(room, playerId, data);
             break;
+        case 'special_reward': {
+            // Award special reward and broadcast
+            const amount = Number(data.data?.amount || 0);
+            const note = data.data?.note || 'Special reward';
+            if (!Number.isFinite(amount) || amount === 0) {
+                return;
+            }
+            const pl = room.gameState.gameData.players.find(p => p.id === playerId);
+            if (!pl) return;
+            pl.money += amount;
+            room.broadcast({
+                type: 'special_reward',
+                playerId,
+                amount,
+                note,
+                playerName: pl.name,
+                newMoney: pl.money
+            });
+            break;
+        }
         default:
             // Broadcast generic game action
             room.broadcast({

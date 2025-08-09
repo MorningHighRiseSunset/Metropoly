@@ -247,6 +247,108 @@ body {
   }
   .dice-result.show { opacity: 1; }
   
+  /* --- Special Activity Widget (right-side mini game) --- */
+  #special-activity-widget {
+    position: fixed;
+    right: 16px;
+    top: 120px; /* Will be adjusted dynamically to avoid overlapping multiplayer UI */
+    width: 240px;
+    max-width: 90vw;
+    background: rgba(0,0,0,0.9);
+    border: 2px solid #ffd700;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    color: #fff;
+    z-index: 2200;
+    overflow: hidden;
+    display: none;
+  }
+  #special-activity-widget.show { display: block; animation: fadeIn 0.2s ease-out; }
+  #special-activity-widget .saw-header {
+    padding: 10px 12px;
+    background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(255,255,255,0.05));
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    font-weight: 700;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #special-activity-widget .saw-body {
+    padding: 10px 12px 12px 12px;
+  }
+  #special-activity-widget .saw-title {
+    margin: 6px 0 8px 0;
+    font-size: 16px;
+    font-weight: 700;
+  }
+  #special-activity-widget .saw-instructions {
+    font-size: 12px;
+    opacity: 0.85;
+    margin-bottom: 8px;
+  }
+  #special-activity-widget .saw-action-btn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #4caf50;
+    color: #fff;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+  }
+  #special-activity-widget .saw-action-btn:disabled {
+    background: #3a3a3a;
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+  #special-activity-widget .saw-close {
+    margin-top: 6px;
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: #555;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+  }
+  #special-activity-widget .saw-anim {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 10px;
+    min-height: 54px;
+    user-select: none;
+  }
+  /* Simple reel/counter tiles */
+  .saw-tile {
+    flex: 1 1 0;
+    background: #111;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    text-align: center;
+    font-size: 20px;
+    font-weight: 800;
+    padding: 10px 6px;
+  }
+  .saw-chip { font-size: 18px; }
+  .saw-dice { font-size: 22px; }
+  .saw-cards { font-size: 18px; letter-spacing: 2px; }
+  
+  @media (max-width: 700px) {
+    #special-activity-widget {
+      right: 10px;
+      top: 10px;
+      width: 260px;
+      max-width: calc(100vw - 20px);
+    }
+  }
+  
   /* --- Token Selection UI --- */
   .token-selection-ui,
   #token-selection-ui {

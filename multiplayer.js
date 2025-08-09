@@ -532,6 +532,18 @@ class MultiplayerGame {
             case 'game_action':
                 this.handleGameAction(data);
                 break;
+            case 'special_reward':
+                // Server broadcast for special activity payout
+                if (data.playerId && typeof data.amount === 'number') {
+                    this.updatePlayerMoney(data.playerId, data.amount);
+                    const who = this.getPlayerName(data.playerId);
+                    const note = data.note || 'Special reward';
+                    this.showNotification(`💫 ${who} received $${data.amount} (${note})`, 'success');
+                    if (data.playerId === this.playerId && window.updateMoneyDisplay) {
+                        window.updateMoneyDisplay();
+                    }
+                }
+                break;
                 
             case 'player_joined_game':
                 this.handlePlayerJoinedGame(data);
