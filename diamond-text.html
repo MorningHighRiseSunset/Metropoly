@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Diamond A Sparkle</title>
+  <style>
+  /* TEMP: Black background for sparkle visibility - remove for production */
+  body {
+    background: #111; /* REMOVE THIS LINE FOR NORMAL BACKGROUND */
+  }
+  .diamond-container {
+    position: relative;
+    display: inline-block;
+  }
+  .diamond-img {
+    display: block;
+    width: 100px;
+    height: auto;
+  }
+  .svg-sparkle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    pointer-events: none;
+    opacity: 0;
+    filter: drop-shadow(0 0 2px white);
+    transition: opacity 0.12s, transform 0.12s;
+    will-change: opacity, transform;
+  }
+  </style>
+</head>
+<body>
+  <div class="diamond-container" id="diamondContainer">
+    <img src="diamondA.png" alt="Diamond A" class="diamond-img">
+    <!-- Sparkles will be injected here -->
+  </div>
+  <script>
+    // CONFIGURABLE:
+    const NUM_SPARKLES = 5;
+    const DIAMOND_WIDTH = 100;
+    const DIAMOND_HEIGHT = 100;
+    const MIN_INTERVAL = 1200; // ms
+    const MAX_INTERVAL = 3500; // ms
+
+    // SVG sparkle shape as a string
+    const sparkleSVG = `
+      <svg class="svg-sparkle" viewBox="0 0 10 10">
+    <polygon points="5,0 6,4 10,5 6,6 5,10 4,6 0,5 4,4" fill="white" fill-opacity="0.5"/>
+    <rect x="4.7" y="1.5" width="0.6" height="7" fill="white" fill-opacity="0.3" rx="0.3"/>
+    <rect x="1.5" y="4.7" width="7" height="0.6" fill="white" fill-opacity="0.3" rx="0.3"/>
+    </svg>
+    `;
+
+    // Create sparkles and add to DOM
+    const container = document.getElementById('diamondContainer');
+    const sparkles = [];
+    for (let i = 0; i < NUM_SPARKLES; i++) {
+      const div = document.createElement('div');
+      div.innerHTML = sparkleSVG;
+      const sparkle = div.firstElementChild;
+      container.appendChild(sparkle);
+      sparkles.push(sparkle);
+    }
+
+    // Animate sparkles at random positions/times
+    function animateSparkle(sparkle) {
+      // Random position within diamond image bounds (tweak for best effect)
+      const margin = 10;
+      const x = Math.random() * (DIAMOND_WIDTH - 2 * margin) + margin;
+      const y = Math.random() * (DIAMOND_HEIGHT - 2 * margin) + margin;
+      sparkle.style.left = `${x}px`;
+      sparkle.style.top = `${y}px`;
+
+      // Random rotation and scale for realism
+      const rot = Math.random() * 30 - 15;
+      const scale = 0.8 + Math.random() * 0.7;
+      sparkle.style.transform = `scale(${scale}) rotate(${rot}deg)`;
+
+      // Animate: fade in, then out
+      sparkle.style.opacity = '1';
+      setTimeout(() => {
+        sparkle.style.opacity = '0';
+      }, 180 + Math.random() * 120); // visible for 180-300ms
+
+      // Schedule next sparkle for this element
+      setTimeout(() => animateSparkle(sparkle),
+        Math.random() * (MAX_INTERVAL - MIN_INTERVAL) + MIN_INTERVAL
+      );
+    }
+
+    // Start all sparkles at random times
+    sparkles.forEach((sparkle, i) => {
+      setTimeout(() => animateSparkle(sparkle), Math.random() * 2000);
+    });
+  </script>
+</body>
+</html>

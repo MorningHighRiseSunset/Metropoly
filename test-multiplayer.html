@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .test-section {
+            background: #333;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #45a049;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .status.success {
+            background: #4CAF50;
+        }
+        .status.error {
+            background: #f44336;
+        }
+        .status.info {
+            background: #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Multiplayer Fixes Test</h1>
+    
+    <div class="test-section">
+        <h2>Dice Button Test</h2>
+        <p>Test if the dice button is properly sized and visible in multiplayer mode.</p>
+        <button class="test-button" onclick="testDiceButton()">Test Dice Button</button>
+        <div id="dice-button-status" class="status info">Click to test dice button</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Token Movement Test</h2>
+        <p>Test if token movement is properly synchronized between players.</p>
+        <button class="test-button" onclick="testTokenMovement()">Test Token Movement</button>
+        <div id="token-movement-status" class="status info">Click to test token movement</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Multiplayer Connection Test</h2>
+        <p>Test if multiplayer connection and synchronization work properly.</p>
+        <button class="test-button" onclick="testMultiplayerConnection()">Test Connection</button>
+        <div id="connection-status" class="status info">Click to test connection</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Debug Information</h2>
+        <div id="debug-info">
+            <p>Debug information will appear here...</p>
+        </div>
+        <button class="test-button" onclick="updateDebugInfo()">Update Debug Info</button>
+    </div>
+
+    <script>
+        function testDiceButton() {
+            const status = document.getElementById('dice-button-status');
+            
+            // Check if dice button exists
+            const diceButton = document.querySelector('.dice-button');
+            if (diceButton) {
+                const styles = window.getComputedStyle(diceButton);
+                const width = parseInt(styles.minWidth);
+                const height = parseInt(styles.minHeight);
+                const fontSize = parseInt(styles.fontSize);
+                
+                if (width >= 120 && height >= 50 && fontSize >= 16) {
+                    status.textContent = `✅ Dice button is properly sized (${width}px x ${height}px, ${fontSize}px font)`;
+                    status.className = 'status success';
+                } else {
+                    status.textContent = `❌ Dice button is too small (${width}px x ${height}px, ${fontSize}px font)`;
+                    status.className = 'status error';
+                }
+            } else {
+                status.textContent = '❌ Dice button not found';
+                status.className = 'status error';
+            }
+        }
+        
+        function testTokenMovement() {
+            const status = document.getElementById('token-movement-status');
+            
+            // Check if required functions exist
+            const requiredFunctions = ['moveToken', 'getBoardSquarePosition', 'updateTokenPosition'];
+            const missingFunctions = requiredFunctions.filter(fn => !window[fn]);
+            
+            if (missingFunctions.length === 0) {
+                status.textContent = '✅ Token movement functions are available';
+                status.className = 'status success';
+            } else {
+                status.textContent = `❌ Missing token movement functions: ${missingFunctions.join(', ')}`;
+                status.className = 'status error';
+            }
+        }
+        
+        function testMultiplayerConnection() {
+            const status = document.getElementById('connection-status');
+            
+            // Check if multiplayer game instance exists
+            if (window.multiplayerGame) {
+                const game = window.multiplayerGame;
+                const connectionStatus = game.ws && game.ws.readyState === WebSocket.OPEN;
+                
+                if (connectionStatus) {
+                    status.textContent = `✅ Multiplayer connected (${game.players.length} players)`;
+                    status.className = 'status success';
+                } else {
+                    status.textContent = '❌ Multiplayer not connected';
+                    status.className = 'status error';
+                }
+            } else {
+                status.textContent = '❌ Multiplayer game not initialized';
+                status.className = 'status error';
+            }
+        }
+        
+        function updateDebugInfo() {
+            const debugDiv = document.getElementById('debug-info');
+            let debugText = '<h3>Current State:</h3>';
+            
+            // Check multiplayer game
+            if (window.multiplayerGame) {
+                const game = window.multiplayerGame;
+                debugText += `<p><strong>Multiplayer Game:</strong> Active</p>`;
+                debugText += `<p><strong>Players:</strong> ${game.players.length}</p>`;
+                debugText += `<p><strong>Connection:</strong> ${game.ws ? game.ws.readyState : 'No WebSocket'}</p>`;
+                debugText += `<p><strong>My Turn:</strong> ${game.isMyTurn}</p>`;
+            } else {
+                debugText += `<p><strong>Multiplayer Game:</strong> Not initialized</p>`;
+            }
+            
+            // Check game state
+            if (window.players) {
+                debugText += `<p><strong>Game Players:</strong> ${window.players.length}</p>`;
+                window.players.forEach((player, index) => {
+                    debugText += `<p>Player ${index}: ${player.name} (${player.currentPosition || 0})</p>`;
+                });
+            }
+            
+            // Check scene
+            if (window.scene) {
+                debugText += `<p><strong>Scene:</strong> Available</p>`;
+            } else {
+                debugText += `<p><strong>Scene:</strong> Not available</p>`;
+            }
+            
+            // Check dice button
+            const diceButton = document.querySelector('.dice-button');
+            if (diceButton) {
+                const styles = window.getComputedStyle(diceButton);
+                debugText += `<p><strong>Dice Button:</strong> Visible (${styles.minWidth} x ${styles.minHeight})</p>`;
+            } else {
+                debugText += `<p><strong>Dice Button:</strong> Not found</p>`;
+            }
+            
+            debugDiv.innerHTML = debugText;
+        }
+        
+        // Auto-update debug info every 5 seconds
+        setInterval(updateDebugInfo, 5000);
+        
+        // Initial debug info
+        updateDebugInfo();
+    </script>
+</body>
+</html>

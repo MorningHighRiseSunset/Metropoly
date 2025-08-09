@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .log {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 10px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            margin: 5px;
+            padding: 10px 15px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .connected {
+            background: #d4edda;
+            color: #155724;
+        }
+        .disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>Multiplayer Connection Test</h1>
+    
+    <div id="status" class="status disconnected">Disconnected</div>
+    
+    <div class="controls">
+        <button onclick="connect()">Connect</button>
+        <button onclick="createRoom()">Create Room</button>
+        <button onclick="joinRoom()">Join Room</button>
+        <button onclick="selectToken()">Select Token</button>
+        <button onclick="setReady()">Set Ready</button>
+        <button onclick="startGame()">Start Game</button>
+        <button onclick="rejoinGame()">Rejoin Game</button>
+        <button onclick="disconnect()">Disconnect</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+    
+    <div class="controls">
+        <label>Room ID: <input type="text" id="roomId" placeholder="Enter room ID"></label>
+        <label>Player ID: <input type="text" id="playerId" placeholder="Enter player ID"></label>
+    </div>
+    
+    <div id="log" class="log"></div>
+
+    <script>
+        let ws = null;
+        let currentRoomId = null;
+        let currentPlayerId = null;
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function updateStatus(connected) {
+            const statusDiv = document.getElementById('status');
+            if (connected) {
+                statusDiv.textContent = 'Connected';
+                statusDiv.className = 'status connected';
+            } else {
+                statusDiv.textContent = 'Disconnected';
+                statusDiv.className = 'status disconnected';
+            }
+        }
+        
+        function connect() {
+            const serverUrl = 'ws://localhost:3000';
+            log(`Connecting to ${serverUrl}...`);
+            
+            ws = new WebSocket(serverUrl);
+            
+            ws.onopen = () => {
+                log('✅ Connected to server');
+                updateStatus(true);
+            };
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                log(`📨 Received: ${data.type} - ${JSON.stringify(data)}`);
+                
+                if (data.type === 'room_created') {
+                    currentRoomId = data.roomId;
+                    currentPlayerId = data.playerId;
+                    document.getElementById('roomId').value = currentRoomId;
+                    document.getElementById('playerId').value = currentPlayerId;
+                } else if (data.type === 'joined_room') {
+                    currentRoomId = data.roomInfo.roomId;
+                    currentPlayerId = data.playerId;
+                    document.getElementById('roomId').value = currentRoomId;
+                    document.getElementById('playerId').value = currentPlayerId;
+                }
+            };
+            
+            ws.onclose = () => {
+                log('🔌 Disconnected from server');
+                updateStatus(false);
+            };
+            
+            ws.onerror = (error) => {
+                log(`❌ WebSocket error: ${error}`);
+                updateStatus(false);
+            };
+        }
+        
+        function createRoom() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('❌ Not connected to server');
+                return;
+            }
+            
+            const message = {
+                type: 'create_room',
+                playerName: 'TestPlayer'
+            };
+            
+            log(`📤 Sending: ${JSON.stringify(message)}`);
+            ws.send(JSON.stringify(message));
+        }
+        
+        function joinRoom() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('❌ Not connected to server');
+                return;
+            }
+            
+            const roomId = document.getElementById('roomId').value;
+            if (!roomId) {
+                log('❌ Please enter a room ID');
+                return;
+            }
+            
+            const message = {
+                type: 'join_room',
+                roomId: roomId,
+                playerName: 'TestPlayer2'
+            };
+            
+            log(`📤 Sending: ${JSON.stringify(message)}`);
+            ws.send(JSON.stringify(message));
+        }
+        
+        function selectToken() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('❌ Not connected to server');
+                return;
+            }
+            
+            const message = {
+                type: 'select_token',
+                tokenName: 'football'
+            };
+            
+            log(`📤 Sending: ${JSON.stringify(message)}`);
+            ws.send(JSON.stringify(message));
+        }
+        
+        function setReady() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('❌ Not connected to server');
+                return;
+            }
+            
+            const message = {
+                type: 'set_ready',
+                ready: true
+            };
+            
+            log(`📤 Sending: ${JSON.stringify(message)}`);
+            ws.send(JSON.stringify(message));
+        }
+        
+        function startGame() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('❌ Not connected to server');
+                return;
+            }
+            
+            const message = {
+                type: 'start_game'
+            };
+            
+            log(`📤 Sending: ${JSON.stringify(message)}`);
+            ws.send(JSON.stringify(message));
+        }
+        
+        function rejoinGame() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('❌ Not connected to server');
+                return;
+            }
+            
+            const roomId = document.getElementById('roomId').value;
+            const playerId = document.getElementById('playerId').value;
+            
+            if (!roomId || !playerId) {
+                log('❌ Please enter both room ID and player ID');
+                return;
+            }
+            
+            const message = {
+                type: 'rejoin_game',
+                roomId: roomId,
+                playerId: playerId
+            };
+            
+            log(`📤 Sending: ${JSON.stringify(message)}`);
+            ws.send(JSON.stringify(message));
+        }
+        
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+        
+        // Auto-connect on page load
+        window.onload = () => {
+            log('Page loaded, ready to test');
+        };
+    </script>
+</body>
+</html> 
