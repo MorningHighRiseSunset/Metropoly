@@ -178,14 +178,15 @@
 
         .video-chat-container {
             position: fixed;
-            top: 50%;
-            right: 20px;
+            top: 100px;
+            left: 10px;
+            right: auto;
             width: 320px;
             background: rgba(0, 0, 0, 0.9);
             border-radius: 10px;
             z-index: 1003;
             border: 1px solid rgba(255, 215, 0, 0.3);
-            transform: translateY(-50%);
+            transform: none;
         }
 
         .video-chat-header {
@@ -494,6 +495,19 @@
             const toggleBtn = document.getElementById('videoChatToggle');
             
             if (!container || !toggleBtn) return;
+
+            // Position under money counter (which is under connection status)
+            try {
+                const moneyEl = document.getElementById('player-money');
+                if (moneyEl) {
+                    const rect = moneyEl.getBoundingClientRect();
+                    container.style.top = `${Math.max(rect.bottom + 10, 80)}px`;
+                    container.style.left = '10px';
+                    container.style.right = 'auto';
+                }
+            } catch (e) {
+                // Fallback handled by CSS
+            }
 
             // Get player count from multiplayer game
             const playerCount = multiplayerGame ? multiplayerGame.players.length : 2;

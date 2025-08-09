@@ -126,8 +126,8 @@ body {
   /* --- Money Display --- */
   .money-display {
     position: fixed;
-    top: 20px;
-    left: 20px;
+    top: 50px;
+    left: 10px;
     background: rgba(40,40,40,0.9);
     color: #fff;
     padding: 15px 20px;
@@ -568,7 +568,7 @@ body {
   /* --- Responsive --- */
   @media (max-width: 700px) {
     .money-display {
-      top: 10px !important;
+      top: 44px !important;
       left: 10px !important;
       right: auto !important;
       width: auto !important;
@@ -814,7 +814,7 @@ body {
   
       .money-display {
       position: fixed !important;
-      top: 8px !important;
+      top: 44px !important;
       left: 8px !important;
       right: auto !important;
       width: auto !important;

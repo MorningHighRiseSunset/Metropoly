@@ -3905,16 +3905,32 @@ function createPlayerTokenSelectionUI(playerIndex) {
     if (startBtn) startBtn.remove();
 
     tokenSelectionUI = document.createElement("div");
+    tokenSelectionUI.id = "token-selection-ui";
     tokenSelectionUI.style.position = "fixed";
-    tokenSelectionUI.style.top = "10px";
-    tokenSelectionUI.style.left = "20px";
+    // Position under the multiplayer UI (top-right). We'll compute dynamically below.
+    tokenSelectionUI.style.right = "16px";
     tokenSelectionUI.style.padding = "15px";
     tokenSelectionUI.style.borderRadius = "10px";
     tokenSelectionUI.style.color = "white";
     tokenSelectionUI.style.textAlign = "center";
     tokenSelectionUI.style.zIndex = "1000";
-    tokenSelectionUI.style.width = "300px";
+    tokenSelectionUI.style.width = "220px";
     tokenSelectionUI.style.maxHeight = "400px";
+    tokenSelectionUI.style.overflowY = "auto";
+
+    // Compute top based on multiplayer UI position
+    const mpUI = document.getElementById('multiplayer-ui');
+    const computeTokenUIPosition = () => {
+        const fallbackTop = 90; // Fallback if mpUI not found
+        if (mpUI) {
+            const rect = mpUI.getBoundingClientRect();
+            tokenSelectionUI.style.top = `${Math.max(rect.bottom + 10, 10)}px`;
+        } else {
+            tokenSelectionUI.style.top = `${fallbackTop}px`;
+        }
+    };
+    computeTokenUIPosition();
+    window.addEventListener('resize', computeTokenUIPosition);
 
     const title = document.createElement("h2");
     title.textContent = "Select Tokens and AI Players";
