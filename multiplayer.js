@@ -599,6 +599,12 @@ class MultiplayerGame {
                 this.showNotification(`${data.playerName} recovered their connection`, 'info');
                 break;
                 
+            case 'player_ready_for_transition':
+                console.log('Player ready for transition:', data.playerName || data.playerId);
+                // Optional: show a brief toast, but avoid interrupting gameplay
+                this.showNotification(`${data.playerName || 'A player'} is loading into the game...`, 'info');
+                break;
+
             case 'game_transition_ready_ack':
                 console.log('Game transition acknowledged by server');
                 break;

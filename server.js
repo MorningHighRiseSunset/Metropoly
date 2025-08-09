@@ -331,9 +331,10 @@ wss.on('connection', (ws, req) => {
         console.error('WebSocket connection error:', error);
     });
 
-    ws.on('message', (message) => {
+ws.on('message', (message, isBinary) => {
         try {
-            const data = JSON.parse(message);
+            const rawText = isBinary ? message.toString() : (typeof message === 'string' ? message : String(message));
+            const data = JSON.parse(rawText);
             console.log(`Received message from WebSocket: ${data.type}`, data);
             
             // Find the player ID for this WebSocket connection
@@ -383,6 +384,15 @@ wss.on('connection', (ws, req) => {
                     break;
                 case 'ready_for_game_transition':
                     handleReadyForGameTransition(ws, data, playerId);
+                    break;
+                case 'ping_session':
+                    handlePingSession(ws, data, playerId);
+                    break;
+                case 'validate_session':
+                    handleValidateSession(ws, data, playerId);
+                    break;
+                case 'request_room_info':
+                    handleRequestRoomInfo(ws, data, playerId);
                     break;
                 default:
                     console.log(`Unknown message type: ${data.type}`);
@@ -1219,6 +1229,92 @@ function handleRequestGameState(ws, data, playerId) {
     
     console.log('Sending game state to requesting player:', gameStateMessage);
     ws.send(JSON.stringify(gameStateMessage));
+}
+
+function handlePingSession(ws, data, playerId) {
+    // Respond with session status and lightweight room/player info when available
+    try {
+        const response = { type: 'session_pong' };
+
+        if (playerId) {
+            const playerInfo = players.get(playerId);
+            if (playerInfo) {
+                const room = rooms.get(playerInfo.roomId);
+                response.playerId = playerId;
+                response.roomId = playerInfo.roomId;
+                if (room) {
+                    response.players = Array.from(room.players.values()).map(p => ({
+                        id: p.id,
+                        name: p.name,
+                        token: p.token
+                    }));
+                    response.gameState = { status: room.gameState.status };
+                }
+            }
+        }
+
+        ws.send(JSON.stringify(response));
+    } catch (err) {
+        ws.send(JSON.stringify({ type: 'error', message: 'Invalid message format' }));
+    }
+}
+
+function handleValidateSession(ws, data, playerId) {
+    try {
+        const { roomId, playerId: pid } = data;
+        const targetPlayerId = pid || playerId;
+        if (!targetPlayerId || !roomId) {
+            ws.send(JSON.stringify({ type: 'session_invalid' }));
+            return;
+        }
+
+        const playerInfo = players.get(targetPlayerId);
+        const room = rooms.get(roomId);
+        if (playerInfo && room && room.players.has(targetPlayerId)) {
+            ws.send(JSON.stringify({
+                type: 'session_valid',
+                roomId,
+                playerId: targetPlayerId,
+                players: Array.from(room.players.values()).map(p => ({ id: p.id, name: p.name, token: p.token }))
+            }));
+        } else {
+            // Fallback: check persistent session
+            const session = playerSessions.get(targetPlayerId);
+            if (session && session.roomId === roomId) {
+                ws.send(JSON.stringify({ type: 'session_valid', roomId, playerId: targetPlayerId }));
+            } else {
+                ws.send(JSON.stringify({ type: 'session_invalid' }));
+            }
+        }
+    } catch (err) {
+        ws.send(JSON.stringify({ type: 'session_invalid' }));
+    }
+}
+
+function handleRequestRoomInfo(ws, data, playerId) {
+    try {
+        // If player is known, return their room info
+        if (playerId) {
+            const playerInfo = players.get(playerId);
+            if (playerInfo) {
+                const room = rooms.get(playerInfo.roomId);
+                if (room) {
+                    ws.send(JSON.stringify({
+                        type: 'room_info',
+                        roomId: room.roomId,
+                        playerId: playerId,
+                        players: Array.from(room.players.values()).map(p => ({ id: p.id, name: p.name, token: p.token })),
+                        gameState: { status: room.gameState.status }
+                    }));
+                    return;
+                }
+            }
+        }
+        // Otherwise, respond with a minimal info payload indicating no binding
+        ws.send(JSON.stringify({ type: 'room_not_found' }));
+    } catch (err) {
+        ws.send(JSON.stringify({ type: 'error', message: 'Invalid message format' }));
+    }
 }
 
 function handleGameTransitionReady(ws, data, playerId) {
