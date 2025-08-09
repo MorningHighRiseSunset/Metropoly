@@ -2603,8 +2603,18 @@ class MultiplayerGame {
 
     showDiceButtonForMultiplayer() {
         // Find the dice button
-        const diceButton = document.querySelector('.dice-button');
+        let diceButton = document.querySelector('.dice-button');
         if (diceButton) {
+            // Replace the button with a clone to remove any pre-existing listeners from single-player mode
+            const cloned = diceButton.cloneNode(false);
+            // Preserve basic properties
+            cloned.className = diceButton.className;
+            cloned.id = diceButton.id || '';
+            cloned.textContent = diceButton.textContent || 'Roll Dice';
+            // Swap in DOM
+            diceButton.parentNode.replaceChild(cloned, diceButton);
+            diceButton = cloned;
+
             // Show the dice button for multiplayer mode
             diceButton.style.display = 'block';
             diceButton.style.position = 'fixed';
@@ -2649,8 +2659,18 @@ class MultiplayerGame {
                 diceButton.style.cursor = 'not-allowed';
             }
             
-            // Override the click handler to use multiplayer roll
+            // Bind click exclusively to multiplayer roll
             diceButton.onclick = () => {
+                if (this.isMyTurn) {
+                    this.rollDice();
+                } else {
+                    this.showNotification("It's not your turn!", 'error');
+                }
+            };
+
+            // Also support touchstart for mobile
+            diceButton.ontouchstart = (e) => {
+                e.preventDefault();
                 if (this.isMyTurn) {
                     this.rollDice();
                 } else {
