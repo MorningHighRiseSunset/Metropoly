@@ -121,6 +121,16 @@ class MultiplayerGame {
                 this.updateConnectionStatus(true);
                 this.connectionAttempts = 0; // Reset on successful connection
                 
+                // Send a transition notification to the server
+                if (this.roomId && this.playerId) {
+                    console.log('Notifying server of game transition with existing IDs');
+                    this.sendMessage({
+                        type: 'ready_for_game_transition',
+                        roomId: this.roomId,
+                        playerId: this.playerId
+                    });
+                }
+                
                 // Only try to rejoin if we have valid session data
                 if (this.roomId && this.playerId && this.storedGameState) {
                     console.log('Valid session data found, attempting to rejoin game');
@@ -278,6 +288,12 @@ class MultiplayerGame {
                 
             case 'session_pong':
                 console.log('Session health check successful');
+                break;
+            case 'ready_for_game_transition_ack':
+                console.log('Server acknowledged game transition readiness');
+                break;
+            case 'player_reconnected':
+                console.log('Player reconnected successfully:', data);
                 break;
                 
             case 'player_joined':

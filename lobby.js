@@ -332,6 +332,13 @@ class LobbyManager {
             playerId: this.playerId
         });
         
+        // Also send transition ready notification
+        this.sendMessage({
+            type: 'ready_for_game_transition',
+            roomId: roomId,
+            playerId: this.playerId
+        });
+        
         // Redirect to the game page with room information
         setTimeout(() => {
             console.log('Redirecting to game with room:', roomId, 'player:', this.playerId);

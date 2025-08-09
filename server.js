@@ -30,6 +30,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Game state management
 const rooms = new Map();
 const players = new Map();
+// NEW: Add persistent player sessions that survive WebSocket reconnections
+const playerSessions = new Map(); // Maps playerId to persistent session data
 
 // Room management
 class GameRoom {
@@ -379,6 +381,9 @@ wss.on('connection', (ws, req) => {
                 case 'game_transition_ready':
                     handleGameTransitionReady(ws, data, playerId);
                     break;
+                case 'ready_for_game_transition':
+                    handleReadyForGameTransition(ws, data, playerId);
+                    break;
                 default:
                     console.log(`Unknown message type: ${data.type}`);
                     ws.send(JSON.stringify({
@@ -424,7 +429,26 @@ wss.on('connection', (ws, req) => {
                         return;
                     }
                     
-                    // For lobby connections, remove the player normally
+                    // For lobby connections, check if this is a transition
+                    // Don't immediately remove players during lobby-to-game transitions
+                    if (room.gameState.status === 'lobby') {
+                        console.log(`Player ${playerId} disconnected from lobby, checking if this is a game transition`);
+                        
+                        // Check if player has a valid session that might be transitioning
+                        const session = playerSessions.get(playerId);
+                        if (session && (Date.now() - session.timestamp) < 30000) { // 30 second grace period
+                            console.log(`Player ${playerId} likely transitioning to game, keeping session alive`);
+                            // Keep the player in the room but mark their connection as null
+                            const roomPlayer = room.players.get(playerId);
+                            if (roomPlayer) {
+                                roomPlayer.ws = null;
+                            }
+                            // Don't delete from global players map yet
+                            return;
+                        }
+                    }
+                    
+                    // Remove the player normally if not transitioning
                     const shouldDelete = room.removePlayer(playerId);
                     if (shouldDelete) {
                         rooms.delete(playerInfo.roomId);
@@ -437,13 +461,19 @@ wss.on('connection', (ws, req) => {
                     }
                 }
             }
-            players.delete(playerId);
+            // Only delete from players map if we're not keeping them for reconnection
+            if (playerInfo && playerInfo.ws === null) {
+                // Don't delete, just mark as disconnected
+                console.log(`Player ${playerId} marked as disconnected but kept in tracking`);
+            } else {
+                players.delete(playerId);
+            }
         }
     });
 });
 
 function handleJoinRoom(ws, data) {
-    const { roomId, playerName } = data;
+    const { roomId, playerName, playerId: existingPlayerId } = data; // Allow existing player ID
     const room = rooms.get(roomId);
     
     if (!room) {
@@ -462,44 +492,103 @@ function handleJoinRoom(ws, data) {
         return;
     }
     
-    const newPlayerId = generatePlayerId();
-    // Update the player tracking with name
-    players.set(newPlayerId, { ws, roomId, name: playerName });
+    let playerId = existingPlayerId;
+    let isReconnecting = false;
     
-    const success = room.addPlayer(newPlayerId, playerName, ws);
+    // Check if this is a reconnection with existing player ID
+    if (existingPlayerId && playerSessions.has(existingPlayerId)) {
+        const session = playerSessions.get(existingPlayerId);
+        if (session.roomId === roomId) {
+            console.log(`Player ${existingPlayerId} reconnecting to room ${roomId}`);
+            isReconnecting = true;
+            
+            // Check if player is already in the room
+            const existingPlayer = room.players.get(existingPlayerId);
+            if (existingPlayer) {
+                // Update WebSocket connection for existing player
+                existingPlayer.ws = ws;
+                players.set(existingPlayerId, { ws, roomId, name: existingPlayer.name });
+                
+                ws.send(JSON.stringify({
+                    type: 'joined_room',
+                    playerId: existingPlayerId,
+                    roomInfo: room.getRoomInfo(),
+                    isReconnection: true
+                }));
+                
+                room.broadcast({
+                    type: 'player_reconnected',
+                    playerId: existingPlayerId,
+                    playerName: existingPlayer.name,
+                    roomInfo: room.getRoomInfo()
+                }, existingPlayerId);
+                
+                return;
+            }
+        }
+    }
+    
+    // Generate new player ID if not reconnecting
+    if (!playerId) {
+        playerId = generatePlayerId();
+    }
+    
+    // Create or update player session
+    playerSessions.set(playerId, {
+        roomId: roomId,
+        playerName: playerName,
+        timestamp: Date.now()
+    });
+    
+    // Update the player tracking with name
+    players.set(playerId, { ws, roomId, name: playerName });
+    
+    const success = room.addPlayer(playerId, playerName, ws);
     if (success) {
         ws.send(JSON.stringify({
             type: 'joined_room',
-            playerId: newPlayerId,
-            roomInfo: room.getRoomInfo()
+            playerId: playerId,
+            roomInfo: room.getRoomInfo(),
+            isReconnection: isReconnecting
         }));
         
         room.broadcast({
             type: 'player_joined',
-            playerId: newPlayerId,
+            playerId: playerId,
             playerName: playerName,
             roomInfo: room.getRoomInfo()
-        }, newPlayerId);
+        }, playerId);
     }
 }
 
 function handleCreateRoom(ws, data) {
-    const { playerName } = data;
+    const { playerName, playerId: existingPlayerId } = data; // Allow existing player ID
     const roomId = generateRoomId();
-    const newPlayerId = generatePlayerId();
     
-    const room = new GameRoom(roomId, newPlayerId);
+    let playerId = existingPlayerId;
+    if (!playerId) {
+        playerId = generatePlayerId();
+    }
+    
+    const room = new GameRoom(roomId, playerId);
     rooms.set(roomId, room);
     
-    // Update the player tracking with name
-    players.set(newPlayerId, { ws, roomId, name: playerName });
+    // Create or update player session
+    playerSessions.set(playerId, {
+        roomId: roomId,
+        playerName: playerName,
+        timestamp: Date.now()
+    });
     
-    room.addPlayer(newPlayerId, playerName, ws);
+    // Update the player tracking with name
+    players.set(playerId, { ws, roomId, name: playerName });
+    
+    room.addPlayer(playerId, playerName, ws);
     
     ws.send(JSON.stringify({
         type: 'room_created',
         roomId: roomId,
-        playerId: newPlayerId,
+        playerId: playerId,
         roomInfo: room.getRoomInfo()
     }));
 }
@@ -1157,6 +1246,69 @@ function handleGameTransitionReady(ws, data, playerId) {
     }
 }
 
+function handleReadyForGameTransition(ws, data, playerId) {
+    const { roomId, playerId: transitionPlayerId } = data;
+    console.log(`Player ${transitionPlayerId} ready for game transition in room ${roomId}`);
+    
+    const room = rooms.get(roomId);
+    if (!room) {
+        console.log(`Room ${roomId} not found for transition`);
+        return;
+    }
+    
+    const player = room.players.get(transitionPlayerId);
+    if (player) {
+        console.log(`Marking player ${transitionPlayerId} as ready for game transition`);
+        
+        // Mark the player as ready for transition
+        player.transitionReady = true;
+        player.transitionTimestamp = Date.now();
+        
+        // Update the player session
+        if (playerSessions.has(transitionPlayerId)) {
+            const session = playerSessions.get(transitionPlayerId);
+            session.transitionReady = true;
+            session.transitionTimestamp = Date.now();
+            playerSessions.set(transitionPlayerId, session);
+        }
+        
+        // Send acknowledgment
+        ws.send(JSON.stringify({
+            type: 'ready_for_game_transition_ack',
+            playerId: transitionPlayerId,
+            roomId: roomId
+        }));
+        
+        // Notify other players
+        room.broadcast({
+            type: 'player_ready_for_transition',
+            playerId: transitionPlayerId,
+            playerName: player.name
+        }, transitionPlayerId);
+    }
+}
+
+function cleanupOldSessions() {
+    const now = Date.now();
+    const maxAge = 5 * 60 * 1000; // 5 minutes
+    
+    for (const [playerId, session] of playerSessions.entries()) {
+        if (now - session.timestamp > maxAge) {
+            // Check if player is still in a room
+            const playerInfo = players.get(playerId);
+            if (!playerInfo || !playerInfo.ws) {
+                console.log(`Cleaning up old session for player ${playerId}`);
+                playerSessions.delete(playerId);
+                
+                // Also clean up from global players if they're not connected
+                if (playerInfo && !playerInfo.ws) {
+                    players.delete(playerId);
+                }
+            }
+        }
+    }
+}
+
 // Utility functions
 function generateRoomId() {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -1263,6 +1415,11 @@ server.listen(PORT, () => {
     console.log(`   - GET /api/rooms`);
     console.log(`   - GET /api/room/:roomId`);
     console.log(`   - GET /health`);
+    
+    // Start session cleanup timer
+    setInterval(() => {
+        cleanupOldSessions();
+    }, 60000); // Clean up every minute
 });
 
 // Handle server errors
