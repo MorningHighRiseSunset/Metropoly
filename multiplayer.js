@@ -542,59 +542,65 @@ class MultiplayerGame {
 
     // New specific handlers for server messages
     handleDiceRolled(data) {
-        console.log('Dice rolled:', data);
+        console.log('=== HANDLE DICE ROLLED ===');
+        console.log('Received dice roll data:', data);
+        console.log('Current player ID:', this.playerId);
+        console.log('Dice roll data player ID:', data.playerId);
+        console.log('Is this our dice roll?', data.playerId === this.playerId);
         
-        // Debug token synchronization before movement
-        this.debugTokenSynchronization();
+        // Update the player's position in our local state
+        const player = this.getPlayerById(data.playerId);
+        if (player) {
+            console.log(`Player ${data.playerId} found in local state:`, player);
+            console.log(`Previous position: ${player.position}, New position: ${data.newPosition}`);
+            
+            // Calculate the starting position correctly
+            const fromPosition = data.fromPosition || ((data.newPosition - data.total + 42) % 42);
+            console.log(`Calculated fromPosition: ${fromPosition}, newPosition: ${data.newPosition}`);
+            
+            // Update player position
+            player.position = data.newPosition;
+            console.log(`Updated player ${data.playerId} position to ${data.newPosition}`);
+            
+            // Also update the global game state if available
+            if (window.players) {
+                const gamePlayer = window.players.find(p => p.id === data.playerId);
+                if (gamePlayer) {
+                    gamePlayer.currentPosition = data.newPosition;
+                    gamePlayer.position = data.newPosition;
+                    console.log(`Updated game player ${data.playerId} position to ${data.newPosition}`);
+                }
+            }
+            
+            // Update global players array if available
+            if (typeof players !== 'undefined') {
+                const globalPlayer = players.find(p => p.id === data.playerId);
+                if (globalPlayer) {
+                    globalPlayer.currentPosition = data.newPosition;
+                    globalPlayer.position = data.newPosition;
+                    console.log(`Updated global player ${data.playerId} position to ${data.newPosition}`);
+                }
+            }
+            
+            // Move the visual token
+            console.log(`Calling moveTokenInGame for player ${data.playerId} from ${fromPosition} to ${data.newPosition}`);
+            this.moveTokenInGame(data.playerId, fromPosition, data.newPosition, data.passedGo);
+        } else {
+            console.error(`Player ${data.playerId} not found in local state`);
+            console.log('Available players:', this.players);
+        }
         
-        // Show dice roll notification
-        this.showNotification(
-            `🎲 ${data.playerName} rolled ${data.dice1} + ${data.dice2} = ${data.total}`,
-            'success'
-        );
-        
-        // Calculate the starting position
-        const fromPosition = (data.newPosition - data.total + 42) % 42;
-        
-        // Ensure all players see the dice roll animation
+        // Show dice result to all players
         if (window.showDiceResult) {
             window.showDiceResult(data.total, data.dice1, data.dice2);
         }
         
-        // Update the player's position in our local state first
-        const player = this.getPlayerById(data.playerId);
-        if (player) {
-            player.position = data.newPosition;
+        // Update money display if this is our roll
+        if (data.playerId === this.playerId && window.updateMoneyDisplay) {
+            window.updateMoneyDisplay();
         }
         
-        // Also update the game's player arrays
-        if (window.players) {
-            const gamePlayer = window.players.find(p => p.id === data.playerId);
-            if (gamePlayer) {
-                gamePlayer.currentPosition = data.newPosition;
-                gamePlayer.position = data.newPosition;
-            }
-        }
-        
-        // Move token on the board for ALL players with proper synchronization
-        this.moveTokenInGame(data.playerId, fromPosition, data.newPosition, data.passedGo);
-        
-        // Update player money if passed Go
-        if (data.passedGo) {
-            this.updatePlayerMoney(data.playerId, data.newMoney);
-            this.showNotification(`💰 ${data.playerName} passed Go and collected $200!`, 'success');
-        }
-        
-        // Update turn indicator
-        this.isMyTurn = data.playerId === this.playerId;
-        this.showTurnIndicator(this.isMyTurn);
-        
-        // Ensure the moving player's token is visible
-        setTimeout(() => {
-            this.ensureTokensAreVisible();
-            // Debug token synchronization after movement
-            this.debugTokenSynchronization();
-        }, 1000);
+        console.log('=== END HANDLE DICE ROLLED ===');
     }
 
     handlePropertyPurchased(data) {
@@ -1144,6 +1150,13 @@ class MultiplayerGame {
                     const startPosition = { x: 18.5, y: 2, z: 18.5 };
                     token.position.set(startPosition.x, startPosition.y, startPosition.z);
                     
+                    // Set important userData for token identification
+                    if (!token.userData) token.userData = {};
+                    token.userData.playerId = player.id;
+                    token.userData.playerIndex = index;
+                    token.userData.tokenName = player.token;
+                    token.userData.isPlayerToken = true;
+                    
                     // Update the player's selectedToken reference
                     if (window.players && window.players[index]) {
                         window.players[index].selectedToken = token;
@@ -1158,6 +1171,8 @@ class MultiplayerGame {
                         // Update both player arrays with token reference
                         this.updatePlayerToken(index, token, player.token);
                     }
+                    
+                    console.log(`Token ${player.token} assigned to player ${player.name} (ID: ${player.id}) at index ${index}`);
                 } else {
                     // Token not found, log but don't recurse
                     console.log('Token not found for', tokenName, '- will be created when available');
@@ -1300,6 +1315,56 @@ class MultiplayerGame {
 
     getPlayerById(playerId) {
         return this.players.find(p => p.id === playerId);
+    }
+
+    getPlayerToken(playerId) {
+        // Try to find token by player ID in multiple ways
+        const player = this.getPlayerById(playerId);
+        if (!player) return null;
+        
+        // Method 1: Check if player has selectedToken
+        if (player.selectedToken) {
+            return player.selectedToken;
+        }
+        
+        // Method 2: Check window.players array
+        if (window.players) {
+            const gamePlayer = window.players.find(p => p.id === playerId);
+            if (gamePlayer && gamePlayer.selectedToken) {
+                return gamePlayer.selectedToken;
+            }
+        }
+        
+        // Method 3: Check global players array
+        if (typeof players !== 'undefined') {
+            const globalPlayer = players.find(p => p.id === playerId);
+            if (globalPlayer && globalPlayer.selectedToken) {
+                return globalPlayer.selectedToken;
+            }
+        }
+        
+        // Method 4: Search scene for token with matching userData
+        if (window.scene) {
+            let foundToken = null;
+            window.scene.traverse((object) => {
+                if (object.userData && object.userData.playerId === playerId) {
+                    foundToken = object;
+                }
+            });
+            if (foundToken) return foundToken;
+        }
+        
+        // Method 5: Try to find by token name in scene
+        if (window.scene && player.token) {
+            const tokenObject = window.scene.getObjectByName(player.token);
+            if (tokenObject) {
+                // Update the player's selectedToken reference
+                player.selectedToken = tokenObject;
+                return tokenObject;
+            }
+        }
+        
+        return null;
     }
 
     sendMessage(message) {
@@ -1481,7 +1546,20 @@ class MultiplayerGame {
                 }
             }
             
+            // Method 8: Try to find token by searching through all scene objects
+            if (!token && window.scene) {
+                window.scene.traverse((object) => {
+                    if (object.userData && object.userData.playerId === playerId) {
+                        token = object;
+                    }
+                });
+            }
+            
             if (token) {
+                console.log(`Found token for player ${playerId}: ${token.name}`);
+                console.log(`Token userData:`, token.userData);
+                console.log(`Token position before move:`, token.position);
+                
                 // Move the visual token
                 if (window.moveToken) {
                     const startPos = window.getBoardSquarePosition ? window.getBoardSquarePosition(fromPosition) : fromPosition;
@@ -1489,6 +1567,8 @@ class MultiplayerGame {
                     
                     console.log(`Moving token for player ${playerId} from ${fromPosition} to ${toPosition}`);
                     console.log(`Token found: ${token.name}, Start pos: ${JSON.stringify(startPos)}, End pos: ${JSON.stringify(endPos)}`);
+                    console.log(`Window moveToken function available: ${!!window.moveToken}`);
+                    console.log(`Window getBoardSquarePosition function available: ${!!window.getBoardSquarePosition}`);
                     
                     // Prevent infinite recursion by checking if token is already moving
                     if (token.userData && token.userData.isMoving) {
@@ -1508,44 +1588,37 @@ class MultiplayerGame {
                     }
                     
                     // Use the game's moveToken function for proper animation
-                    window.moveToken(startPos, endPos, token, () => {
-                        console.log(`Token movement completed for player ${playerId}`);
-                        
-                        // Unmark token as moving
+                    try {
+                        window.moveToken(startPos, endPos, token, () => {
+                            console.log(`Token movement completed for player ${playerId}`);
+                            console.log(`Token position after move:`, token.position);
+                            
+                            // Unmark token as moving
+                            if (token.userData) {
+                                token.userData.isMoving = false;
+                            }
+                        });
+                    } catch (error) {
+                        console.error(`Error calling moveToken for player ${playerId}:`, error);
+                        // Unmark token as moving on error
                         if (token.userData) {
                             token.userData.isMoving = false;
                         }
-                        
-                        // Update token position tracking
-                        if (window.updateTokenPosition) {
-                            window.updateTokenPosition(token, toPosition);
-                        }
-                        
-                        // After token movement, trigger property landing logic
-                        if (window.finishMove && playerId === this.playerId) {
-                            // Only call finishMove for the current player to avoid UI conflicts
-                            console.log(`Calling finishMove for current player ${playerId} at position ${toPosition}`);
-                            window.finishMove(gamePlayer, toPosition, passedGo);
-                        } else if (playerId !== this.playerId) {
-                            // For other players, just show a notification that they landed on a property
-                            const propertyName = window.placeNames ? window.placeNames[toPosition] : null;
-                            if (propertyName) {
-                                this.showNotification(`${player.name} landed on ${propertyName}`, 'info');
-                            }
-                        }
-                        
-                        if (passedGo && window.handlePassingGo) {
-                            window.handlePassingGo(gamePlayer);
-                        }
-                    });
+                    }
                 } else {
-                    console.error('window.moveToken function not available');
-                    // Fallback: directly position the token
-                    const endPos = window.getBoardSquarePosition ? window.getBoardSquarePosition(toPosition) : { x: 0, y: 0, z: 0 };
-                    token.position.set(endPos.x, endPos.y, endPos.z);
+                    console.error(`Window moveToken function not available for player ${playerId}`);
+                    // Fallback: directly set token position
+                    if (window.getBoardSquarePosition) {
+                        const endPos = window.getBoardSquarePosition(toPosition);
+                        token.position.set(endPos.x, endPos.y, endPos.z);
+                        console.log(`Fallback: Set token position directly to ${JSON.stringify(endPos)}`);
+                    }
                 }
             } else {
                 console.error('No token found for player:', playerId);
+                console.log('Available players:', this.players);
+                console.log('Window players:', window.players);
+                console.log('Scene available:', !!window.scene);
                 // Try to create a fallback token movement
                 this.createFallbackTokenMovement(playerId, fromPosition, toPosition);
             }
@@ -2204,6 +2277,18 @@ class MultiplayerGame {
                 window.players[index].selectedToken = token;
                 window.players[index].currentPosition = 0;
             }
+            
+            // Ensure token has proper userData for identification
+            if (token && !token.userData) token.userData = {};
+            if (token) {
+                const player = globalPlayers[index];
+                if (player) {
+                    token.userData.playerId = player.id;
+                    token.userData.playerIndex = index;
+                    token.userData.tokenName = tokenName;
+                    token.userData.isPlayerToken = true;
+                }
+            }
         } else {
             console.warn(`Global players array not available for index ${index}`);
         }
@@ -2242,6 +2327,42 @@ class MultiplayerGame {
         }
         console.log('===================================');
     }
+
+    // Test function to manually trigger token movement
+    testTokenMovement(playerId) {
+        console.log(`Testing token movement for player ${playerId}`);
+        
+        if (!window.scene) {
+            console.error('Scene not available for testing');
+            return;
+        }
+        
+        const token = this.getPlayerToken(playerId);
+        if (token) {
+            console.log(`Found token for testing: ${token.name}`);
+            console.log(`Current position:`, token.position);
+            
+            // Test movement from current position to next position
+            const currentPos = token.position;
+            const testEndPos = {
+                x: currentPos.x + 5,
+                y: currentPos.y,
+                z: currentPos.z
+            };
+            
+            console.log(`Testing movement from ${JSON.stringify(currentPos)} to ${JSON.stringify(testEndPos)}`);
+            
+            if (window.moveToken) {
+                window.moveToken(currentPos, testEndPos, token, () => {
+                    console.log(`Test movement completed`);
+                });
+            } else {
+                console.error('moveToken function not available for testing');
+            }
+        } else {
+            console.error(`No token found for player ${playerId} during testing`);
+        }
+    }
 }
 
 // Global functions for HTML onclick handlers
@@ -2260,6 +2381,23 @@ function endTurn() {
 function leaveGame() {
     if (window.multiplayerGame) {
         window.multiplayerGame.leaveGame();
+    }
+}
+
+// Global helper function for token identification
+function getPlayerToken(playerId) {
+    if (window.multiplayerGame) {
+        return window.multiplayerGame.getPlayerToken(playerId);
+    }
+    return null;
+}
+
+// Global test function for debugging token movement
+function testTokenMovement(playerId) {
+    if (window.multiplayerGame) {
+        window.multiplayerGame.testTokenMovement(playerId);
+    } else {
+        console.error('Multiplayer game not initialized');
     }
 }
 

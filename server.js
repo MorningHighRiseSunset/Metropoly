@@ -727,6 +727,9 @@ function handleDiceRoll(room, playerId, data) {
     const player = room.gameState.gameData.players.find(p => p.id === playerId);
     if (!player) return;
     
+    // Store the current position before updating
+    const fromPosition = player.position;
+    
     // Update player position
     const newPosition = (player.position + total) % 42; // Using 42 spaces on board
     const passedGo = newPosition < player.position;
@@ -738,7 +741,7 @@ function handleDiceRoll(room, playerId, data) {
         player.money += 200;
     }
     
-    // Broadcast dice roll result
+    // Broadcast dice roll result with fromPosition
     room.broadcast({
         type: 'dice_rolled',
         playerId: playerId,
@@ -746,6 +749,7 @@ function handleDiceRoll(room, playerId, data) {
         dice1: dice1,
         dice2: dice2,
         total: total,
+        fromPosition: fromPosition,
         newPosition: newPosition,
         passedGo: passedGo,
         newMoney: player.money
