@@ -129,6 +129,9 @@ class MultiplayerGame {
                     console.log('No valid session data, waiting for room join or creation');
                     // Don't automatically rejoin - wait for user to create/join a room
                 }
+                
+                // Start session health monitoring
+                this.startSessionHealthMonitoring();
             };
             
             // Add connection timeout
@@ -147,6 +150,9 @@ class MultiplayerGame {
             this.ws.onclose = (event) => {
                 console.log('Disconnected from multiplayer server', event.code, event.reason);
                 this.updateConnectionStatus(false);
+                
+                // Stop session health monitoring
+                this.stopSessionHealthMonitoring();
                 
                 // Only retry if we haven't exceeded max attempts
                 if (this.connectionAttempts < this.maxConnectionAttempts) {
@@ -181,12 +187,7 @@ class MultiplayerGame {
         // Check if we have valid room and player IDs
         if (!this.roomId || !this.playerId) {
             console.log('No valid room or player ID, cannot rejoin');
-            this.showNotification('Invalid game session. Please create or join a new room.', 'warning');
-            setTimeout(() => {
-                if (window.location.pathname.includes('game.html')) {
-                    window.location.href = 'lobby.html';
-                }
-            }, 2000);
+            this.showNotification('No active game session. Please create or join a new room.', 'info');
             return;
         }
         
@@ -244,6 +245,39 @@ class MultiplayerGame {
                         type: 'request_room_info'
                     });
                 }
+                break;
+                
+            case 'room_info':
+                console.log('Received room info:', data);
+                if (data.roomId && data.playerId) {
+                    this.roomId = data.roomId;
+                    this.playerId = data.playerId;
+                    console.log('Room and player IDs set from server');
+                    
+                    // Try to rejoin the game now that we have valid IDs
+                    if (this.storedGameState) {
+                        console.log('Attempting to rejoin with recovered session data');
+                        this.rejoinGame();
+                    }
+                }
+                break;
+                
+            case 'session_valid':
+                console.log('Session validated successfully');
+                this.showNotification('Session recovered successfully!', 'success');
+                this.retryCount = 0;
+                // Try to rejoin the game
+                this.rejoinGame();
+                break;
+                
+            case 'session_invalid':
+                console.log('Session validation failed, clearing session data');
+                this.showNotification('Previous game session has expired. Please create or join a new room.', 'warning');
+                this.clearAllSessionData();
+                break;
+                
+            case 'session_pong':
+                console.log('Session health check successful');
                 break;
                 
             case 'player_joined':
@@ -355,27 +389,23 @@ class MultiplayerGame {
                 break;
                 
             case 'room_not_found':
-                console.log('Room not found, clearing session data');
-                this.clearAllSessionData();
-                this.showNotification('Room not found. Please create or join a new room.', 'warning');
+                console.log('Room not found, but keeping session - might be temporary');
+                this.showNotification('Room temporarily unavailable. Please wait or refresh.', 'warning');
                 break;
                 
             case 'player_not_found':
-                console.log('Player not found in room, clearing session data');
-                this.clearAllSessionData();
-                this.showNotification('Player not found in room. Please create or join a new room.', 'warning');
+                console.log('Player not found in room, but keeping session - might be temporary');
+                this.showNotification('Player session issue detected. Please wait or refresh.', 'warning');
                 break;
                 
             case 'game_not_found':
-                console.log('Game not found, clearing session data');
-                this.clearAllSessionData();
-                this.showNotification('Game not found. Please create or join a new room.', 'warning');
+                console.log('Game not found, but keeping session - might be temporary');
+                this.showNotification('Game temporarily unavailable. Please wait or refresh.', 'warning');
                 break;
                 
             case 'game_state_not_found':
-                console.log('Game state not found, clearing session data');
-                this.clearAllSessionData();
-                this.showNotification('Game state not found. Please create or join a new room.', 'warning');
+                console.log('Game state not found, but keeping session - might be temporary');
+                this.showNotification('Game state issue detected. Please wait or refresh.', 'warning');
                 break;
                 
             default:
@@ -387,29 +417,81 @@ class MultiplayerGame {
         if (message.includes('not found')) {
             console.log('Player/room not found, this might be expected for new connections');
             
-            // Check if we've tried too many times
-            if (!this.retryCount) {
-                this.retryCount = 0;
-            }
-            
-            this.retryCount++;
-            
-            if (this.retryCount <= 3) {
-                // Retry requesting game state after a delay
-                setTimeout(() => {
-                    console.log(`Retrying game state request (attempt ${this.retryCount})...`);
-                    this.sendMessage({
-                        type: 'request_game_state',
-                        roomId: this.roomId,
-                        playerId: this.playerId
-                    });
-                }, 2000);
+            // Only retry if we have valid room/player IDs
+            if (this.roomId && this.playerId) {
+                if (!this.retryCount) {
+                    this.retryCount = 0;
+                }
+                
+                this.retryCount++;
+                
+                if (this.retryCount <= 2) {
+                    // Retry requesting game state after a delay
+                    setTimeout(() => {
+                        console.log(`Retrying game state request (attempt ${this.retryCount})...`);
+                        this.sendMessage({
+                            type: 'request_game_state',
+                            roomId: this.roomId,
+                            playerId: this.playerId
+                        });
+                    }, 2000);
+                } else {
+                    console.log('Max retry attempts reached, attempting session recovery...');
+                    this.attemptSessionRecovery();
+                }
             } else {
-                console.log('Max retry attempts reached, clearing session and starting fresh');
-                this.clearSessionAndStartFresh();
+                console.log('No valid room/player IDs, this is expected for new connections');
             }
         } else {
             this.showNotification(`Server error: ${message}`, 'error');
+        }
+    }
+    
+    attemptSessionRecovery() {
+        console.log('Attempting session recovery...');
+        this.showNotification('Attempting to recover your game session...', 'info');
+        
+        if (this.roomId && this.playerId) {
+            // First try to validate the existing session
+            this.sendMessage({
+                type: 'validate_session',
+                roomId: this.roomId,
+                playerId: this.playerId
+            });
+        } else {
+            // Try to get room info from the server
+            this.sendMessage({
+                type: 'request_room_info'
+            });
+        }
+        
+        // Reset retry count for next time
+        this.retryCount = 0;
+    }
+    
+    startSessionHealthMonitoring() {
+        // Only monitor if we have an active session
+        if (!this.roomId || !this.playerId) {
+            return;
+        }
+        
+        // Check session health every 30 seconds
+        this.sessionHealthInterval = setInterval(() => {
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                console.log('Checking session health...');
+                this.sendMessage({
+                    type: 'ping_session',
+                    roomId: this.roomId,
+                    playerId: this.playerId
+                });
+            }
+        }, 30000); // 30 seconds
+    }
+    
+    stopSessionHealthMonitoring() {
+        if (this.sessionHealthInterval) {
+            clearInterval(this.sessionHealthInterval);
+            this.sessionHealthInterval = null;
         }
     }
 
@@ -1037,13 +1119,39 @@ class MultiplayerGame {
         // Create new button if none exists
         if (document.getElementById('leave-game-btn')) return;
         
+        // Create button container
+        const buttonContainer = document.createElement('div');
+        buttonContainer.id = 'game-controls';
+        buttonContainer.style.cssText = `
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 10000;
+        `;
+        
+        // Recovery button
+        const recoveryBtn = document.createElement('button');
+        recoveryBtn.id = 'recovery-btn';
+        recoveryBtn.textContent = 'Recover Session';
+        recoveryBtn.style.cssText = `
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            border: 1px solid #4CAF50;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        `;
+        recoveryBtn.onclick = () => this.attemptSessionRecovery();
+        
+        // Leave button
         const leaveBtn = document.createElement('button');
         leaveBtn.id = 'leave-game-btn';
         leaveBtn.textContent = 'Leave Game';
         leaveBtn.style.cssText = `
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
             background: rgba(0, 0, 0, 0.9);
             color: white;
             border: 1px solid #333;
@@ -1051,10 +1159,12 @@ class MultiplayerGame {
             border-radius: 4px;
             cursor: pointer;
             font-size: 14px;
-            z-index: 10000;
         `;
         leaveBtn.onclick = () => this.leaveGame();
-        document.body.appendChild(leaveBtn);
+        
+        buttonContainer.appendChild(recoveryBtn);
+        buttonContainer.appendChild(leaveBtn);
+        document.body.appendChild(buttonContainer);
     }
 
     setupMultiplayerGame() {
