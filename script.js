@@ -1065,17 +1065,14 @@ const placeNames = [
     ];
 
     // Filter tokens to only those required
-    let tokenList = allTokens;
-
     let loadedCount = 0;
-
-    tokenList.forEach(tokenInfo => {
+    allTokens.forEach(tokenInfo => {
         console.log(`Loading token: ${tokenInfo.name} from ${tokenInfo.path}`);
         loader.load(tokenInfo.path, (gltf) => {
             const model = gltf.scene;
             window.loadedTokenModels[tokenInfo.name] = model;
             loadedCount++;
-            if (loadedCount === tokenList.length && typeof onAllLoaded === 'function') {
+            if (loadedCount === allTokens.length && typeof onAllLoaded === 'function') {
                 console.log('All tokens loaded successfully');
                 onAllLoaded();
             }
@@ -1083,7 +1080,7 @@ const placeNames = [
             console.error(`Error loading model for ${tokenInfo.name}:`, err);
             console.error(`Failed path: ${tokenInfo.path}`);
             loadedCount++;
-            if (loadedCount === tokenList.length && typeof onAllLoaded === 'function') {
+            if (loadedCount === allTokens.length && typeof onAllLoaded === 'function') {
                 onAllLoaded();
             }
         });
