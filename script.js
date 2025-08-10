@@ -5059,6 +5059,7 @@ function throwFootballAnimation(token, endPos, finalHeight, callback) {
         token.position.copy(pos);
 
         // Velocity (for facing direction)
+    
         const deltaT = 0.001;
         const nextT = Math.min(t + deltaT, 1);
         const prevT = Math.max(t - deltaT, 0);
