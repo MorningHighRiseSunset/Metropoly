@@ -1,19 +1,20 @@
-// Global dice roll function for multiplayer override
-window.rollDice = function() {
-    // Example dice roll logic
-    const diceResult = Math.floor(Math.random() * 6) + 1;
-    console.log('Dice rolled:', diceResult);
-    // Trigger token movement here (replace with your actual movement logic)
-    // moveToken(currentPlayerIndex, diceResult);
-    // Optionally, broadcast dice result to other clients via multiplayer system
-};
 const DEBUG = false;
 import * as THREE from './libs/three.module.js';
-import { GLTFLoader } from './libs/GLTFLoader.js';
-import { OrbitControls } from './libs/OrbitControls.js';
-import { TextGeometry } from './libs/TextGeometry.js';
-import { FontLoader } from './libs/FontLoader.js';
-import { CatmullRomCurve3 } from './libs/three.module.js';
+import {
+    GLTFLoader
+} from './libs/GLTFLoader.js';
+import {
+    OrbitControls
+} from './libs/OrbitControls.js';
+import {
+    TextGeometry
+} from './libs/TextGeometry.js';
+import {
+    FontLoader
+} from './libs/FontLoader.js';
+import {
+    CatmullRomCurve3
+} from './libs/three.module.js';
 
 // Initialize the GLTFLoader
 const loader = new GLTFLoader();
@@ -22,9 +23,8 @@ const loader = new GLTFLoader();
 class GLTFMaterialsPbrSpecularGlossinessExtension {
     constructor(parser) {
         this.parser = parser;
-        this.name = 'KHR_materials_pbrSpecularGlossiness';
     }
-
+    
     afterRoot(result) {
         return Promise.all(result.materials.map((materialDef, index) => {
             if (materialDef.extensions && materialDef.extensions.KHR_materials_pbrSpecularGlossiness) {
@@ -33,45 +33,27 @@ class GLTFMaterialsPbrSpecularGlossinessExtension {
             return Promise.resolve();
         }));
     }
-
+    
     assignMaterial(materialDef, index) {
         const material = this.parser.materials[index];
         if (!material) return Promise.resolve();
-
+        
         const pbrSpecularGlossiness = materialDef.extensions.KHR_materials_pbrSpecularGlossiness;
-
+        
         // Convert specular-glossiness to metallic-roughness
         if (pbrSpecularGlossiness.diffuseFactor) {
             material.color.fromArray(pbrSpecularGlossiness.diffuseFactor);
         }
-
+        
         if (pbrSpecularGlossiness.specularFactor) {
             const specular = pbrSpecularGlossiness.specularFactor;
             material.metalness = 1 - Math.max(specular[0], specular[1], specular[2]);
         }
-
+        
         if (pbrSpecularGlossiness.glossinessFactor !== undefined) {
             material.roughness = 1 - pbrSpecularGlossiness.glossinessFactor;
         }
-
-        // Handle textures safely
-        if (pbrSpecularGlossiness.diffuseTexture && pbrSpecularGlossiness.diffuseTexture.index !== undefined) {
-            const textureIndex = pbrSpecularGlossiness.diffuseTexture.index;
-            const texture = this.parser.textureLoader.load(this.parser.json.textures[textureIndex].source);
-            if (texture) {
-                material.map = texture;
-                material.needsUpdate = true;
-            }
-        }
-        if (pbrSpecularGlossiness.specularGlossinessTexture && pbrSpecularGlossiness.specularGlossinessTexture.index !== undefined) {
-            const textureIndex = pbrSpecularGlossiness.specularGlossinessTexture.index;
-            const texture = this.parser.textureLoader.load(this.parser.json.textures[textureIndex].source);
-            if (texture) {
-                material.specularMap = texture;
-                material.needsUpdate = true;
-            }
-        }
-
+        
         return Promise.resolve();
     }
 }
@@ -1082,67 +1064,66 @@ const placeNames = [
     "Las Vegas Golden Knights" // Position 41
 ];
 
-    const allTokens = [
-        { name: 'rolls royce', path: 'Models/RollsRoyce/rollsRoyceCarAnim.glb', scale: [0.9, 0.9, 0.9] },
-        { name: 'helicopter', path: 'Models/Helicopter/helicopter.glb', scale: [0.01, 0.01, 0.01] },
-        { name: 'hat', path: 'Models/TopHat/tophat.glb', scale: [0.5, 0.5, 0.5] },
-        { name: 'football', path: 'Models/Football/football.glb', scale: [0.1, 0.1, 0.1] },
-        { name: 'burger', path: 'Models/Cheeseburger/cheeseburger.glb', scale: [3.5, 3.5, 3.5] },
-        { name: 'nike', path: 'Models/Shoe/shoe.glb', scale: [1.5, 1.5, 1.5] },
-        { name: 'woman', path: 'Models/WhiteGirlIdle/WhiteGirlIdle.glb', scale: [0.02, 0.02, 0.02] }
-    ];
+const chanceCards = [
+    "Move forward 3 spaces",
+    "Go back three spaces",
+    "Pay $100 for casino renovations", // Increased from $50
+    "Collect $300 from a high roller tip", // Increased from $150
+    "Your poker face pays off. Collect $150.", // Increased from $75
+    "You win a slot machine jackpot. Collect $400.", // Increased from $200
+    "Caught cheating at blackjack. Pay $200.", // Increased from $100
+    "Casino loyalty program rewards you. Collect $200.", // Increased from $100
+    "Your luck runs out. Pay $50.", // Increased from $25
+    "Win a casino raffle. Collect $500.", // Increased from $250
+    "Pay $200 for a VIP casino membership.", // Increased from $100
+    "Collect $100 from each player for hosting a poker night.", // Increased from $50
+    "Move forward 5 spaces.",
+    "Your lucky day! Collect $600 from the casino.", // Increased from $300
+    "Caught counting cards. Pay a $400 fine.", // Increased from $200
+    "Win a high-stakes poker game. Collect $1,000.", // Increased from $500
+    "Pay $150 for a luxury spa treatment.", // Increased from $75
+    "Win a blackjack tournament. Collect $500.", // Increased from $250
+    "Caught speeding on the Strip. Pay a $200 fine.", // Increased from $50
+    "Your investments pay off. Collect $800." // Increased from $400
+];
 
-    // Filter tokens to only those required
-    let loadedCount = 0;
-    allTokens.forEach(tokenInfo => {
-        console.log(`Loading token: ${tokenInfo.name} from ${tokenInfo.path}`);
-        loader.load(tokenInfo.path, (gltf) => {
-            const model = gltf.scene;
-            window.loadedTokenModels[tokenInfo.name] = model;
-            loadedCount++;
-            if (loadedCount === allTokens.length && typeof onAllLoaded === 'function') {
-                console.log('All tokens loaded successfully');
-                onAllLoaded();
-            }
-        }, undefined, (err) => {
-            console.error(`Error loading model for ${tokenInfo.name}:`, err);
-            console.error(`Failed path: ${tokenInfo.path}`);
-            loadedCount++;
-            if (loadedCount === allTokens.length && typeof onAllLoaded === 'function') {
-                onAllLoaded();
-            }
-        });
-    });
-
-    [
-        "Collect $50 from valet parking tips.", // Increased from $25
-        "Casino stocks are up. Collect $100.", // Increased from $50
-        "Pay $80 per house and $150 per hotel for property maintenance.", // Increased from $40/$115
-        "You find a lucky chip on the floor. Collect $50.", // Increased from $20
-        "Casino holiday bonus. Collect $150.", // Increased from $75
-        "Pay $100 for a casino marketing fee.", // Increased from $50
-        "Win a casino poker tournament. Collect $300.", // Increased from $150
-        "Casino appreciation day. Collect $50 from each player.", // Increased from $10
-        "Caught using your phone at the blackjack table. Pay $100.", // Increased from $50
-        "Pay $200 for a charity gala.", // Increased from $100
-        "Collect $400 from a casino jackpot.", // Increased from $200
-        "You win Employee of the Year. Collect $300.", // Increased from $150
-        "Pay $100 for a parking violation.", // Increased from $50
-        "Collect $50 from each player for hosting a casino night.", // Increased from $25
-        "Move forward 3 spaces.",
-        "Pay $80 per house and $150 per hotel for property maintenance.", // Increased from $40/$115
-        "Collect $150 from a casino loyalty program.", // Increased from $75
-        "You find a winning lottery ticket. Collect $1,000.", // Increased from $500
-        "Pay $300 for a luxury suite upgrade.", // Increased from $150
-        "Collect $200 for a successful business venture.", // Increased from $100
-        "Pay $400 for a luxury shopping spree.", // Increased from $200
-        "Your stocks rise. Collect $600.", // Increased from $300
-        "Caught cheating at a poker game. Pay $200.", // Increased from $100
-        "Advance to the Las Vegas Aces game. If you pass GO, collect $400.", // Increased from $200
-        "Win a raffle at the casino. Collect $500.", // Increased from $250
-        "Pay $150 for a fine dining experience.", // Increased from $75
-        "Collect $100 for a lucky slot machine spin.", // Increased from $50
-    ];
+const communityChestCards = [
+    "Advance to GO. Collect $400.", // Increased from $200
+    "Get Out of Jail Free - Keep this card until needed or sell it.",
+    "Pay $100 for valet parking fees.", // Increased from $50
+    "Collect $200 from a casino bonus.", // Increased from $100
+    "You win Employee of the Month. Collect $100.", // Increased from $50
+    "Pay $300 for a casino uniform upgrade.", // Increased from $150
+    "Collect $500 from a casino jackpot.", // Increased from $200
+    "Pay $200 for a gaming license renewal.", // Increased from $100
+    "Collect $50 from valet parking tips.", // Increased from $25
+    "Casino stocks are up. Collect $100.", // Increased from $50
+    "Pay $80 per house and $150 per hotel for property maintenance.", // Increased from $40/$115
+    "You find a lucky chip on the floor. Collect $50.", // Increased from $20
+    "Casino holiday bonus. Collect $150.", // Increased from $75
+    "Pay $100 for a casino marketing fee.", // Increased from $50
+    "Win a casino poker tournament. Collect $300.", // Increased from $150
+    "Casino appreciation day. Collect $50 from each player.", // Increased from $10
+    "Caught using your phone at the blackjack table. Pay $100.", // Increased from $50
+    "Pay $200 for a charity gala.", // Increased from $100
+    "Collect $400 from a casino jackpot.", // Increased from $200
+    "You win Employee of the Year. Collect $300.", // Increased from $150
+    "Pay $100 for a parking violation.", // Increased from $50
+    "Collect $50 from each player for hosting a casino night.", // Increased from $25
+    "Move forward 3 spaces.",
+    "Pay $80 per house and $150 per hotel for property maintenance.", // Increased from $40/$115
+    "Collect $150 from a casino loyalty program.", // Increased from $75
+    "You find a winning lottery ticket. Collect $1,000.", // Increased from $500
+    "Pay $300 for a luxury suite upgrade.", // Increased from $150
+    "Collect $200 for a successful business venture.", // Increased from $100
+    "Pay $400 for a luxury shopping spree.", // Increased from $200
+    "Your stocks rise. Collect $600.", // Increased from $300
+    "Caught cheating at a poker game. Pay $200.", // Increased from $100
+    "Advance to the Las Vegas Aces game. If you pass GO, collect $400.", // Increased from $200
+    "Win a raffle at the casino. Collect $500.", // Increased from $250
+    "Pay $150 for a fine dining experience.", // Increased from $75
+    "Collect $100 for a lucky slot machine spin.", // Increased from $50
+];
 
 // filepath: c:\Users\DELL\Metropoly\script.js
 let availableTokens = [{
@@ -1805,7 +1786,7 @@ function hideTokenSpinner(tokenName) {
 
 
 // 2. Replace your createTokens function with this:
-function createTokens(onAllLoaded, requiredTokenNames) {
+function createTokens(onAllLoaded) {
     // Prevent multiple calls
     if (window.tokensAlreadyLoaded) {
         console.log('Tokens already loaded, skipping...');
@@ -1833,24 +1814,29 @@ function createTokens(onAllLoaded, requiredTokenNames) {
         console.log(`Loading token: ${tokenInfo.name} from ${tokenInfo.path}`);
         loader.load(tokenInfo.path, (gltf) => {
             const model = gltf.scene;
-            // Traverse all meshes and safely handle material and textures
-            model.traverse((child) => {
-                if (child.isMesh && child.material) {
-                    // Handle transparency for woman and any mesh with alpha texture
-                    if (child.material.map && child.material.map.image) {
-                        child.material.transparent = true;
-                        child.material.alphaTest = 0.1;
-                        child.material.depthWrite = true;
-                        child.material.side = THREE.DoubleSide;
-                    } else {
-                        child.material.transparent = false;
-                        child.material.depthWrite = true;
-                        child.material.side = THREE.FrontSide;
-                        child.material.alphaTest = 0;
+            // Fix transparency issues for woman model
+            if (tokenInfo.name === 'woman') {
+                model.traverse((child) => {
+                    if (child.isMesh) {
+                        // Handle transparency properly for woman model
+                        if (child.material.map && child.material.map.image) {
+                            // If there's a texture with alpha channel, enable transparency
+                            child.material.transparent = true;
+                            child.material.alphaTest = 0.1;
+                            child.material.depthWrite = true;
+                            child.material.side = THREE.DoubleSide;
+                        } else {
+                            // For non-transparent materials
+                            child.material.transparent = false;
+                            child.material.depthWrite = true;
+                            child.material.side = THREE.FrontSide;
+                            child.material.alphaTest = 0;
+                        }
+                        // Ensure material updates
+                        child.material.needsUpdate = true;
                     }
-                    child.material.needsUpdate = true;
-                }
-            });
+                });
+            }
             model.scale.set(...tokenInfo.scale);
             model.visible = false;
             model.userData.isToken = true;
@@ -2441,8 +2427,6 @@ function showPropertyUI(position) {
     }
 
     console.log(`Creating property UI for ${property.name}`);
-    // Also render right-side activity for featured properties
-    try { window.showSpecialActivityForProperty?.(property); } catch(_){}
     
     // Create overlay and popup
     const overlay = document.createElement('div');
@@ -3719,15 +3703,6 @@ function endTurn() {
     console.log(`Ending turn for Player ${currentPlayerIndex + 1} (${players[currentPlayerIndex].name})`);
 
     try {
-        // Ensure any special activity UI is closed between turns
-        try {
-            if (window.hideSpecialActivityWidget) {
-                window.hideSpecialActivityWidget();
-            } else {
-                const saw = document.getElementById('special-activity-widget');
-                if (saw) saw.remove();
-            }
-        } catch (e) { /* ignore */ }
         // Reset all turn-related flags
         isTurnInProgress = true; // Temporarily set to true during transition
         hasTakenAction = false;
@@ -3930,32 +3905,16 @@ function createPlayerTokenSelectionUI(playerIndex) {
     if (startBtn) startBtn.remove();
 
     tokenSelectionUI = document.createElement("div");
-    tokenSelectionUI.id = "token-selection-ui";
     tokenSelectionUI.style.position = "fixed";
-    // Position under the multiplayer UI (top-right). We'll compute dynamically below.
-    tokenSelectionUI.style.right = "16px";
+    tokenSelectionUI.style.top = "10px";
+    tokenSelectionUI.style.left = "20px";
     tokenSelectionUI.style.padding = "15px";
     tokenSelectionUI.style.borderRadius = "10px";
     tokenSelectionUI.style.color = "white";
     tokenSelectionUI.style.textAlign = "center";
     tokenSelectionUI.style.zIndex = "1000";
-    tokenSelectionUI.style.width = "220px";
+    tokenSelectionUI.style.width = "300px";
     tokenSelectionUI.style.maxHeight = "400px";
-    tokenSelectionUI.style.overflowY = "auto";
-
-    // Compute top based on multiplayer UI position
-    const mpUI = document.getElementById('multiplayer-ui');
-    const computeTokenUIPosition = () => {
-        const fallbackTop = 90; // Fallback if mpUI not found
-        if (mpUI) {
-            const rect = mpUI.getBoundingClientRect();
-            tokenSelectionUI.style.top = `${Math.max(rect.bottom + 10, 10)}px`;
-        } else {
-            tokenSelectionUI.style.top = `${fallbackTop}px`;
-        }
-    };
-    computeTokenUIPosition();
-    window.addEventListener('resize', computeTokenUIPosition);
 
     const title = document.createElement("h2");
     title.textContent = "Select Tokens and AI Players";
@@ -5073,7 +5032,6 @@ function throwFootballAnimation(token, endPos, finalHeight, callback) {
         token.position.copy(pos);
 
         // Velocity (for facing direction)
-    
         const deltaT = 0.001;
         const nextT = Math.min(t + deltaT, 1);
         const prevT = Math.max(t - deltaT, 0);
@@ -5619,12 +5577,6 @@ function handlePropertyLanding(player, position) {
     }
 
     console.log(`${player.name} landed on: ${property.name}`, property);
-    // Show special activity widget for select landmark properties (human players only)
-    try {
-        if (!isCurrentPlayerAI()) {
-            window.showSpecialActivityForProperty?.(property);
-        }
-    } catch (_) { /* non-fatal */ }
 
     // Play horse galloping sound for Horseback Riding property
     if (property.name === "Horseback Riding") {
@@ -6218,7 +6170,10 @@ function init() {
         btn.id = 'camera-follow-toggle';
         btn.innerText = 'Follow Token (F)';
         btn.style.position = 'fixed';
-        btn.style.zIndex = '10002';
+        btn.style.top = '80px';
+        btn.style.left = '50%';
+        btn.style.transform = 'translateX(-50%)';
+        btn.style.zIndex = '2002';
         btn.style.background = '#222';
         btn.style.color = '#fff';
         btn.style.padding = '10px 18px';
@@ -6235,7 +6190,10 @@ function init() {
         indicator.id = 'camera-follow-indicator';
         indicator.innerText = 'FOLLOWING TOKEN';
         indicator.style.position = 'fixed';
-        indicator.style.zIndex = '10002';
+        indicator.style.top = '120px';
+        indicator.style.left = '50%';
+        indicator.style.transform = 'translateX(-50%)';
+        indicator.style.zIndex = '2002';
         indicator.style.background = '#4caf50';
         indicator.style.color = '#fff';
         indicator.style.padding = '6px 18px';
@@ -6246,43 +6204,6 @@ function init() {
         indicator.style.display = 'none';
         indicator.style.boxShadow = '0 2px 8px rgba(0,0,0,0.18)';
         document.body.appendChild(indicator);
-
-        function positionFollowUI() {
-            const mpRoot = document.getElementById('multiplayer-ui')
-                || document.getElementById('players-list')
-                || document.getElementById('multiplayer-players');
-            let top = 120;
-            let right = 10;
-            if (mpRoot) {
-                const r = mpRoot.getBoundingClientRect();
-                top = Math.max(10, Math.floor(r.bottom + 10));
-                right = Math.max(10, Math.floor(window.innerWidth - r.right + 10));
-            }
-            // Position the follow button directly under the multiplayer UI (right-aligned)
-            btn.style.top = top + 'px';
-            btn.style.right = right + 'px';
-            btn.style.left = '';
-            btn.style.transform = '';
-
-            // Place the green indicator just below the button, same right offset
-            const btnRect = btn.getBoundingClientRect();
-            const indicatorTop = Math.floor(btnRect.bottom + 6);
-            indicator.style.top = indicatorTop + 'px';
-            indicator.style.right = right + 'px';
-            indicator.style.left = '';
-            indicator.style.transform = '';
-        }
-
-        // Initial position and on resize
-        positionFollowUI();
-        window.addEventListener('resize', positionFollowUI);
-
-        // Reposition when multiplayer UI is added/changes
-        const mo = new MutationObserver(positionFollowUI);
-        mo.observe(document.body, { childList: true, subtree: true });
-
-        // Reflect current follow state immediately (shows green box when active)
-        updateCameraFollowUI();
     }
 
     // Initialize the advanced pathfinding system
@@ -6319,274 +6240,6 @@ function init() {
     window.addEventListener("click", onTokenClick);
     window.addEventListener("resize", onWindowResize, false);
     window.addEventListener("click", onPropertyClick);
-    
-    // Install special activities UI helpers
-    (function installSpecialActivities() {
-        if (window.showSpecialActivityForProperty) return;
-
-        const FEATURED = {
-            "Hard Rock Hotel": { kind: 'slots' },
-            "Bellagio": { kind: 'poker' },
-            "Caesars Palace": { kind: 'craps' },
-            "Santa Fe Hotel and Casino": { kind: 'low_poker' },
-            "Wynn Las Vegas": { kind: 'baccarat' },
-            "The Cosmopolitan": { kind: 'blackjack' }
-        };
-
-        function computeTopOffset() {
-            const mp = document.getElementById('multiplayer-ui');
-            if (!mp) return 120;
-            const r = mp.getBoundingClientRect();
-            return Math.max(10, r.bottom + 10);
-        }
-
-        function ensureRoot(property) {
-            let root = document.getElementById('special-activity-widget');
-            if (!root) {
-                root = document.createElement('div');
-                root.id = 'special-activity-widget';
-                document.body.appendChild(root);
-            }
-            root.style.top = computeTopOffset() + 'px';
-            root.classList.add('show');
-            root.setAttribute('data-property', property?.name || '');
-            return root;
-        }
-
-        function hideWidget() {
-            const root = document.getElementById('special-activity-widget');
-            if (root) root.remove();
-        }
-
-        function awardMoneyToCurrentPlayer(amount, note) {
-            const current = players[currentPlayerIndex];
-            if (!current) return;
-
-            // Singleplayer immediate update
-            current.money += amount;
-            updateMoneyDisplay?.();
-
-            // Multiplayer sync to server and others
-            try {
-                const isMulti = window.isMultiplayerMode && window.multiplayerGame && window.multiplayerGame.ws && window.multiplayerGame.ws.readyState === WebSocket.OPEN;
-                if (isMulti) {
-                    window.multiplayerGame.sendMessage({
-                        type: 'game_action',
-                        action: 'special_reward',
-                        data: {
-                            playerId: window.multiplayerGame.playerId,
-                            amount,
-                            note: note || 'Special activity reward'
-                        }
-                    });
-                }
-            } catch(_) {}
-        }
-
-        function renderSlots(property) {
-            const root = ensureRoot(property);
-            root.innerHTML = '';
-            const header = document.createElement('div');
-            header.className = 'saw-header';
-            header.innerHTML = '🎰 Hard Rock Slots';
-
-            const body = document.createElement('div');
-            body.className = 'saw-body';
-
-            const title = document.createElement('div');
-            title.className = 'saw-title';
-            title.textContent = 'Spin the reels!';
-
-            const instructions = document.createElement('div');
-            instructions.className = 'saw-instructions';
-            instructions.textContent = 'Tap or click Spin. Small chance to hit a payout and earn money.';
-
-            const anim = document.createElement('div');
-            anim.className = 'saw-anim';
-
-            const tiles = [0,1,2].map(() => {
-                const t = document.createElement('div');
-                t.className = 'saw-tile';
-                t.textContent = '—';
-                return t;
-            });
-            tiles.forEach(t => anim.appendChild(t));
-
-            const btn = document.createElement('button');
-            btn.className = 'saw-action-btn';
-            btn.textContent = 'Spin';
-
-            let spinning = false;
-            function doSpin() {
-                if (spinning) return;
-                spinning = true;
-                btn.disabled = true;
-                // Mobile friendly: support pointer events
-                const symbols = ['🍒','🍋','🔔','⭐','💎','7'];
-                const spinDuration = 900;
-                const start = performance.now();
-                const raf = () => {
-                    const now = performance.now();
-                    const p = Math.min(1, (now - start) / spinDuration);
-                    tiles.forEach((t, idx) => {
-                        if (Math.random() < 0.6) t.textContent = symbols[Math.floor(Math.random()*symbols.length)];
-                    });
-                    if (p < 1) {
-                        requestAnimationFrame(raf);
-                    } else {
-                        // Final result
-                        const result = tiles.map(() => symbols[Math.floor(Math.random()*symbols.length)]);
-                        tiles.forEach((t, i) => t.textContent = result[i]);
-                        // Determine payout
-                        let payout = 0;
-                        if (result[0] === result[1] && result[1] === result[2]) {
-                            payout = result[0] === '7' ? 300 : 150;
-                        } else if (result.some(v => v === '💎')) {
-                            payout = 50;
-                        } else if (new Set(result).size === 2) {
-                            payout = 25;
-                        }
-                        if (payout > 0) {
-                            showFeedback(`You won $${payout} at the slots!`);
-                            awardMoneyToCurrentPlayer(payout, 'Slots win');
-                        } else {
-                            showFeedback('No win this time.');
-                        }
-                        spinning = false;
-                        btn.disabled = false;
-                    }
-                };
-                requestAnimationFrame(raf);
-            }
-            btn.addEventListener('click', doSpin, { passive: true });
-            btn.addEventListener('touchstart', (e) => { e.preventDefault(); doSpin(); }, { passive: false });
-
-            const close = document.createElement('button');
-            close.className = 'saw-close';
-            close.textContent = 'Close';
-            close.addEventListener('click', hideWidget, { passive: true });
-            close.addEventListener('touchstart', (e) => { e.preventDefault(); hideWidget(); }, { passive: false });
-
-            body.appendChild(title);
-            body.appendChild(instructions);
-            body.appendChild(anim);
-            body.appendChild(btn);
-            body.appendChild(close);
-            root.appendChild(header);
-            root.appendChild(body);
-        }
-
-        function renderSimpleActivity(property, label, icon, chanceConfig) {
-            const root = ensureRoot(property);
-            root.innerHTML = '';
-            const header = document.createElement('div');
-            header.className = 'saw-header';
-            header.textContent = `${icon} ${label}`;
-
-            const body = document.createElement('div');
-            body.className = 'saw-body';
-            const title = document.createElement('div');
-            title.className = 'saw-title';
-            title.textContent = 'Try your luck!';
-            const instructions = document.createElement('div');
-            instructions.className = 'saw-instructions';
-            instructions.textContent = 'Tap or click Play for a chance to earn money.';
-            const anim = document.createElement('div');
-            anim.className = 'saw-anim';
-            const tile = document.createElement('div');
-            tile.className = 'saw-tile';
-            tile.textContent = icon;
-            anim.appendChild(tile);
-            const btn = document.createElement('button');
-            btn.className = 'saw-action-btn';
-            btn.textContent = 'Play';
-
-            let busy = false;
-            function playOnce() {
-                if (busy) return; busy = true; btn.disabled = true;
-                const duration = 800; const start = performance.now();
-                const raf = () => {
-                    const now = performance.now(); const p = Math.min(1, (now - start)/duration);
-                    if (Math.random() < 0.7) tile.textContent = icon;
-                    if (p < 1) requestAnimationFrame(raf); else {
-                        const roll = Math.random();
-                        let payout = 0;
-                        for (const band of chanceConfig) {
-                            if (roll < band.threshold) { payout = band.payout; break; }
-                        }
-                        if (payout > 0) {
-                            showFeedback(`You won $${payout}!`);
-                            awardMoneyToCurrentPlayer(payout, `${label} win`);
-                        } else {
-                            showFeedback('Unlucky this time.');
-                        }
-                        busy = false; btn.disabled = false;
-                    }
-                };
-                requestAnimationFrame(raf);
-            }
-            btn.addEventListener('click', playOnce, { passive: true });
-            btn.addEventListener('touchstart', (e) => { e.preventDefault(); playOnce(); }, { passive: false });
-
-            const close = document.createElement('button');
-            close.className = 'saw-close';
-            close.textContent = 'Close';
-            close.addEventListener('click', hideWidget, { passive: true });
-            close.addEventListener('touchstart', (e) => { e.preventDefault(); hideWidget(); }, { passive: false });
-
-            body.appendChild(title);
-            body.appendChild(instructions);
-            body.appendChild(anim);
-            body.appendChild(btn);
-            body.appendChild(close);
-            root.appendChild(header);
-            root.appendChild(body);
-        }
-
-        function showForProperty(property) {
-            if (!property) return;
-            const conf = FEATURED[property.name];
-            if (!conf) return;
-            if (conf.kind === 'slots') return renderSlots(property);
-            if (conf.kind === 'poker') return renderSimpleActivity(property, 'Bellagio Poker', '♠️', [
-                { threshold: 0.05, payout: 300 },
-                { threshold: 0.15, payout: 120 },
-                { threshold: 0.35, payout: 50 },
-                { threshold: 1.00, payout: 0 }
-            ]);
-            if (conf.kind === 'craps') return renderSimpleActivity(property, 'Caesars Craps', '🎲', [
-                { threshold: 0.07, payout: 250 },
-                { threshold: 0.17, payout: 100 },
-                { threshold: 0.40, payout: 40 },
-                { threshold: 1.00, payout: 0 }
-            ]);
-            if (conf.kind === 'low_poker') return renderSimpleActivity(property, 'Santa Fe Low Stakes', '🃏', [
-                { threshold: 0.10, payout: 120 },
-                { threshold: 0.25, payout: 60 },
-                { threshold: 0.50, payout: 25 },
-                { threshold: 1.00, payout: 0 }
-            ]);
-            if (conf.kind === 'baccarat') return renderSimpleActivity(property, 'Wynn Baccarat', '🎴', [
-                { threshold: 0.06, payout: 280 },
-                { threshold: 0.16, payout: 110 },
-                { threshold: 0.38, payout: 45 },
-                { threshold: 1.00, payout: 0 }
-            ]);
-            if (conf.kind === 'blackjack') return renderSimpleActivity(property, 'Cosmo Blackjack', '🂡', [
-                { threshold: 0.08, payout: 220 },
-                { threshold: 0.20, payout: 90 },
-                { threshold: 0.42, payout: 35 },
-                { threshold: 1.00, payout: 0 }
-            ]);
-        }
-
-        window.showSpecialActivityForProperty = showForProperty;
-        window.hideSpecialActivityWidget = hideWidget;
-        window.addEventListener('resize', () => {
-            const root = document.getElementById('special-activity-widget');
-            if (root) root.style.top = computeTopOffset() + 'px';
-        });
-    })();
 
     // Main animation loop
     function animate() {
