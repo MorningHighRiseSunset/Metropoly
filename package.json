@@ -1,12 +1,12 @@
 {
   "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
     "install": "^0.13.0",
     "npm": "^10.9.2",
-    "three": "^0.178.0",
+    "three": "^0.179.1",
     "three-gltf-extensions": "^0.0.15",
-    "express": "^4.18.2",
-    "ws": "^8.14.2",
-    "cors": "^2.8.5"
+    "ws": "^8.14.2"
   },
   "name": "metropoly",
   "version": "1.0.0",
