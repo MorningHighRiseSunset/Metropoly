@@ -29,6 +29,7 @@ class GLTFMaterialsPbrSpecularGlossinessExtension {
         return Promise.all(result.materials.map((materialDef, index) => {
             const hasExtension = materialDef.extensions && materialDef.extensions.KHR_materials_pbrSpecularGlossiness;
             const material = this.parser.materials && this.parser.materials[index];
+            // Only process if both extension and material exist
             if (hasExtension && material) {
                 return this.assignMaterial(materialDef, index);
             }
@@ -38,6 +39,7 @@ class GLTFMaterialsPbrSpecularGlossinessExtension {
                     console.warn('GLTFMaterialsPbrSpecularGlossinessExtension: Material missing for index', index, materialDef);
                 }
             }
+            // Never access any property of material if material is undefined
             return Promise.resolve();
         }));
     }
@@ -45,7 +47,7 @@ class GLTFMaterialsPbrSpecularGlossinessExtension {
     assignMaterial(materialDef, index) {
         const material = this.parser.materials[index];
         if (!material) {
-            // Skip if material is undefined
+            // Never access any property of material if material is undefined
             return Promise.resolve();
         }
 
@@ -2374,7 +2376,8 @@ function handleUtilitySpace(player, property) {
         updateMoneyDisplay();
     }
 }
-
+        // Extension handler removed as requested
+        class GLTFMaterialsPbrSpecularGlossinessExtension {
 function handleRailroadSpace(player, property) {
     if (!property.owner) {
         if (!isCurrentPlayerAI()) {
@@ -2448,7 +2451,7 @@ function showPropertyUI(position) {
         hasHandledProperty = true;
         return;
     }
-    if (property.name === "FREE PARKING") {
+        // loader.register((parser) => new GLTFMaterialsPbrSpecularGlossinessExtension(parser));
         const currentPlayer = players[currentPlayerIndex];
         showFreeParkingUI(currentPlayer);
         hasHandledProperty = true;
