@@ -390,6 +390,9 @@ ws.on('message', (message, isBinary) => {
                 case 'ready_for_game_transition':
                     handleReadyForGameTransition(ws, data, playerId);
                     break;
+                case 'game_transition_ready':
+                    handleGameTransitionReady(ws, data, playerId);
+                    break;
                 case 'ping_session':
                     handlePingSession(ws, data, playerId);
                     break;
@@ -1403,15 +1406,15 @@ function handleReadyForGameTransition(ws, data, playerId) {
         console.log(`Room ${roomId} not found for transition`);
         return;
     }
-    
+
     const player = room.players.get(transitionPlayerId);
     if (player) {
         console.log(`Marking player ${transitionPlayerId} as ready for game transition`);
-        
+
         // Mark the player as ready for transition
         player.transitionReady = true;
         player.transitionTimestamp = Date.now();
-        
+
         // Update the player session
         if (playerSessions.has(transitionPlayerId)) {
             const session = playerSessions.get(transitionPlayerId);
@@ -1419,20 +1422,41 @@ function handleReadyForGameTransition(ws, data, playerId) {
             session.transitionTimestamp = Date.now();
             playerSessions.set(transitionPlayerId, session);
         }
-        
+
+        // Store the lobby socket for handshake
+        player.lobbySocket = ws;
+
         // Send acknowledgment
         ws.send(JSON.stringify({
             type: 'ready_for_game_transition_ack',
             playerId: transitionPlayerId,
             roomId: roomId
         }));
-        
+
         // Notify other players
         room.broadcast({
             type: 'player_ready_for_transition',
             playerId: transitionPlayerId,
             playerName: player.name
         }, transitionPlayerId);
+    }
+    // Called when game socket connects and is ready
+    const { roomId: gameRoomId } = data;
+    const gameRoom = rooms.get(gameRoomId);
+    if (!gameRoom) {
+        console.log(`Room ${gameRoomId} not found for game transition ready`);
+        return;
+    }
+    const gamePlayer = gameRoom.players.get(playerId);
+    if (gamePlayer && gamePlayer.lobbySocket) {
+        // Send confirmation to lobby socket
+        gamePlayer.lobbySocket.send(JSON.stringify({
+            type: 'game_transition_confirmed',
+            roomId: gameRoomId,
+            playerId
+        }));
+        // Optionally, clean up reference
+        delete gamePlayer.lobbySocket;
     }
 }
 

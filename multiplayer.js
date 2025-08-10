@@ -150,22 +150,22 @@ class MultiplayerGame {
         
         try {
             this.ws = new WebSocket(this.serverUrl);
-            
+
             this.ws.onopen = () => {
                 console.log('Connected to multiplayer server');
                 this.updateConnectionStatus(true);
                 this.connectionAttempts = 0; // Reset on successful connection
-                
-                // Send a transition notification to the server
+
+                // Send game_transition_ready to server for handshake
                 if (this.roomId && this.playerId) {
-                    console.log('Notifying server of game transition with existing IDs');
+                    console.log('Notifying server that game socket is ready for transition handshake');
                     this.sendMessage({
-                        type: 'ready_for_game_transition',
+                        type: 'game_transition_ready',
                         roomId: this.roomId,
                         playerId: this.playerId
                     });
                 }
-                
+
                 // Only try to rejoin if we have valid session data
                 if (
                     this.roomId &&

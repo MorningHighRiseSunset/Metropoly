@@ -355,19 +355,26 @@ class LobbyManager {
             roomId: roomId,
             playerId: this.playerId
         });
-        
-        // Redirect to the game page with room information
-        setTimeout(() => {
-            console.log('Grace period complete. Redirecting to game with room:', roomId, 'player:', this.playerId);
-            const gameUrl = `game.html?room=${roomId}&player=${this.playerId}`;
-            console.log('Game URL:', gameUrl);
-            // Optionally, close the lobby socket here if needed
-            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-                console.log('Closing lobby WebSocket after grace period.');
-                this.ws.close();
+
+        // Wait for handshake confirmation from server/game socket
+        this.ws.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.type === 'game_transition_confirmed' && data.roomId === roomId && data.playerId === this.playerId) {
+                    console.log('Received game_transition_confirmed handshake from server. Redirecting to game.');
+                    const gameUrl = `game.html?room=${roomId}&player=${this.playerId}`;
+                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                        console.log('Closing lobby WebSocket after handshake.');
+                        this.ws.close();
+                    }
+                    window.location.href = gameUrl;
+                } else {
+                    this.handleServerMessage(data);
+                }
+            } catch (error) {
+                console.error('Error parsing server message:', error);
             }
-            window.location.href = gameUrl;
-        }, 3000); // Increased delay to ensure data transfer
+        };
     }
 
     createRoom() {
