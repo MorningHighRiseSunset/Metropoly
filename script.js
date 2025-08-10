@@ -1,10 +1,14 @@
 const DEBUG = false;
-import * as THREE from './libs/three.module.js';
+// Remove ES module imports for three.js. THREE will be available globally via script tag in HTML.
+// Add this to your index.html before other scripts:
+// <script src="./libs/three.module.js"></script>
+// Or use CDN:
+// <script src="https://unpkg.com/three@latest/build/three.min.js"></script>
 import { GLTFLoader } from './libs/GLTFLoader.js';
 import { OrbitControls } from './libs/OrbitControls.js';
 import { TextGeometry } from './libs/TextGeometry.js';
 import { FontLoader } from './libs/FontLoader.js';
-import { CatmullRomCurve3 } from './libs/three.module.js';
+// Remove CatmullRomCurve3 import; use THREE.CatmullRomCurve3 if needed.
 
 // Initialize the GLTFLoader
 const loader = new GLTFLoader();
