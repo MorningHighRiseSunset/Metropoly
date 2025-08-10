@@ -281,6 +281,9 @@ class MultiplayerGame {
         console.log('Received server message:', data);
         
         switch (data.type) {
+            case 'dice_rolled':
+                this.handleDiceRoll(data);
+                break;
             case 'joined_room':
                 console.log('Joined room successfully');
                 // If we don't have room/player IDs yet, this might be a fresh connection
@@ -1114,7 +1117,7 @@ class MultiplayerGame {
         // Send dice roll request to server (server will generate the roll)
         this.sendMessage({
             type: 'game_action',
-            action: 'dice_roll',
+            action: 'roll_dice',
             data: {
                 playerId: this.playerId
             }
