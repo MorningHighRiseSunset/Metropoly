@@ -1108,21 +1108,22 @@ class MultiplayerGame {
     // Player action methods
     rollDice() {
         if (!this.isMyTurn) {
+            console.log('[Multiplayer] rollDice called but not my turn');
             this.showNotification("It's not your turn!", 'error');
             return;
         }
 
-        console.log('Rolling dice for multiplayer game...');
-        
+        console.log('[Multiplayer] Rolling dice for multiplayer game...');
         // Send dice roll request to server (server will generate the roll)
-        this.sendMessage({
+        const msg = {
             type: 'game_action',
             action: 'roll_dice',
             data: {
                 playerId: this.playerId
             }
-        });
-        
+        };
+        console.log('[Multiplayer] Sending message to server:', msg);
+        this.sendMessage(msg);
         // Show immediate feedback
         this.showNotification('Rolling dice...', 'info');
     }
@@ -1213,13 +1214,19 @@ class MultiplayerGame {
         // Override dice rolling to use multiplayer
         if (window.rollDice) {
             const originalRollDice = window.rollDice;
+            console.log('[Multiplayer] Overriding window.rollDice for multiplayer');
             window.rollDice = () => {
+                console.log('[Multiplayer] window.rollDice called');
                 if (this.isMyTurn) {
+                    console.log('[Multiplayer] It is my turn, calling multiplayer rollDice');
                     this.rollDice();
                 } else {
+                    console.log('[Multiplayer] Not my turn, blocking rollDice');
                     this.showNotification("It's not your turn!", 'error');
                 }
             };
+        } else {
+            console.warn('[Multiplayer] window.rollDice not found when trying to override');
         }
 
         // Override property buying to use multiplayer
@@ -2141,7 +2148,7 @@ class MultiplayerGame {
                 console.error('No token found for player:', playerId);
                 console.log('Available players:', this.players);
                 console.log('Window players:', window.players);
-                console.log('Scene available:', !!window.scene);
+                               console.log('Scene available:', !!window.scene);
                 // Try to create a fallback token movement
                 this.createFallbackTokenMovement(playerId, fromPosition, toPosition);
             }
@@ -2238,7 +2245,7 @@ class MultiplayerGame {
 
     disableTokenSelectionUI() {
         console.log('Disabling token selection UI for multiplayer mode...');
-        
+
         // Set global flag to prevent token selection UI creation
         window.isMultiplayerMode = true;
         
@@ -2993,4 +3000,4 @@ function testTokenMovement(playerId) {
 }
 
 // Make MultiplayerGame available globally
-window.MultiplayerGame = MultiplayerGame; 
+window.MultiplayerGame = MultiplayerGame;
