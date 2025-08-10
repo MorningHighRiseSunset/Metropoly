@@ -781,7 +781,8 @@ class MultiplayerGame {
         console.log('Received game state update:', data);
         console.log('Previous players count:', this.players.length);
         
-        this.gameState = data.gameState;
+    // Ensure gameState is always an object to avoid sync warnings
+    this.gameState = data.gameState || {};
         this.players = this.normalizePlayers(data.players || []);
         this.currentPlayerIndex = data.currentPlayerIndex || 0;
         this.isMyTurn = data.currentPlayerId === this.playerId;
