@@ -1,20 +1,10 @@
 const DEBUG = false;
-import * as THREE from './libs/three.module.js';
-import {
-    GLTFLoader
-} from './libs/GLTFLoader.js';
-import {
-    OrbitControls
-} from './libs/OrbitControls.js';
-import {
-    TextGeometry
-} from './libs/TextGeometry.js';
-import {
-    FontLoader
-} from './libs/FontLoader.js';
-import {
-    CatmullRomCurve3
-} from './libs/three.module.js';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
+import { CatmullRomCurve3 } from 'three';
 
 // Initialize the GLTFLoader
 const loader = new GLTFLoader();
