@@ -27,7 +27,13 @@ class GLTFMaterialsPbrSpecularGlossinessExtension {
 
     afterRoot(result) {
         return Promise.all(result.materials.map((materialDef, index) => {
-            if (materialDef.extensions && materialDef.extensions.KHR_materials_pbrSpecularGlossiness) {
+            // Only process if extension exists and material is defined
+            if (
+                materialDef.extensions &&
+                materialDef.extensions.KHR_materials_pbrSpecularGlossiness &&
+                this.parser.materials &&
+                this.parser.materials[index]
+            ) {
                 return this.assignMaterial(materialDef, index);
             }
             return Promise.resolve();
@@ -36,7 +42,10 @@ class GLTFMaterialsPbrSpecularGlossinessExtension {
 
     assignMaterial(materialDef, index) {
         const material = this.parser.materials[index];
-        if (!material) return Promise.resolve();
+        if (!material) {
+            // Skip if material is undefined
+            return Promise.resolve();
+        }
 
         const pbrSpecularGlossiness = materialDef.extensions.KHR_materials_pbrSpecularGlossiness;
 
