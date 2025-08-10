@@ -167,11 +167,16 @@ class MultiplayerGame {
                 }
                 
                 // Only try to rejoin if we have valid session data
-                if (this.roomId && this.playerId && this.storedGameState) {
+                if (
+                    this.roomId &&
+                    this.playerId &&
+                    this.storedGameState &&
+                    this.storedGameState.isRejoin === true // Only rejoin if explicitly marked as a rejoin
+                ) {
                     console.log('Valid session data found, attempting to rejoin game');
                     this.rejoinGame();
                 } else {
-                    console.log('No valid session data, waiting for room join or creation');
+                    console.log('No valid session data or not a rejoin, waiting for room join or creation');
                     // Don't automatically rejoin - wait for user to create/join a room
                 }
                 
@@ -282,7 +287,8 @@ class MultiplayerGame {
         
         switch (data.type) {
             case 'dice_rolled':
-                this.handleDiceRoll(data);
+                // This is the broadcast from the server after a dice roll
+                this.handleDiceRolled(data);
                 break;
             case 'joined_room':
                 console.log('Joined room successfully');
