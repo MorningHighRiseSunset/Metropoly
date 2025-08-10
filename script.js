@@ -1092,8 +1092,6 @@ const placeNames = [
         }, undefined, (err) => {
             console.error(`Error loading model for ${tokenInfo.name}:`, err);
             console.error(`Failed path: ${tokenInfo.path}`);
-            // Assign a placeholder object so multiplayer assignment does not fail
-            window.loadedTokenModels[tokenInfo.name] = { placeholder: true, name: tokenInfo.name };
             loadedCount++;
             if (loadedCount === tokenList.length && typeof onAllLoaded === 'function') {
                 onAllLoaded();
