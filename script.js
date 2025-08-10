@@ -66,21 +66,21 @@ class GLTFMaterialsPbrSpecularGlossinessExtension {
         }
 
         // Handle textures safely
-        if (pbrSpecularGlossiness.diffuseTexture && pbrSpecularGlossiness.diffuseTexture.index !== undefined) {
+        if (pbrSpecularGlossiness.diffuseTexture && pbrSpecularGlossiness.diffuseTexture.index !== undefined && material) {
             const textureIndex = pbrSpecularGlossiness.diffuseTexture.index;
             if (this.parser.json.textures && this.parser.json.textures[textureIndex]) {
                 const texture = this.parser.textureLoader.load(this.parser.json.textures[textureIndex].source);
-                if (texture) {
+                if (texture && material) {
                     material.map = texture;
                     material.needsUpdate = true;
                 }
             }
         }
-        if (pbrSpecularGlossiness.specularGlossinessTexture && pbrSpecularGlossiness.specularGlossinessTexture.index !== undefined) {
+        if (pbrSpecularGlossiness.specularGlossinessTexture && pbrSpecularGlossiness.specularGlossinessTexture.index !== undefined && material) {
             const textureIndex = pbrSpecularGlossiness.specularGlossinessTexture.index;
             if (this.parser.json.textures && this.parser.json.textures[textureIndex]) {
                 const texture = this.parser.textureLoader.load(this.parser.json.textures[textureIndex].source);
-                if (texture) {
+                if (texture && material) {
                     material.specularMap = texture;
                     material.needsUpdate = true;
                 }
