@@ -370,12 +370,13 @@
     
     <script src="vegasScene.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+        <script src="./libs/GLTFLoader.js"></script>
         <script src="script.js"></script>
         <script type="module" src="multiplayer.js"></script>
     <script>
         // Initialize multiplayer game
         let multiplayerGame;
-        
+        // multiplayerGame will be declared only once below
         document.addEventListener('DOMContentLoaded', () => {
             // Get room and player info from URL parameters
             const urlParams = new URLSearchParams(window.location.search);
