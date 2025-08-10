@@ -1374,27 +1374,42 @@ function handleRequestRoomInfo(ws, data, playerId) {
 
 function handleGameTransitionReady(ws, data, playerId) {
     const { roomId, playerId: transitionPlayerId } = data;
-    console.log(`Game transition ready for player ${transitionPlayerId} in room ${roomId}`);
-    
+    console.log(`[handleGameTransitionReady] Received for player ${transitionPlayerId} in room ${roomId}`);
+
     const room = rooms.get(roomId);
     if (!room) {
-        console.log(`Room ${roomId} not found for transition`);
+        console.warn(`[handleGameTransitionReady] Room ${roomId} not found for transition. Player: ${transitionPlayerId}`);
+        ws.send(JSON.stringify({
+            type: 'error',
+            message: `Room ${roomId} not found for transition. Please rejoin or create the room first.`,
+            roomId,
+            playerId: transitionPlayerId
+        }));
         return;
     }
-    
+
     const player = room.players.get(transitionPlayerId);
-    if (player) {
-        console.log(`Player ${transitionPlayerId} ready for game transition`);
-        // Mark the player as ready for transition
-        player.transitionReady = true;
-        
-        // Send acknowledgment
+    if (!player) {
+        console.warn(`[handleGameTransitionReady] Player ${transitionPlayerId} not found in room ${roomId}.`);
         ws.send(JSON.stringify({
-            type: 'game_transition_ready_ack',
-            playerId: transitionPlayerId,
-            roomId: roomId
+            type: 'error',
+            message: `Player ${transitionPlayerId} not found in room ${roomId}. Please join the room first.`,
+            roomId,
+            playerId: transitionPlayerId
         }));
+        return;
     }
+
+    console.log(`[handleGameTransitionReady] Player ${transitionPlayerId} ready for game transition in room ${roomId}`);
+    // Mark the player as ready for transition
+    player.transitionReady = true;
+
+    // Send acknowledgment
+    ws.send(JSON.stringify({
+        type: 'game_transition_ready_ack',
+        playerId: transitionPlayerId,
+        roomId: roomId
+    }));
 }
 
 function handleReadyForGameTransition(ws, data, playerId) {
