@@ -1,15 +1,7 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/loaders/GLTFLoader.js';
 const DEBUG = false;
-// Remove ES module imports for three.js. THREE will be available globally via script tag in HTML.
-// Add this to your index.html or game.html before other scripts:
-// <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-// <script src="./libs/GLTFLoader.js"></script>
-// <script src="./libs/OrbitControls.js"></script>
-// <script src="./libs/TextGeometry.js"></script>
-// <script src="./libs/FontLoader.js"></script>
-// Remove CatmullRomCurve3 import; use THREE.CatmullRomCurve3 if needed.
-// Remove CatmullRomCurve3 import; use THREE.CatmullRomCurve3 if needed.
+// Using ES module imports for three.js and GLTFLoader. No script tags needed for these in HTML.
 
 // Initialize the GLTFLoader
 const loader = new GLTFLoader();
