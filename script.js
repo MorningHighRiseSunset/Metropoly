@@ -27,14 +27,16 @@ class GLTFMaterialsPbrSpecularGlossinessExtension {
 
     afterRoot(result) {
         return Promise.all(result.materials.map((materialDef, index) => {
-            // Only process if extension exists and material is defined
-            if (
-                materialDef.extensions &&
-                materialDef.extensions.KHR_materials_pbrSpecularGlossiness &&
-                this.parser.materials &&
-                this.parser.materials[index]
-            ) {
+            const hasExtension = materialDef.extensions && materialDef.extensions.KHR_materials_pbrSpecularGlossiness;
+            const material = this.parser.materials && this.parser.materials[index];
+            if (hasExtension && material) {
                 return this.assignMaterial(materialDef, index);
+            }
+            // If extension exists but material is missing, skip and log for debug
+            if (hasExtension && !material) {
+                if (window.DEBUG) {
+                    console.warn('GLTFMaterialsPbrSpecularGlossinessExtension: Material missing for index', index, materialDef);
+                }
             }
             return Promise.resolve();
         }));
@@ -50,34 +52,38 @@ class GLTFMaterialsPbrSpecularGlossinessExtension {
         const pbrSpecularGlossiness = materialDef.extensions.KHR_materials_pbrSpecularGlossiness;
 
         // Convert specular-glossiness to metallic-roughness
-        if (pbrSpecularGlossiness.diffuseFactor) {
+        if (pbrSpecularGlossiness.diffuseFactor && material.color) {
             material.color.fromArray(pbrSpecularGlossiness.diffuseFactor);
         }
 
-        if (pbrSpecularGlossiness.specularFactor) {
+        if (pbrSpecularGlossiness.specularFactor && typeof material.metalness === 'number') {
             const specular = pbrSpecularGlossiness.specularFactor;
             material.metalness = 1 - Math.max(specular[0], specular[1], specular[2]);
         }
 
-        if (pbrSpecularGlossiness.glossinessFactor !== undefined) {
+        if (pbrSpecularGlossiness.glossinessFactor !== undefined && typeof material.roughness === 'number') {
             material.roughness = 1 - pbrSpecularGlossiness.glossinessFactor;
         }
 
         // Handle textures safely
         if (pbrSpecularGlossiness.diffuseTexture && pbrSpecularGlossiness.diffuseTexture.index !== undefined) {
             const textureIndex = pbrSpecularGlossiness.diffuseTexture.index;
-            const texture = this.parser.textureLoader.load(this.parser.json.textures[textureIndex].source);
-            if (texture) {
-                material.map = texture;
-                material.needsUpdate = true;
+            if (this.parser.json.textures && this.parser.json.textures[textureIndex]) {
+                const texture = this.parser.textureLoader.load(this.parser.json.textures[textureIndex].source);
+                if (texture) {
+                    material.map = texture;
+                    material.needsUpdate = true;
+                }
             }
         }
         if (pbrSpecularGlossiness.specularGlossinessTexture && pbrSpecularGlossiness.specularGlossinessTexture.index !== undefined) {
             const textureIndex = pbrSpecularGlossiness.specularGlossinessTexture.index;
-            const texture = this.parser.textureLoader.load(this.parser.json.textures[textureIndex].source);
-            if (texture) {
-                material.specularMap = texture;
-                material.needsUpdate = true;
+            if (this.parser.json.textures && this.parser.json.textures[textureIndex]) {
+                const texture = this.parser.textureLoader.load(this.parser.json.textures[textureIndex].source);
+                if (texture) {
+                    material.specularMap = texture;
+                    material.needsUpdate = true;
+                }
             }
         }
 
