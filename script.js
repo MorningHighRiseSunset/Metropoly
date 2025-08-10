@@ -1,5 +1,10 @@
 const DEBUG = false;
-// three.js and GLTFLoader are loaded globally via script tags in HTML.
+import * as THREE from './libs/three.module.js';
+import { GLTFLoader } from './libs/GLTFLoader.js';
+import { OrbitControls } from './libs/OrbitControls.js';
+import { TextGeometry } from './libs/TextGeometry.js';
+import { FontLoader } from './libs/FontLoader.js';
+import { CatmullRomCurve3 } from './libs/three.module.js';
 
 // Initialize the GLTFLoader
 const loader = new GLTFLoader();
