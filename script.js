@@ -1,3 +1,12 @@
+// Global dice roll function for multiplayer override
+window.rollDice = function() {
+    // Example dice roll logic
+    const diceResult = Math.floor(Math.random() * 6) + 1;
+    console.log('Dice rolled:', diceResult);
+    // Trigger token movement here (replace with your actual movement logic)
+    // moveToken(currentPlayerIndex, diceResult);
+    // Optionally, broadcast dice result to other clients via multiplayer system
+};
 const DEBUG = false;
 import * as THREE from './libs/three.module.js';
 import { GLTFLoader } from './libs/GLTFLoader.js';
