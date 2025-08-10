@@ -1595,54 +1595,36 @@ class MultiplayerGame {
         }
 
         // Create tokens first, then position them
-        if (window.createTokens) {
-            window.createTokens(() => {
-                // Ensure tokens are properly assigned and visible after creation
-                this.ensureTokensAreVisible();
-
-                // Assign selectedToken for each player if possible
-                if (window.scene) {
-                    this.players.forEach(player => {
-                        const tokenObject = window.scene.getObjectByName(player.token);
-                        if (tokenObject) {
-                            player.selectedToken = tokenObject;
-                        }
-                    });
-                }
-
-                // Update UI after tokens are assigned
-                if (typeof this.updatePlayersDisplay === 'function') {
-                    this.updatePlayersDisplay();
-                }
-
-                // Start the game if we have enough players
-                if (this.players.length >= 2) {
-                    this.startMultiplayerGame();
-                }
-            });
-        } else {
-            // Fallback if createTokens is not available
-            this.ensureTokensAreVisible();
-
+        const assignTokensAndUpdateUI = () => {
             // Assign selectedToken for each player if possible
             if (window.scene) {
                 this.players.forEach(player => {
                     const tokenObject = window.scene.getObjectByName(player.token);
                     if (tokenObject) {
                         player.selectedToken = tokenObject;
+                    } else {
+                        console.warn(`Token object not found for player ${player.id} with token name ${player.token}`);
                     }
                 });
             }
-
             // Update UI after tokens are assigned
             if (typeof this.updatePlayersDisplay === 'function') {
                 this.updatePlayersDisplay();
             }
-
             // Start the game if we have enough players
             if (this.players.length >= 2) {
                 this.startMultiplayerGame();
             }
+        };
+
+        if (window.createTokens) {
+            window.createTokens(() => {
+                this.ensureTokensAreVisible();
+                assignTokensAndUpdateUI();
+            });
+        } else {
+            this.ensureTokensAreVisible();
+            assignTokensAndUpdateUI();
         }
     }
 
