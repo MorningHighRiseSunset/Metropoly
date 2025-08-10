@@ -7,12 +7,7 @@ class MultiplayerGame {
             return window.multiplayerGame;
         }
         
-        // Debug logging for constructor
-        console.log('=== MULTIPLAYER GAME CONSTRUCTOR DEBUG ===');
-        console.log('Received roomId:', roomId);
-        console.log('Received playerId:', playerId);
-        console.log('roomId type:', typeof roomId);
-        console.log('playerId type:', typeof playerId);
+    // Debug logging for constructor (removed for cleaner output)
         
         // Safeguard: If roomId is undefined, try to recover it
         if (!roomId || roomId === 'undefined') {
@@ -67,14 +62,10 @@ class MultiplayerGame {
         // Try to get player data from lobby session storage
         this.loadLobbyPlayerData();
         
-        console.log('Final roomId:', this.roomId);
-        console.log('Final playerId:', this.playerId);
-        console.log('MultiplayerGame initialized successfully');
-        console.log('==========================================');
+    // ...existing code...
         
         // Ensure playerId is properly set and accessible
         if (this.playerId) {
-            console.log('Setting playerId on window object for global access');
             window.currentPlayerId = this.playerId;
         }
         
@@ -1594,18 +1585,27 @@ class MultiplayerGame {
             window.initializePlayers();
         }
 
-        // Create tokens first, then position them
-        const assignTokensAndUpdateUI = () => {
-            // Assign selectedToken for each player if possible
+    // Create tokens first, then position them
+    // Gather required token names from current players
+    const requiredTokenNames = this.players.map(p => p.token).filter(Boolean);
+    const assignTokensAndUpdateUI = (retryCount = 0) => {
+            let allTokensAssigned = true;
             if (window.scene) {
                 this.players.forEach(player => {
                     const tokenObject = window.scene.getObjectByName(player.token);
                     if (tokenObject) {
                         player.selectedToken = tokenObject;
+                        console.log(`Token ${player.token} assigned to player ${player.name} (ID: ${player.id})`);
                     } else {
+                        allTokensAssigned = false;
                         console.warn(`Token object not found for player ${player.id} with token name ${player.token}`);
                     }
                 });
+            }
+            if (!allTokensAssigned && retryCount < 20) {
+                // Retry after short delay (max 20 times)
+                setTimeout(() => assignTokensAndUpdateUI(retryCount + 1), 200);
+                return;
             }
             // Update UI after tokens are assigned
             if (typeof this.updatePlayersDisplay === 'function') {
@@ -1621,7 +1621,7 @@ class MultiplayerGame {
             window.createTokens(() => {
                 this.ensureTokensAreVisible();
                 assignTokensAndUpdateUI();
-            });
+            }, requiredTokenNames);
         } else {
             this.ensureTokensAreVisible();
             assignTokensAndUpdateUI();

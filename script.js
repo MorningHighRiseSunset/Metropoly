@@ -1064,66 +1064,74 @@ const placeNames = [
     "Las Vegas Golden Knights" // Position 41
 ];
 
-const chanceCards = [
-    "Move forward 3 spaces",
-    "Go back three spaces",
-    "Pay $100 for casino renovations", // Increased from $50
-    "Collect $300 from a high roller tip", // Increased from $150
-    "Your poker face pays off. Collect $150.", // Increased from $75
-    "You win a slot machine jackpot. Collect $400.", // Increased from $200
-    "Caught cheating at blackjack. Pay $200.", // Increased from $100
-    "Casino loyalty program rewards you. Collect $200.", // Increased from $100
-    "Your luck runs out. Pay $50.", // Increased from $25
-    "Win a casino raffle. Collect $500.", // Increased from $250
-    "Pay $200 for a VIP casino membership.", // Increased from $100
-    "Collect $100 from each player for hosting a poker night.", // Increased from $50
-    "Move forward 5 spaces.",
-    "Your lucky day! Collect $600 from the casino.", // Increased from $300
-    "Caught counting cards. Pay a $400 fine.", // Increased from $200
-    "Win a high-stakes poker game. Collect $1,000.", // Increased from $500
-    "Pay $150 for a luxury spa treatment.", // Increased from $75
-    "Win a blackjack tournament. Collect $500.", // Increased from $250
-    "Caught speeding on the Strip. Pay a $200 fine.", // Increased from $50
-    "Your investments pay off. Collect $800." // Increased from $400
-];
+    const allTokens = [
+        { name: 'rolls royce', path: 'Models/RollsRoyce/rollsRoyceCarAnim.glb', scale: [0.9, 0.9, 0.9] },
+        { name: 'helicopter', path: 'Models/Helicopter/helicopter.glb', scale: [0.01, 0.01, 0.01] },
+        { name: 'hat', path: 'Models/TopHat/tophat.glb', scale: [0.5, 0.5, 0.5] },
+        { name: 'football', path: 'Models/Football/football.glb', scale: [0.1, 0.1, 0.1] },
+        { name: 'burger', path: 'Models/Cheeseburger/cheeseburger.glb', scale: [3.5, 3.5, 3.5] },
+        { name: 'nike', path: 'Models/Shoe/shoe.glb', scale: [1.5, 1.5, 1.5] },
+        { name: 'woman', path: 'Models/WhiteGirlIdle/WhiteGirlIdle.glb', scale: [0.02, 0.02, 0.02] }
+    ];
 
-const communityChestCards = [
-    "Advance to GO. Collect $400.", // Increased from $200
-    "Get Out of Jail Free - Keep this card until needed or sell it.",
-    "Pay $100 for valet parking fees.", // Increased from $50
-    "Collect $200 from a casino bonus.", // Increased from $100
-    "You win Employee of the Month. Collect $100.", // Increased from $50
-    "Pay $300 for a casino uniform upgrade.", // Increased from $150
-    "Collect $500 from a casino jackpot.", // Increased from $200
-    "Pay $200 for a gaming license renewal.", // Increased from $100
-    "Collect $50 from valet parking tips.", // Increased from $25
-    "Casino stocks are up. Collect $100.", // Increased from $50
-    "Pay $80 per house and $150 per hotel for property maintenance.", // Increased from $40/$115
-    "You find a lucky chip on the floor. Collect $50.", // Increased from $20
-    "Casino holiday bonus. Collect $150.", // Increased from $75
-    "Pay $100 for a casino marketing fee.", // Increased from $50
-    "Win a casino poker tournament. Collect $300.", // Increased from $150
-    "Casino appreciation day. Collect $50 from each player.", // Increased from $10
-    "Caught using your phone at the blackjack table. Pay $100.", // Increased from $50
-    "Pay $200 for a charity gala.", // Increased from $100
-    "Collect $400 from a casino jackpot.", // Increased from $200
-    "You win Employee of the Year. Collect $300.", // Increased from $150
-    "Pay $100 for a parking violation.", // Increased from $50
-    "Collect $50 from each player for hosting a casino night.", // Increased from $25
-    "Move forward 3 spaces.",
-    "Pay $80 per house and $150 per hotel for property maintenance.", // Increased from $40/$115
-    "Collect $150 from a casino loyalty program.", // Increased from $75
-    "You find a winning lottery ticket. Collect $1,000.", // Increased from $500
-    "Pay $300 for a luxury suite upgrade.", // Increased from $150
-    "Collect $200 for a successful business venture.", // Increased from $100
-    "Pay $400 for a luxury shopping spree.", // Increased from $200
-    "Your stocks rise. Collect $600.", // Increased from $300
-    "Caught cheating at a poker game. Pay $200.", // Increased from $100
-    "Advance to the Las Vegas Aces game. If you pass GO, collect $400.", // Increased from $200
-    "Win a raffle at the casino. Collect $500.", // Increased from $250
-    "Pay $150 for a fine dining experience.", // Increased from $75
-    "Collect $100 for a lucky slot machine spin.", // Increased from $50
-];
+    // Filter tokens to only those required
+    let tokenList = allTokens;
+    if (Array.isArray(requiredTokenNames) && requiredTokenNames.length > 0) {
+        tokenList = allTokens.filter(token => requiredTokenNames.includes(token.name));
+    }
+
+    let loadedCount = 0;
+
+    tokenList.forEach(tokenInfo => {
+        console.log(`Loading token: ${tokenInfo.name} from ${tokenInfo.path}`);
+        loader.load(tokenInfo.path, (gltf) => {
+            const model = gltf.scene;
+
+            window.loadedTokenModels[tokenInfo.name] = model;
+            loadedCount++;
+            if (loadedCount === tokenList.length && typeof onAllLoaded === 'function') {
+                console.log('All tokens loaded successfully');
+                onAllLoaded();
+            }
+        }, undefined, (err) => {
+            console.error(`Error loading model for ${tokenInfo.name}:`, err);
+            console.error(`Failed path: ${tokenInfo.path}`);
+            loadedCount++;
+            if (loadedCount === tokenList.length && typeof onAllLoaded === 'function') {
+                onAllLoaded();
+            }
+        });
+    });
+
+    [
+        "Collect $50 from valet parking tips.", // Increased from $25
+        "Casino stocks are up. Collect $100.", // Increased from $50
+        "Pay $80 per house and $150 per hotel for property maintenance.", // Increased from $40/$115
+        "You find a lucky chip on the floor. Collect $50.", // Increased from $20
+        "Casino holiday bonus. Collect $150.", // Increased from $75
+        "Pay $100 for a casino marketing fee.", // Increased from $50
+        "Win a casino poker tournament. Collect $300.", // Increased from $150
+        "Casino appreciation day. Collect $50 from each player.", // Increased from $10
+        "Caught using your phone at the blackjack table. Pay $100.", // Increased from $50
+        "Pay $200 for a charity gala.", // Increased from $100
+        "Collect $400 from a casino jackpot.", // Increased from $200
+        "You win Employee of the Year. Collect $300.", // Increased from $150
+        "Pay $100 for a parking violation.", // Increased from $50
+        "Collect $50 from each player for hosting a casino night.", // Increased from $25
+        "Move forward 3 spaces.",
+        "Pay $80 per house and $150 per hotel for property maintenance.", // Increased from $40/$115
+        "Collect $150 from a casino loyalty program.", // Increased from $75
+        "You find a winning lottery ticket. Collect $1,000.", // Increased from $500
+        "Pay $300 for a luxury suite upgrade.", // Increased from $150
+        "Collect $200 for a successful business venture.", // Increased from $100
+        "Pay $400 for a luxury shopping spree.", // Increased from $200
+        "Your stocks rise. Collect $600.", // Increased from $300
+        "Caught cheating at a poker game. Pay $200.", // Increased from $100
+        "Advance to the Las Vegas Aces game. If you pass GO, collect $400.", // Increased from $200
+        "Win a raffle at the casino. Collect $500.", // Increased from $250
+        "Pay $150 for a fine dining experience.", // Increased from $75
+        "Collect $100 for a lucky slot machine spin.", // Increased from $50
+    ];
 
 // filepath: c:\Users\DELL\Metropoly\script.js
 let availableTokens = [{
@@ -1786,7 +1794,7 @@ function hideTokenSpinner(tokenName) {
 
 
 // 2. Replace your createTokens function with this:
-function createTokens(onAllLoaded) {
+function createTokens(onAllLoaded, requiredTokenNames) {
     // Prevent multiple calls
     if (window.tokensAlreadyLoaded) {
         console.log('Tokens already loaded, skipping...');
