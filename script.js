@@ -1076,6 +1076,10 @@ const placeNames = [
 
     // Filter tokens to only those required
     let tokenList = allTokens;
+    // Fallback: if requiredTokenNames is undefined, use all tokens
+    if (typeof requiredTokenNames === 'undefined') {
+        requiredTokenNames = allTokens.map(token => token.name);
+    }
     if (Array.isArray(requiredTokenNames) && requiredTokenNames.length > 0) {
         tokenList = allTokens.filter(token => requiredTokenNames.includes(token.name));
     }
