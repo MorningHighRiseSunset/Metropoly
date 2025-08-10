@@ -1266,21 +1266,38 @@ function handlePingSession(ws, data, playerId) {
     try {
         const response = { type: 'session_pong' };
 
-        if (playerId) {
-            const playerInfo = players.get(playerId);
-            if (playerInfo) {
-                const room = rooms.get(playerInfo.roomId);
-                response.playerId = playerId;
-                response.roomId = playerInfo.roomId;
-                if (room) {
-                    response.players = Array.from(room.players.values()).map(p => ({
-                        id: p.id,
-                        name: p.name,
-                        token: p.token
-                    }));
-                    response.gameState = { status: room.gameState.status };
-                }
-            }
+        if (!playerId) {
+            console.warn('Ping session: playerId not found for ws');
+            ws.send(JSON.stringify({
+                type: 'error',
+                message: 'Player not found in session. Please join a room first.'
+            }));
+            return;
+        }
+
+        const playerInfo = players.get(playerId);
+        if (!playerInfo) {
+            console.warn(`Ping session: playerInfo not found for playerId ${playerId}`);
+            ws.send(JSON.stringify({
+                type: 'error',
+                message: 'Player info missing. Please rejoin the room.'
+            }));
+            return;
+        }
+
+        const room = rooms.get(playerInfo.roomId);
+        response.playerId = playerId;
+        response.roomId = playerInfo.roomId;
+        if (room) {
+            response.players = Array.from(room.players.values()).map(p => ({
+                id: p.id,
+                name: p.name,
+                token: p.token
+            }));
+            response.gameState = { status: room.gameState.status };
+        } else {
+            response.players = [];
+            response.gameState = { status: 'no_room' };
         }
 
         ws.send(JSON.stringify(response));
