@@ -337,15 +337,20 @@ ws.on('message', (message, isBinary) => {
             const data = JSON.parse(rawText);
             console.log(`Received message from WebSocket: ${data.type}`, data);
             
-            // Find the player ID for this WebSocket connection
+            // Find the player ID for this message
             let playerId = null;
-            for (const [pid, playerInfo] of players.entries()) {
-                if (playerInfo.ws === ws) {
-                    playerId = pid;
-                    break;
+            if (data.playerId && players.has(data.playerId)) {
+                playerId = data.playerId;
+            } else {
+                // Fallback: match by ws object
+                for (const [pid, playerInfo] of players.entries()) {
+                    if (playerInfo.ws === ws) {
+                        playerId = pid;
+                        break;
+                    }
                 }
             }
-            
+
             console.log(`Message from player ${playerId || 'unknown'}: ${data.type}`);
             
             switch (data.type) {
