@@ -358,9 +358,14 @@ class LobbyManager {
         
         // Redirect to the game page with room information
         setTimeout(() => {
-            console.log('Redirecting to game with room:', roomId, 'player:', this.playerId);
+            console.log('Grace period complete. Redirecting to game with room:', roomId, 'player:', this.playerId);
             const gameUrl = `game.html?room=${roomId}&player=${this.playerId}`;
             console.log('Game URL:', gameUrl);
+            // Optionally, close the lobby socket here if needed
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                console.log('Closing lobby WebSocket after grace period.');
+                this.ws.close();
+            }
             window.location.href = gameUrl;
         }, 3000); // Increased delay to ensure data transfer
     }
@@ -823,4 +828,4 @@ function startGame() {
 let lobbyManager;
 document.addEventListener('DOMContentLoaded', () => {
     lobbyManager = new LobbyManager();
-}); 
+});

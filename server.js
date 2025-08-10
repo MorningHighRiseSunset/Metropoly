@@ -763,6 +763,8 @@ function handleStartGame(ws, data, playerId) {
 }
 
 function handleGameAction(ws, data, playerId) {
+    // Debug: Log the incoming data for troubleshooting
+    console.log('[SERVER] handleGameAction received:', JSON.stringify(data));
     // Find the room this player is in
     const playerInfo = players.get(playerId);
     if (!playerInfo) {
@@ -788,6 +790,14 @@ function handleGameAction(ws, data, playerId) {
         ws.send(JSON.stringify({
             type: 'error',
             message: 'Not your turn'
+        }));
+        return;
+    }
+    // Additional check: Ensure player is registered in room.players
+    if (!room.players.has(playerId)) {
+        ws.send(JSON.stringify({
+            type: 'error',
+            message: 'Player not registered in room'
         }));
         return;
     }
@@ -1200,8 +1210,8 @@ function handleRequestGameState(ws, data, playerId) {
                     id: p.id,
                     name: p.name,
                     token: p.token,
-                    money: foundRoom.gameState.gameData?.players?.find(gp => gp.id === p.id)?.money || 1500,
-                    position: foundRoom.gameState.gameData?.players?.find(gp => gp.id === p.id)?.position || 0
+                    money: room.gameState.gameData?.players?.find(gp => gp.id === p.id)?.money || 1500,
+                    position: room.gameState.gameData?.players?.find(gp => gp.id === p.id)?.position || 0
                 })),
                 currentPlayerIndex: foundRoom.gameState.currentTurn,
                 currentPlayerId: foundRoom.gameState.gameData?.players?.[foundRoom.gameState.currentTurn]?.id || null,
@@ -1561,4 +1571,4 @@ process.on('SIGINT', () => {
         console.log('✅ Server closed');
         process.exit(0);
     });
-}); 
+});
