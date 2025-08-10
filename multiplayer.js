@@ -1599,7 +1599,22 @@ class MultiplayerGame {
             window.createTokens(() => {
                 // Ensure tokens are properly assigned and visible after creation
                 this.ensureTokensAreVisible();
-                
+
+                // Assign selectedToken for each player if possible
+                if (window.scene) {
+                    this.players.forEach(player => {
+                        const tokenObject = window.scene.getObjectByName(player.token);
+                        if (tokenObject) {
+                            player.selectedToken = tokenObject;
+                        }
+                    });
+                }
+
+                // Update UI after tokens are assigned
+                if (typeof this.updatePlayersDisplay === 'function') {
+                    this.updatePlayersDisplay();
+                }
+
                 // Start the game if we have enough players
                 if (this.players.length >= 2) {
                     this.startMultiplayerGame();
@@ -1608,7 +1623,22 @@ class MultiplayerGame {
         } else {
             // Fallback if createTokens is not available
             this.ensureTokensAreVisible();
-            
+
+            // Assign selectedToken for each player if possible
+            if (window.scene) {
+                this.players.forEach(player => {
+                    const tokenObject = window.scene.getObjectByName(player.token);
+                    if (tokenObject) {
+                        player.selectedToken = tokenObject;
+                    }
+                });
+            }
+
+            // Update UI after tokens are assigned
+            if (typeof this.updatePlayersDisplay === 'function') {
+                this.updatePlayersDisplay();
+            }
+
             // Start the game if we have enough players
             if (this.players.length >= 2) {
                 this.startMultiplayerGame();
