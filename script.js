@@ -2376,8 +2376,7 @@ function handleUtilitySpace(player, property) {
         updateMoneyDisplay();
     }
 }
-        // Extension handler removed as requested
-        class GLTFMaterialsPbrSpecularGlossinessExtension {
+
 function handleRailroadSpace(player, property) {
     if (!property.owner) {
         if (!isCurrentPlayerAI()) {
@@ -2451,7 +2450,7 @@ function showPropertyUI(position) {
         hasHandledProperty = true;
         return;
     }
-        // loader.register((parser) => new GLTFMaterialsPbrSpecularGlossinessExtension(parser));
+    if (property.name === "FREE PARKING") {
         const currentPlayer = players[currentPlayerIndex];
         showFreeParkingUI(currentPlayer);
         hasHandledProperty = true;
