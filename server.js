@@ -353,13 +353,22 @@ io.on('connection', (socket) => {
     socket.on('lobby_data', (data) => {
         // Attach socketId to player for tracking
         if (data.playerId) {
-            if (!players.has(data.playerId)) {
-                players.set(data.playerId, { socketId: socket.id, roomId: data.roomId, name: data.playerName });
-            } else {
+            // Backend safeguard: disconnect old socket for same playerId
+            if (players.has(data.playerId)) {
                 const info = players.get(data.playerId);
+                if (info.socketId && info.socketId !== socket.id) {
+                    // Disconnect previous socket
+                    const oldSocket = io.sockets.sockets.get(info.socketId);
+                    if (oldSocket) {
+                        oldSocket.disconnect(true);
+                        console.log(`[SOCKET GUARD] Disconnected old socket for playerId ${data.playerId}`);
+                    }
+                }
                 info.socketId = socket.id;
                 info.roomId = data.roomId || info.roomId;
                 info.name = data.playerName || info.name;
+            } else {
+                players.set(data.playerId, { socketId: socket.id, roomId: data.roomId, name: data.playerName });
             }
         }
         // Route by type
