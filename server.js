@@ -492,6 +492,8 @@ function handleJoinRoom(ws, data) {
             roomInfo: room.getRoomInfo()
         }, joiningPlayerId);
         console.log(`[JOIN] Updated player ${joiningPlayerId} socketId and broadcasted join.`);
+        // Debug: log full player list after join
+        console.log(`[JOIN] Current room players:`, Array.from(room.players.values()));
         return;
     }
     if (room.players.size >= room.maxPlayers) {
@@ -519,6 +521,8 @@ function handleJoinRoom(ws, data) {
             roomInfo: room.getRoomInfo()
         }, newPlayerId);
         console.log(`[JOIN] New player ${newPlayerId} joined room ${roomId}.`);
+        // Debug: log full player list after join
+        console.log(`[JOIN] Current room players:`, Array.from(room.players.values()));
     }
 }
 
@@ -926,324 +930,72 @@ function handleLeaveRoom(ws, data, playerId) {
 
 function handleRejoinGame(ws, data, playerId) {
     const { roomId, playerId: rejoinPlayerId, storedState } = data;
-    console.log(`Rejoin game request: roomId=${roomId}, playerId=${rejoinPlayerId}`);
-    console.log(`Available rooms:`, Array.from(rooms.keys()));
-    console.log(`Room ${roomId} exists:`, rooms.has(roomId));
-    
+    console.log(`[REJOIN] Rejoin game request: roomId=${roomId}, playerId=${rejoinPlayerId}`);
     const room = rooms.get(roomId);
-    
     if (!room) {
-        console.log(`Room ${roomId} not found. Attempting to recreate from stored state...`);
-        // Try to recreate the room if storedState is provided
-        if (storedState) {
-            // Create new GameRoom instance
-            const newRoom = new GameRoom(roomId, rejoinPlayerId);
-            // Restore game state if available
-            if (storedState.gameState) {
-                newRoom.gameState = storedState.gameState;
-            }
-            // Restore player info
-            const recoveredPlayer = {
-                id: rejoinPlayerId,
-                name: storedState.playerName || 'Unknown Player',
-                ws: ws,
-                token: storedState.selectedToken || null,
-                ready: true,
-                isHost: true
-            };
-            newRoom.players.set(rejoinPlayerId, recoveredPlayer);
-            rooms.set(roomId, newRoom);
-            players.set(rejoinPlayerId, { ws, roomId, name: recoveredPlayer.name });
-            // Send game state update
-            const gameStateMessage = {
-                type: 'game_state_update',
-                gameState: newRoom.gameState,
-                players: Array.from(newRoom.players.values()).map(p => ({
-                    id: p.id,
-                    name: p.name,
-                    token: p.token,
-                    money: newRoom.gameState?.gameData?.players?.find(gp => gp.id === p.id)?.money || 1500,
-                    position: newRoom.gameState?.gameData?.players?.find(gp => gp.id === p.id)?.position || 0
-                })),
-                currentPlayerIndex: newRoom.gameState?.currentTurn || 0,
-                currentPlayerId: newRoom.gameState?.gameData?.players?.[newRoom.gameState?.currentTurn]?.id || null
-            };
-            console.log(`Recreated room and sending game state update:`, gameStateMessage);
-            ws.send(JSON.stringify(gameStateMessage));
-            return;
-        } else {
-            ws.send(JSON.stringify({
-                type: 'error',
-                message: 'Game room not found and no stored state to recover.'
-            }));
-            return;
-        }
+        io.to(ws.id).emit('lobby_data', {
+            type: 'error',
+            message: 'Room not found'
+        });
+        return;
     }
-    
-    console.log(`Room found, game state status: ${room.gameState.status}`);
-    console.log(`Room players count: ${room.players.size}`);
-    
-    console.log(`Room found, checking for player ${rejoinPlayerId} in room`);
-    console.log(`Room players:`, Array.from(room.players.keys()));
-    
     // Check if player was already in this room
     const existingPlayer = room.players.get(rejoinPlayerId);
     if (existingPlayer) {
-        console.log(`Player ${rejoinPlayerId} found in room, updating connection`);
-        console.log(`Player name: ${existingPlayer.name}, token: ${existingPlayer.token}`);
-        
-        // Update the WebSocket connection
-        existingPlayer.ws = ws;
-        playerId = rejoinPlayerId;
-        players.set(playerId, { ws, roomId, name: existingPlayer.name });
-        
-        console.log(`Updated player connection for ${rejoinPlayerId}`);
-        
-        // Send current game state
-        const gameStateMessage = {
-            type: 'game_state_update',
-            gameState: room.gameState,
-            players: Array.from(room.players.values()).map(p => ({
-                id: p.id,
-                name: p.name,
-                token: p.token,
-                money: room.gameState.gameData?.players?.find(gp => gp.id === p.id)?.money || 1500,
-                position: room.gameState.gameData?.players?.find(gp => gp.id === p.id)?.position || 0
-            })),
-            currentPlayerIndex: room.gameState.currentTurn,
-            currentPlayerId: room.gameState.gameData?.players?.[room.gameState.currentTurn]?.id || null
-        };
-        
-        console.log(`Sending game state update:`, gameStateMessage);
-        ws.send(JSON.stringify(gameStateMessage));
-        
-        // Notify other players about the rejoin
+        console.log(`[REJOIN] Player ${rejoinPlayerId} found in room, updating socketId.`);
+        existingPlayer.socketId = ws.id;
+        players.set(rejoinPlayerId, { socketId: ws.id, roomId, name: existingPlayer.name });
+        if (ws && ws.join) ws.join(roomId);
+        io.to(ws.id).emit('lobby_data', {
+            type: 'joined_room',
+            playerId: rejoinPlayerId,
+            roomInfo: room.getRoomInfo()
+        });
         room.broadcast({
             type: 'player_rejoined',
             playerId: rejoinPlayerId,
-            playerName: existingPlayer.name
+            playerName: existingPlayer.name,
+            roomInfo: room.getRoomInfo()
         }, rejoinPlayerId);
-        
-    } else {
-        // Player not found in room, try to recover from stored state or global players
-        console.log(`Player ${rejoinPlayerId} not found in room, attempting recovery`);
-        
-        let recoveredPlayer = null;
-        
-        // Check global players map
-        const globalPlayerInfo = players.get(rejoinPlayerId);
-        if (globalPlayerInfo && globalPlayerInfo.roomId === roomId) {
-            console.log(`Found player ${rejoinPlayerId} in global players map`);
-            recoveredPlayer = {
-                id: rejoinPlayerId,
-                name: globalPlayerInfo.name || 'Unknown Player',
-                ws: ws,
-                token: null,
-                ready: false,
-                isHost: false
-            };
-        }
-        
-        // If we have stored state, use it for recovery
-        if (!recoveredPlayer && storedState) {
-            console.log(`Using stored state for player recovery:`, storedState);
-            recoveredPlayer = {
-                id: rejoinPlayerId,
-                name: storedState.playerName || 'Unknown Player',
-                ws: ws,
-                token: storedState.selectedToken || null,
-                ready: true, // Assume ready if they had stored state
-                isHost: storedState.isHost || false
-            };
-        }
-        
-        if (recoveredPlayer) {
-            console.log(`Recovering player:`, recoveredPlayer);
-            room.players.set(rejoinPlayerId, recoveredPlayer);
-            players.set(rejoinPlayerId, { ws, roomId, name: recoveredPlayer.name });
-            
-            // Send game state update
-            const gameStateMessage = {
-                type: 'game_state_update',
-                gameState: room.gameState,
-                players: Array.from(room.players.values()).map(p => ({
-                    id: p.id,
-                    name: p.name,
-                    token: p.token,
-                    money: room.gameState.gameData?.players?.find(gp => gp.id === p.id)?.money || 1500,
-                    position: room.gameState.gameData?.players?.find(gp => gp.id === p.id)?.position || 0
-                })),
-                currentPlayerIndex: room.gameState.currentTurn,
-                currentPlayerId: room.gameState.gameData?.players?.[room.gameState.currentTurn]?.id || null
-            };
-            
-            console.log(`Sending recovered game state update:`, gameStateMessage);
-            ws.send(JSON.stringify(gameStateMessage));
-            
-            // Notify other players about the recovery
-            room.broadcast({
-                type: 'player_recovered',
-                playerId: rejoinPlayerId,
-                playerName: recoveredPlayer.name
-            }, rejoinPlayerId);
-            
-        } else {
-            console.log(`Could not recover player ${rejoinPlayerId}`);
-            ws.send(JSON.stringify({
-                type: 'error',
-                message: 'Player not found in game'
-            }));
-        }
-    }
-}
-
-function handleRequestNextTurn(ws, data, playerId) {
-    // Find the room this player is in
-    const playerInfo = players.get(playerId);
-    if (!playerInfo) {
-        ws.send(JSON.stringify({
-            type: 'error',
-            message: 'Player not found'
-        }));
+        console.log(`[REJOIN] Updated player ${rejoinPlayerId} socketId and broadcasted rejoin.`);
+        // Debug: log full player list after rejoin
+        console.log(`[REJOIN] Current room players:`, Array.from(room.players.values()));
         return;
     }
-    
-    const room = rooms.get(playerInfo.roomId);
-    if (!room || room.gameState.status !== 'playing') {
-        ws.send(JSON.stringify({
-            type: 'error',
-            message: 'Game not in progress'
-        }));
+    // If not found, try to recover from storedState
+    if (storedState && storedState.playerName) {
+        const recoveredPlayer = {
+            id: rejoinPlayerId,
+            name: storedState.playerName,
+            socketId: ws.id,
+            token: storedState.selectedToken || null,
+            ready: true,
+            isHost: storedState.isHost || false
+        };
+        room.players.set(rejoinPlayerId, recoveredPlayer);
+        players.set(rejoinPlayerId, { socketId: ws.id, roomId, name: recoveredPlayer.name });
+        if (ws && ws.join) ws.join(roomId);
+        io.to(ws.id).emit('lobby_data', {
+            type: 'joined_room',
+            playerId: rejoinPlayerId,
+            roomInfo: room.getRoomInfo()
+        });
+        room.broadcast({
+            type: 'player_rejoined',
+            playerId: rejoinPlayerId,
+            playerName: recoveredPlayer.name,
+            roomInfo: room.getRoomInfo()
+        }, rejoinPlayerId);
+        console.log(`[REJOIN] Recovered player ${rejoinPlayerId} from storedState and broadcasted rejoin.`);
+        // Debug: log full player list after recovery
+        console.log(`[REJOIN] Current room players:`, Array.from(room.players.values()));
         return;
     }
-    
-    // Move to next player
-    const currentPlayer = room.gameState.gameData.players[room.gameState.currentTurn];
-    const nextPlayerIndex = (room.gameState.currentTurn + 1) % room.gameState.gameData.players.length;
-    const nextPlayer = room.gameState.gameData.players[nextPlayerIndex];
-    
-    room.gameState.currentTurn = nextPlayerIndex;
-    
-    // Broadcast turn change
-    room.broadcast({
-        type: 'player_turn',
-        playerId: nextPlayer.id,
-        playerName: nextPlayer.name,
-        currentPlayerIndex: nextPlayerIndex
+    io.to(ws.id).emit('lobby_data', {
+        type: 'error',
+        message: 'Player not found in game'
     });
-}
-
-function handleRequestGameState(ws, data, playerId) {
-    console.log(`Game state request from player ${playerId}`);
-    
-    // Find the room this player is in
-    const playerInfo = players.get(playerId);
-    if (!playerInfo) {
-        console.log(`Player ${playerId} not found in players map, checking all rooms...`);
-        
-        // Try to find the player in any room
-        let foundRoom = null;
-        let foundPlayer = null;
-        
-        for (const [roomId, room] of rooms.entries()) {
-            const roomPlayer = room.players.get(playerId);
-            if (roomPlayer) {
-                foundRoom = room;
-                foundPlayer = roomPlayer;
-                console.log(`Found player ${playerId} in room ${roomId}`);
-                break;
-            }
-        }
-        
-        if (foundRoom && foundPlayer) {
-            // Add the player back to the global players map
-            players.set(playerId, { ws, roomId: foundRoom.roomId, name: foundPlayer.name });
-            
-            // Update the player's WebSocket connection in the room
-            foundPlayer.ws = ws;
-            
-            // Send the game state
-            const gameStateMessage = {
-                type: 'game_state_update',
-                gameState: foundRoom.gameState,
-                players: Array.from(foundRoom.players.values()).map(p => ({
-                    id: p.id,
-                    name: p.name,
-                    token: p.token,
-                    money: foundRoom.gameState.gameData?.players?.find(gp => gp.id === p.id)?.money || 1500,
-                    position: foundRoom.gameState.gameData?.players?.find(gp => gp.id === p.id)?.position || 0
-                })),
-                currentPlayerIndex: foundRoom.gameState.currentTurn,
-                currentPlayerId: foundRoom.gameState.gameData?.players?.[foundRoom.gameState.currentTurn]?.id || null,
-                message: 'Game state recovered from room'
-            };
-            
-            console.log('Sending recovered game state:', gameStateMessage);
-            ws.send(JSON.stringify(gameStateMessage));
-            return;
-        }
-        
-        console.log(`Player ${playerId} not found in any room`);
-        ws.send(JSON.stringify({
-            type: 'error',
-            message: 'Player not found'
-        }));
-        return;
-    }
-    
-    const room = rooms.get(playerInfo.roomId);
-    if (!room) {
-        console.log(`Room ${playerInfo.roomId} not found`);
-        ws.send(JSON.stringify({
-            type: 'error',
-            message: 'Room not found'
-        }));
-        return;
-    }
-    
-    // Send current game state to the requesting player
-    const gameStateMessage = {
-        type: 'game_state_update',
-        gameState: room.gameState,
-        players: Array.from(room.players.values()).map(p => ({
-            id: p.id,
-            name: p.name,
-            token: p.token,
-            money: room.gameState.gameData?.players?.find(gp => gp.id === p.id)?.money || 1500,
-            position: room.gameState.gameData?.players?.find(gp => gp.id === p.id)?.position || 0
-        })),
-        currentPlayerIndex: room.gameState.currentTurn,
-        currentPlayerId: room.gameState.gameData?.players?.[room.gameState.currentTurn]?.id || null,
-        message: 'Game state requested'
-    };
-    
-    console.log('Sending game state to requesting player:', gameStateMessage);
-    ws.send(JSON.stringify(gameStateMessage));
-}
-
-function handleGameTransitionReady(ws, data, playerId) {
-    const { roomId, playerId: transitionPlayerId } = data;
-    console.log(`Game transition ready for player ${transitionPlayerId} in room ${roomId}`);
-    
-    const room = rooms.get(roomId);
-    if (!room) {
-        console.log(`Room ${roomId} not found for transition`);
-        return;
-    }
-    
-    const player = room.players.get(transitionPlayerId);
-    if (player) {
-        console.log(`Player ${transitionPlayerId} ready for game transition`);
-        // Mark the player as ready for transition
-        player.transitionReady = true;
-        
-        // Send acknowledgment
-        ws.send(JSON.stringify({
-            type: 'game_transition_ready_ack',
-            playerId: transitionPlayerId,
-            roomId: roomId
-        }));
-    }
+    console.log(`[REJOIN] Could not recover player ${rejoinPlayerId}`);
 }
 
 // Utility functions
