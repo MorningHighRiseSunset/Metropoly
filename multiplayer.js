@@ -147,28 +147,17 @@ class MultiplayerGame {
                 this.updateConnectionStatus(true);
                 this.connectionAttempts = 0; // Reset on successful connection
 
-                // Send game_transition_ready to server for handshake
+
+                // Always send rejoin_game after connecting, using stored roomId and playerId
                 if (this.roomId && this.playerId) {
-                    console.log('Notifying server that game socket is ready for transition handshake');
+                    console.log('Sending rejoin_game after socket connect');
                     this.sendMessage({
-                        type: 'game_transition_ready',
+                        type: 'rejoin_game',
                         roomId: this.roomId,
                         playerId: this.playerId
                     });
-                }
-
-                // Only try to rejoin if we have valid session data
-                if (
-                    this.roomId &&
-                    this.playerId &&
-                    this.storedGameState &&
-                    this.storedGameState.isRejoin === true // Only rejoin if explicitly marked as a rejoin
-                ) {
-                    console.log('Valid session data found, attempting to rejoin game');
-                    this.rejoinGame();
                 } else {
-                    console.log('No valid session data or not a rejoin, waiting for room join or creation');
-                    // Don't automatically rejoin - wait for user to create/join a room
+                    console.log('No valid roomId/playerId, waiting for user to create/join a room');
                 }
                 
                 // Start session health monitoring

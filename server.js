@@ -436,47 +436,14 @@ ws.on('message', (message, isBinary) => {
                 if (room) {
                     // If the game has started, don't immediately remove the player
                     // They might be transitioning to the game page
-                    if (room.gameState.status === 'playing') {
-                        console.log(`Player ${playerId} disconnected during game, keeping them in room for potential rejoin`);
-                        // Keep the player in the room but mark their connection as null
-                        const roomPlayer = room.players.get(playerId);
-                        if (roomPlayer) {
-                            roomPlayer.ws = null;
-                        }
-                        // Don't delete from global players map yet
-                        return;
+                    console.log(`Player ${playerId} disconnected, keeping session alive.`);
+                    const roomPlayer = room.players.get(playerId);
+                    if (roomPlayer) {
+                        roomPlayer.ws = null;
+                        roomPlayer.isTransitioning = true;
+                        roomPlayer.transitionTimestamp = Date.now();
                     }
-                    
-                    // For lobby connections, check if this is a transition
-                    // Don't immediately remove players during lobby-to-game transitions
-                    if (room.gameState.status === 'lobby') {
-                        console.log(`Player ${playerId} disconnected from lobby, checking if this is a game transition`);
-                        
-                        // Check if player has a valid session that might be transitioning
-                        const session = playerSessions.get(playerId);
-                        if (session && (Date.now() - session.timestamp) < 30000) { // 30 second grace period
-                            console.log(`Player ${playerId} likely transitioning to game, keeping session alive`);
-                            // Keep the player in the room but mark their connection as null
-                            const roomPlayer = room.players.get(playerId);
-                            if (roomPlayer) {
-                                roomPlayer.ws = null;
-                            }
-                            // Don't delete from global players map yet
-                            return;
-                        }
-                    }
-                    
-                    // Remove the player normally if not transitioning
-                    const shouldDelete = room.removePlayer(playerId);
-                    if (shouldDelete) {
-                        rooms.delete(playerInfo.roomId);
-                    } else {
-                        room.broadcast({
-                            type: 'player_left',
-                            playerId: playerId,
-                            roomInfo: room.getRoomInfo()
-                        });
-                    }
+                    return;
                 }
             }
             // Only delete from players map if we're not keeping them for reconnection
@@ -544,6 +511,12 @@ function handleJoinRoom(ws, data) {
                 return;
             }
         }
+    }
+    // If player was marked as transitioning, clear the flag
+    if (existingPlayer && existingPlayer.isTransitioning) {
+        existingPlayer.isTransitioning = false;
+        existingPlayer.transitionTimestamp = null;
+        console.log(`Player ${existingPlayerId} transition complete, rejoined in game.`);
     }
     
     // Generate new player ID if not reconnecting
