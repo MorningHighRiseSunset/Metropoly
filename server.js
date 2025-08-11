@@ -85,19 +85,16 @@ class GameRoom {
 
     removePlayer(playerId) {
         this.players.delete(playerId);
-        
         // If host leaves, assign new host
         if (playerId === this.hostId && this.players.size > 0) {
             const newHost = this.players.values().next().value;
             this.hostId = newHost.id;
             newHost.isHost = true;
         }
-        
-        // If room is empty, mark for deletion
-        if (this.players.size === 0) {
+        // Only delete room if empty AND not playing
+        if (this.players.size === 0 && this.gameState.status !== 'playing') {
             return true; // Room should be deleted
         }
-        
         return false;
     }
 
@@ -426,7 +423,7 @@ io.on('connection', (socket) => {
                 const room = rooms.get(playerInfo.roomId);
                 if (room) {
                     if (room.gameState.status === 'playing') {
-                        console.log(`[DISCONNECT] Player ${playerId} disconnected during game, keeping in room for rejoin.`);
+                        console.log(`[DISCONNECT] Player ${playerId} disconnected during game, keeping room for rejoin.`);
                         const roomPlayer = room.players.get(playerId);
                         if (roomPlayer) {
                             roomPlayer.socketId = null;
@@ -437,7 +434,7 @@ io.on('connection', (socket) => {
                     const shouldDelete = room.removePlayer(playerId);
                     if (shouldDelete) {
                         rooms.delete(playerInfo.roomId);
-                        console.log(`[DISCONNECT] Room ${playerInfo.roomId} deleted after last player left.`);
+                        console.log(`[DISCONNECT] Room ${playerInfo.roomId} deleted after last player left and game not active.`);
                     } else {
                         room.broadcast({
                             type: 'player_left',
