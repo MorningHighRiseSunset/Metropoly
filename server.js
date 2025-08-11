@@ -541,36 +541,36 @@ function handleSelectToken(ws, data, playerId) {
 function handleSetReady(ws, data, playerId) {
     const { ready } = data;
     console.log(`Player ${playerId} setting ready status to: ${ready}`);
-    
+
     // Find the room this player is in
     const playerInfo = players.get(playerId);
     if (!playerInfo) {
         console.error('Player not found:', playerId);
-        ws.send(JSON.stringify({
+        if (ws && ws.id) io.to(ws.id).emit('lobby_data', {
             type: 'error',
             message: 'Player not found'
-        }));
+        });
         return;
     }
-    
+
     const room = rooms.get(playerInfo.roomId);
     if (!room) {
         console.error('Room not found for player:', playerId);
-        ws.send(JSON.stringify({
+        if (ws && ws.id) io.to(ws.id).emit('lobby_data', {
             type: 'error',
             message: 'Room not found'
-        }));
+        });
         return;
     }
-    
+
     // Set the player's ready status
     room.setPlayerReady(playerId, ready);
     console.log(`Player ${playerId} ready status set to ${ready}`);
-    
+
     // Get updated room info
     const roomInfo = room.getRoomInfo();
     console.log('Updated room info:', roomInfo);
-    
+
     // Broadcast the change to all players in the room
     room.broadcast({
         type: 'player_ready_changed',
