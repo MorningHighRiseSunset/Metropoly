@@ -330,6 +330,7 @@ const io = new Server(server, {
             'http://127.0.0.1:5500',
             'http://127.0.0.1:3000'
         ],
+        methods: ['GET', 'POST'],
         credentials: true
     }
 });
@@ -453,29 +454,8 @@ io.on('connection', (socket) => {
     });
 });
 
-// Periodic cleanup of stale players (every 60 seconds)
-setInterval(() => {
-    for (const [roomId, room] of rooms.entries()) {
-        if (room.gameState.status !== 'playing') {
-            // Remove players with null socketId
-            for (const [playerId, player] of room.players.entries()) {
-                if (!player.socketId) {
-                    console.log(`[CLEANUP] Removing stale player ${playerId} from room ${roomId}`);
-                    room.removePlayer(playerId);
-                    players.delete(playerId);
-                }
-            }
-            // If room is empty, delete it
-            if (room.players.size === 0) {
-                console.log(`[CLEANUP] Deleting empty room ${roomId}`);
-                rooms.delete(roomId);
-            }
-        }
-    }
-}, 60000);
-
 function handleJoinRoom(ws, data) {
-    const { roomId, playerName, playerId } = data;
+    const { roomId, playerName } = data;
     const room = rooms.get(roomId);
 
     if (!room) {
@@ -486,27 +466,34 @@ function handleJoinRoom(ws, data) {
         return;
     }
 
-    // If playerId is provided and exists, update socketId and allow join
-    if (playerId && room.players.has(playerId)) {
-        console.log(`[JOIN] Player ${playerId} already in room ${roomId}, updating socketId.`);
-        room.players.get(playerId).socketId = ws.id;
-        players.set(playerId, { socketId: ws.id, roomId, name: playerName });
+    // Check if player already exists in the room
+    let joiningPlayerId = null;
+    for (const [pid, pinfo] of room.players.entries()) {
+        if (pinfo.name === playerName) {
+            joiningPlayerId = pid;
+            break;
+        }
+    }
+    if (joiningPlayerId) {
+        // Player exists, update socketId and allow join
+        console.log(`[JOIN] Player ${joiningPlayerId} already in room ${roomId}, updating socketId.`);
+        room.players.get(joiningPlayerId).socketId = ws.id;
+        players.set(joiningPlayerId, { socketId: ws.id, roomId, name: playerName });
         if (ws && ws.join) ws.join(roomId);
         io.to(ws.id).emit('lobby_data', {
             type: 'joined_room',
-            playerId: playerId,
+            playerId: joiningPlayerId,
             roomInfo: room.getRoomInfo()
         });
         room.broadcast({
             type: 'player_joined',
-            playerId: playerId,
+            playerId: joiningPlayerId,
             playerName: playerName,
             roomInfo: room.getRoomInfo()
-        }, playerId);
-        console.log(`[JOIN] Updated player ${playerId} socketId and broadcasted join.`);
+        }, joiningPlayerId);
+        console.log(`[JOIN] Updated player ${joiningPlayerId} socketId and broadcasted join.`);
         return;
     }
-
     if (room.players.size >= room.maxPlayers) {
         console.log(`[JOIN] Room ${roomId} is full. Current players:`, Array.from(room.players.keys()));
         io.to(ws.id).emit('lobby_data', {
@@ -515,7 +502,7 @@ function handleJoinRoom(ws, data) {
         });
         return;
     }
-    const newPlayerId = playerId || generatePlayerId();
+    const newPlayerId = generatePlayerId();
     players.set(newPlayerId, { socketId: ws.id, roomId, name: playerName });
     const success = room.addPlayer(newPlayerId, playerName, ws.id);
     if (success) {
