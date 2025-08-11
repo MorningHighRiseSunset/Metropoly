@@ -1,6 +1,3 @@
-// Initialize Socket.IO connection for lobby
-const socket = io('https://metropoly.onrender.com');
-
 // Lobby management for Metropoly multiplayer game
 class LobbyManager {
     updatePlayerStatusUI(players) {
@@ -211,16 +208,18 @@ class LobbyManager {
         console.log('New roomId from data:', data.roomId);
         console.log('New playerId from data:', data.playerId);
         
-        this.playerId = data.playerId;
-        this.currentRoom = data.roomId; // Keep the room ID for reference
-        
-        console.log('Updated currentRoom:', this.currentRoom);
-        console.log('Updated playerId:', this.playerId);
-        console.log('========================');
-        
-        this.closeModal('joinRoomModal');
-        this.showRoomModal(data.roomInfo);
-        this.showMessage('Successfully joined room!', 'success');
+    this.playerId = data.playerId;
+    this.currentRoom = data.roomId; // Keep the room ID for reference
+    this.currentRoomInfo = data.roomInfo; // Store full room info for UI updates
+
+    console.log('Updated currentRoom:', this.currentRoom);
+    console.log('Updated playerId:', this.playerId);
+    console.log('========================');
+
+    this.closeModal('joinRoomModal');
+    this.updateRoomDisplay(data.roomInfo); // Ensure UI updates immediately
+    this.showRoomModal(data.roomInfo);
+    this.showMessage('Successfully joined room!', 'success');
     }
 
     handlePlayerJoined(data) {
