@@ -512,12 +512,6 @@ function handleJoinRoom(ws, data) {
             }
         }
     }
-    // If player was marked as transitioning, clear the flag
-    if (existingPlayer && existingPlayer.isTransitioning) {
-        existingPlayer.isTransitioning = false;
-        existingPlayer.transitionTimestamp = null;
-        console.log(`Player ${existingPlayerId} transition complete, rejoined in game.`);
-    }
     
     // Generate new player ID if not reconnecting
     if (!playerId) {
