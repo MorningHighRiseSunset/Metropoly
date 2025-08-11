@@ -7,15 +7,21 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 
-// Enhanced CORS configuration
+// Enhanced CORS configuration for REST and Socket.IO
+const allowedOrigins = [
+    'https://metropoly-lv.netlify.app',
+    'http://localhost:3000',
+    'http://localhost:8080',
+    'http://127.0.0.1:5500',
+    'http://127.0.0.1:3000'
+];
 app.use(cors({
-    origin: [
-        'https://metropoly-lv.netlify.app',
-        'http://localhost:3000',
-        'http://localhost:8080',
-        'http://127.0.0.1:5500',
-        'http://127.0.0.1:3000'
-    ],
+    origin: function(origin, callback) {
+        // Allow requests with no origin (like mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        return callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
@@ -23,6 +29,8 @@ app.use(cors({
 
 // Preflight requests
 app.options('*', cors());
+
+// Socket.IO CORS config
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
