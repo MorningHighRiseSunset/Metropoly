@@ -902,12 +902,51 @@ function handleRejoinGame(ws, data, playerId) {
     const room = rooms.get(roomId);
     
     if (!room) {
-        console.log(`Room ${roomId} not found`);
-        ws.send(JSON.stringify({
-            type: 'error',
-            message: 'Game room not found'
-        }));
-        return;
+        console.log(`Room ${roomId} not found. Attempting to recreate from stored state...`);
+        // Try to recreate the room if storedState is provided
+        if (storedState) {
+            // Create new GameRoom instance
+            const newRoom = new GameRoom(roomId, rejoinPlayerId);
+            // Restore game state if available
+            if (storedState.gameState) {
+                newRoom.gameState = storedState.gameState;
+            }
+            // Restore player info
+            const recoveredPlayer = {
+                id: rejoinPlayerId,
+                name: storedState.playerName || 'Unknown Player',
+                ws: ws,
+                token: storedState.selectedToken || null,
+                ready: true,
+                isHost: true
+            };
+            newRoom.players.set(rejoinPlayerId, recoveredPlayer);
+            rooms.set(roomId, newRoom);
+            players.set(rejoinPlayerId, { ws, roomId, name: recoveredPlayer.name });
+            // Send game state update
+            const gameStateMessage = {
+                type: 'game_state_update',
+                gameState: newRoom.gameState,
+                players: Array.from(newRoom.players.values()).map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    token: p.token,
+                    money: newRoom.gameState?.gameData?.players?.find(gp => gp.id === p.id)?.money || 1500,
+                    position: newRoom.gameState?.gameData?.players?.find(gp => gp.id === p.id)?.position || 0
+                })),
+                currentPlayerIndex: newRoom.gameState?.currentTurn || 0,
+                currentPlayerId: newRoom.gameState?.gameData?.players?.[newRoom.gameState?.currentTurn]?.id || null
+            };
+            console.log(`Recreated room and sending game state update:`, gameStateMessage);
+            ws.send(JSON.stringify(gameStateMessage));
+            return;
+        } else {
+            ws.send(JSON.stringify({
+                type: 'error',
+                message: 'Game room not found and no stored state to recover.'
+            }));
+            return;
+        }
     }
     
     console.log(`Room found, game state status: ${room.gameState.status}`);

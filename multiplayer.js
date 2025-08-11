@@ -164,19 +164,22 @@ class MultiplayerGame {
 
     rejoinGame() {
         console.log('Attempting to rejoin game...');
-        
-        // Use stored game state if available
+        // Always use latest stored state from sessionStorage
+        let storedState = null;
+        try {
+            const stateStr = sessionStorage.getItem('metropoly_game_state');
+            if (stateStr) {
+                storedState = JSON.parse(stateStr);
+            }
+        } catch (e) {
+            console.error('Error reading sessionStorage for rejoin:', e);
+        }
         const rejoinData = {
             type: 'rejoin_game',
             roomId: this.roomId,
-            playerId: this.playerId
+            playerId: this.playerId,
+            storedState: storedState || this.storedGameState || null
         };
-        
-        if (this.storedGameState) {
-            console.log('Using stored game state for rejoin');
-            rejoinData.storedState = this.storedGameState;
-        }
-        
         // Send rejoin message with a small delay to ensure proper sync
         setTimeout(() => {
             this.sendMessage(rejoinData);
