@@ -1,6 +1,6 @@
 const express = require('express');
 const http = require('http');
-const WebSocket = require('ws');
+const { Server } = require('socket.io');
 const cors = require('cors');
 const path = require('path');
 
@@ -310,121 +310,117 @@ class GameRoom {
 }
 
 // WebSocket server with error handling
-const wss = new WebSocket.Server({ 
-    server,
-    clientTracking: true,
-    handleProtocols: () => 'websocket'
+const io = new Server(server, {
+    cors: {
+        origin: [
+            'https://metropoly-lv.netlify.app',
+            'http://localhost:3000',
+            'http://localhost:8080',
+            'http://127.0.0.1:5500',
+            'http://127.0.0.1:3000'
+        ],
+        credentials: true
+    }
 });
 
-// Add error handling to WebSocket server
-wss.on('error', (error) => {
-    console.error('WebSocket server error:', error);
-});
+io.on('connection', (socket) => {
+    console.log('New Socket.IO connection:', socket.id);
 
-wss.on('connection', (ws, req) => {
-    console.log('New WebSocket connection from:', req.socket.remoteAddress);
-    
-    // Add error handling to individual connections
-    ws.on('error', (error) => {
-        console.error('WebSocket connection error:', error);
-    });
+    // Listen for all lobby/game messages from client
+    socket.on('lobby_data', (data) => {
+        // Attach socketId to player for tracking
+        if (data.playerId) {
+            if (!players.has(data.playerId)) {
+                players.set(data.playerId, { socketId: socket.id, roomId: data.roomId, name: data.playerName });
+            } else {
+                const info = players.get(data.playerId);
+                info.socketId = socket.id;
+                info.roomId = data.roomId || info.roomId;
+                info.name = data.playerName || info.name;
+            }
+        }
+        // Route by type
+        switch (data.type) {
+            case 'create_room':
+                handleCreateRoom(socket, data);
+                break;
+            case 'join_room':
+                handleJoinRoom(socket, data);
+                break;
+            case 'select_token':
+                handleSelectToken(socket, data, data.playerId);
+                break;
+            case 'set_ready':
+                handleSetReady(socket, data, data.playerId);
+                break;
+            case 'start_game':
+                handleStartGame(socket, data, data.playerId);
+                break;
+            case 'game_action':
+                handleGameAction(socket, data, data.playerId);
+                break;
+            case 'leave_room':
+                handleLeaveRoom(socket, data, data.playerId);
+                break;
+            case 'rejoin_game':
+                handleRejoinGame(socket, data, data.playerId);
+                break;
+            case 'request_next_turn':
+                handleRequestNextTurn(socket, data, data.playerId);
+                break;
+            case 'request_game_state':
+                handleRequestGameState(socket, data, data.playerId);
+                break;
+            case 'game_transition_ready':
+                handleGameTransitionReady(socket, data, data.playerId);
+                break;
+            default:
+                socket.emit('error', { message: 'Unknown lobby_data type' });
+        }
 
-    ws.on('message', (message) => {
-        try {
-            const data = JSON.parse(message);
-            console.log(`Received message from WebSocket: ${data.type}`, data);
-            
-            // Find the player ID for this WebSocket connection
-            let playerId = null;
-            for (const [pid, playerInfo] of players.entries()) {
-                if (playerInfo.ws === ws) {
-                    playerId = pid;
-                    break;
-                }
+        // After handling, emit player connection status to all clients in the room
+        if (data.roomId) {
+            const room = rooms.get(data.roomId);
+            if (room) {
+                const activePlayers = Array.from(room.players.values()).map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    connected: !!players.get(p.id)?.socketId
+                }));
+                io.to(data.roomId).emit('player_status', { roomId: data.roomId, players: activePlayers });
             }
-            
-            console.log(`Message from player ${playerId || 'unknown'}: ${data.type}`);
-            
-            switch (data.type) {
-                case 'join_room':
-                    handleJoinRoom(ws, data);
-                    break;
-                case 'create_room':
-                    handleCreateRoom(ws, data);
-                    break;
-                case 'select_token':
-                    handleSelectToken(ws, data, playerId);
-                    break;
-                case 'set_ready':
-                    handleSetReady(ws, data, playerId);
-                    break;
-                case 'start_game':
-                    handleStartGame(ws, data, playerId);
-                    break;
-                case 'game_action':
-                    handleGameAction(ws, data, playerId);
-                    break;
-                case 'leave_room':
-                    handleLeaveRoom(ws, data, playerId);
-                    break;
-                case 'rejoin_game':
-                    handleRejoinGame(ws, data, playerId);
-                    break;
-                case 'request_next_turn':
-                    handleRequestNextTurn(ws, data, playerId);
-                    break;
-                case 'request_game_state':
-                    handleRequestGameState(ws, data, playerId);
-                    break;
-                case 'game_transition_ready':
-                    handleGameTransitionReady(ws, data, playerId);
-                    break;
-                default:
-                    console.log(`Unknown message type: ${data.type}`);
-                    ws.send(JSON.stringify({
-                        type: 'error',
-                        message: `Unknown message type: ${data.type}`
-                    }));
-                    break;
-            }
-        } catch (error) {
-            console.error('Error parsing message:', error);
-            ws.send(JSON.stringify({
-                type: 'error',
-                message: 'Invalid message format'
-            }));
         }
     });
 
-    ws.on('close', () => {
-        // Find the player ID for this WebSocket connection
+    // Join the socket.io room for multiplayer sync
+    socket.on('join_room', (data) => {
+        if (data.roomId) {
+            socket.join(data.roomId);
+        }
+    });
+
+    socket.on('disconnect', () => {
+        // Find the player ID for this socket connection
         let playerId = null;
         for (const [pid, playerInfo] of players.entries()) {
-            if (playerInfo.ws === ws) {
+            if (playerInfo.socketId === socket.id) {
                 playerId = pid;
                 break;
             }
         }
-        
         if (playerId) {
             const playerInfo = players.get(playerId);
             if (playerInfo) {
                 const room = rooms.get(playerInfo.roomId);
                 if (room) {
-                    // If the game has started, don't immediately remove the player
-                    // They might be transitioning to the game page
                     if (room.gameState.status === 'playing') {
                         console.log(`Player ${playerId} disconnected during game, keeping them in room for potential rejoin`);
-                        // Keep the player in the room but mark their connection as null
                         const roomPlayer = room.players.get(playerId);
                         if (roomPlayer) {
-                            roomPlayer.ws = null;
+                            roomPlayer.socketId = null;
                         }
-                        // Don't delete from global players map yet
                         return;
                     }
-                    
-                    // For lobby connections, remove the player normally
                     const shouldDelete = room.removePlayer(playerId);
                     if (shouldDelete) {
                         rooms.delete(playerInfo.roomId);

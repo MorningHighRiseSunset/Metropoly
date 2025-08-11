@@ -1,7 +1,34 @@
 // Lobby management for Metropoly multiplayer game
 class LobbyManager {
+    updatePlayerStatusUI(players) {
+        // Find the container for player list (adjust selector as needed)
+        const playersList = document.getElementById('playersList');
+        if (!playersList) return;
+        // Remove previous status dots
+        Array.from(playersList.getElementsByClassName('player-status-dot')).forEach(dot => dot.remove());
+        // Add/Update status dots for each player
+        players.forEach(player => {
+            // Find the player item by name (or id if available)
+            const playerItems = Array.from(playersList.getElementsByClassName('player-item'));
+            const playerItem = playerItems.find(item => item.textContent.includes(player.name));
+            if (playerItem) {
+                let dot = playerItem.querySelector('.player-status-dot');
+                if (!dot) {
+                    dot = document.createElement('span');
+                    dot.className = 'player-status-dot';
+                    dot.style.display = 'inline-block';
+                    dot.style.width = '10px';
+                    dot.style.height = '10px';
+                    dot.style.borderRadius = '50%';
+                    dot.style.marginLeft = '8px';
+                    playerItem.querySelector('.player-info').appendChild(dot);
+                }
+                dot.style.background = player.connected ? 'limegreen' : 'gray';
+            }
+        });
+    }
     constructor() {
-        this.ws = null;
+    this.socket = null;
         this.playerId = null;
         this.currentRoom = null;
         this.currentRoomInfo = null; // Store full room info
@@ -11,7 +38,7 @@ class LobbyManager {
         this.isHost = false;
         
         this.serverUrl = this.getServerUrl();
-        this.connectWebSocket();
+    this.connectSocketIO();
         this.setupEventListeners();
         this.loadRooms();
     }
@@ -28,55 +55,41 @@ class LobbyManager {
         return servers[0];
     }
 
-    connectWebSocket() {
-        const serverUrl = this.getServerUrl();
-        console.log('🔌 Connecting to server:', serverUrl);
-        
+    connectSocketIO() {
+        const serverUrl = this.getServerUrl().replace('wss://', 'https://').replace('ws://', 'http://');
+        console.log('🔌 Connecting to Socket.IO server:', serverUrl);
         try {
-            this.ws = new WebSocket(serverUrl);
-            
-            this.ws.onopen = () => {
+            this.socket = io(serverUrl);
+            this.socket.on('connect', () => {
                 console.log('✅ Connected to multiplayer server');
                 this.updateConnectionStatus(true);
-                
-                // Try to rejoin if we have room info
                 if (this.currentRoom) {
                     this.rejoinGame();
                 }
-            };
-            
-            this.ws.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    this.handleServerMessage(data);
-                } catch (error) {
-                    console.error('Error parsing server message:', error);
-                }
-            };
-            
-            this.ws.onclose = () => {
+            });
+            this.socket.on('disconnect', () => {
                 console.log('❌ Disconnected from server');
                 this.updateConnectionStatus(false);
-                
-                // Try to reconnect after a delay
                 setTimeout(() => {
-                    if (!this.ws || this.ws.readyState === WebSocket.CLOSED) {
+                    if (!this.socket.connected) {
                         console.log('🔄 Attempting to reconnect...');
-                        this.connectWebSocket();
+                        this.connectSocketIO();
                     }
                 }, 3000);
-            };
-            
-            this.ws.onerror = (error) => {
-                console.error('❌ WebSocket error:', error);
+            });
+            this.socket.on('lobby_data', (data) => {
+                this.handleServerMessage(data);
+            });
+            this.socket.on('player_status', (status) => {
+                this.updatePlayerStatusUI(status.players);
+            });
+            this.socket.on('error', (error) => {
+                console.error('❌ Socket.IO error:', error);
                 this.updateConnectionStatus(false);
-                
-                // Show user-friendly error message
                 this.showMessage('Connection failed. Please check your internet connection and try again.', 'error');
-            };
-            
+            });
         } catch (error) {
-            console.error('❌ Failed to create WebSocket connection:', error);
+            console.error('❌ Failed to create Socket.IO connection:', error);
             this.showMessage('Unable to connect to server. Please try again later.', 'error');
         }
     }
@@ -435,10 +448,10 @@ class LobbyManager {
 
     sendMessage(message) {
         console.log('Sending message to server:', message);
-        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            this.ws.send(JSON.stringify(message));
+        if (this.socket && this.socket.connected) {
+            this.socket.emit('lobby_data', message);
         } else {
-            console.error('WebSocket not connected. State:', this.ws ? this.ws.readyState : 'null');
+            console.error('Socket.IO not connected.');
             this.showMessage('Not connected to server', 'error');
         }
     }
