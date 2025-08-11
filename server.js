@@ -443,33 +443,32 @@ function handleJoinRoom(ws, data) {
     const room = rooms.get(roomId);
     
     if (!room) {
-        ws.send(JSON.stringify({
+        ws.emit('lobby_data', {
             type: 'error',
             message: 'Room not found'
-        }));
+        });
         return;
     }
-    
+
     if (room.players.size >= room.maxPlayers) {
-        ws.send(JSON.stringify({
+        ws.emit('lobby_data', {
             type: 'error',
             message: 'Room is full'
-        }));
+        });
         return;
     }
-    
+
     const newPlayerId = generatePlayerId();
-    // Update the player tracking with name
-    players.set(newPlayerId, { ws, roomId, name: playerName });
-    
+    players.set(newPlayerId, { socketId: ws.id, roomId, name: playerName });
+
     const success = room.addPlayer(newPlayerId, playerName, ws);
     if (success) {
-        ws.send(JSON.stringify({
+        ws.emit('lobby_data', {
             type: 'joined_room',
             playerId: newPlayerId,
             roomInfo: room.getRoomInfo()
-        }));
-        
+        });
+
         room.broadcast({
             type: 'player_joined',
             playerId: newPlayerId,
@@ -488,16 +487,16 @@ function handleCreateRoom(ws, data) {
     rooms.set(roomId, room);
     
     // Update the player tracking with name
-    players.set(newPlayerId, { ws, roomId, name: playerName });
-    
+    players.set(newPlayerId, { socketId: ws.id, roomId, name: playerName });
+
     room.addPlayer(newPlayerId, playerName, ws);
-    
-    ws.send(JSON.stringify({
+
+    ws.emit('lobby_data', {
         type: 'room_created',
         roomId: roomId,
         playerId: newPlayerId,
         roomInfo: room.getRoomInfo()
-    }));
+    });
 }
 
 function handleSelectToken(ws, data, playerId) {

@@ -1,4 +1,4 @@
-// Multiplayer game management for Metropoly
+// Multiplayer game management for Metropoly using Socket.IO
 class MultiplayerGame {
     constructor(roomId, playerId) {
         // Debug logging for constructor
@@ -37,7 +37,7 @@ class MultiplayerGame {
         
         this.roomId = roomId;
         this.playerId = playerId;
-        this.ws = null;
+        this.socket = null;
         this.gameState = null;
         this.players = [];
         this.currentPlayerIndex = 0;
@@ -67,17 +67,17 @@ class MultiplayerGame {
             window.currentPlayerId = this.playerId;
         }
         
-        this.connectWebSocket();
+        this.connectSocketIO();
         this.setupGame();
     }
 
     getServerUrl() {
         // For development, use localhost. For production, use your Render URL
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            return 'ws://localhost:3000';
+            return 'http://localhost:3000';
         } else {
             // Use your actual Render backend URL
-            return 'wss://metropoly.onrender.com';
+            return 'https://metropoly.onrender.com';
         }
     }
 
@@ -103,7 +103,7 @@ class MultiplayerGame {
         }
     }
 
-    connectWebSocket() {
+    connectSocketIO() {
         if (this.connectionAttempts >= this.maxConnectionAttempts) {
             console.error('Max connection attempts reached, proceeding with fallback mode');
             this.createFallbackPlayers();
@@ -114,53 +114,53 @@ class MultiplayerGame {
         console.log(`Connection attempt ${this.connectionAttempts}/${this.maxConnectionAttempts}`);
         
         try {
-            this.ws = new WebSocket(this.serverUrl);
+            this.socket = io(this.serverUrl);
             
-            this.ws.onopen = () => {
+            this.socket.on('connect', () => {
                 console.log('Connected to multiplayer server');
-                this.updateConnectionStatus(true);
                 this.connectionAttempts = 0; // Reset on successful connection
+                this.socket.emit('join_room', {
+                    roomId: this.roomId,
+                    playerId: this.playerId
+                });
                 this.rejoinGame();
-            };
+            });
             
-            // Add connection timeout
-            setTimeout(() => {
-                if (this.ws.readyState !== WebSocket.OPEN) {
-                    console.error('WebSocket connection timeout, attempting retry');
-                    this.ws.close();
-                }
-            }, 10000); // 10 second timeout
-            
-            this.ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                this.handleServerMessage(data);
-            };
-            
-            this.ws.onclose = (event) => {
-                console.log('Disconnected from multiplayer server', event.code, event.reason);
-                this.updateConnectionStatus(false);
+            this.socket.on('disconnect', () => {
+                console.log('Disconnected from multiplayer server');
                 
                 // Only retry if we haven't exceeded max attempts
                 if (this.connectionAttempts < this.maxConnectionAttempts) {
                     console.log(`Retrying connection in ${this.reconnectDelay}ms...`);
-                    setTimeout(() => this.connectWebSocket(), this.reconnectDelay);
+                    setTimeout(() => this.connectSocketIO(), this.reconnectDelay);
                 } else {
                     console.error('Max reconnection attempts reached, creating fallback players');
                     this.createFallbackPlayers();
                 }
-            };
+            });
             
-            this.ws.onerror = (error) => {
-                console.error('WebSocket error:', error);
-                this.updateConnectionStatus(false);
-            };
+            this.socket.on('connect_error', () => {
+                console.error('Connection error, retrying...');
+                if (this.connectionAttempts < this.maxConnectionAttempts) {
+                    setTimeout(() => this.connectSocketIO(), this.reconnectDelay);
+                } else {
+                    this.createFallbackPlayers();
+                }
+            });
+            
+            this.socket.on('server_message', (data) => {
+                this.handleServerMessage(data);
+            });
+            
+            this.socket.on('error', (message) => {
+                this.handleServerError(message);
+            });
         } catch (error) {
             console.error('Failed to connect:', error);
-            this.updateConnectionStatus(false);
             
             // Retry after delay
             if (this.connectionAttempts < this.maxConnectionAttempts) {
-                setTimeout(() => this.connectWebSocket(), this.reconnectDelay);
+                setTimeout(() => this.connectSocketIO(), this.reconnectDelay);
             } else {
                 this.createFallbackPlayers();
             }
@@ -1368,34 +1368,8 @@ class MultiplayerGame {
     }
 
     sendMessage(message) {
-        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            try {
-                this.ws.send(JSON.stringify(message));
-                console.log('Message sent:', message.type);
-            } catch (error) {
-                console.error('Error sending message:', error);
-                this.showNotification('Failed to send message to server', 'error');
-            }
-        } else {
-            console.warn('WebSocket not connected, message not sent:', message.type);
-            // Don't show error notification for every message to avoid spam
-            if (message.type === 'request_game_state' || message.type === 'rejoin_game') {
-                // Only retry connection for important messages
-                if (this.connectionAttempts < this.maxConnectionAttempts) {
-                    console.log('Attempting to reconnect for important message...');
-                    this.connectWebSocket();
-                }
-            }
-            
-            // For critical messages, try to reconnect and retry
-            if (message.type === 'roll_dice' || message.type === 'move_token' || message.type === 'buy_property') {
-                console.log('Critical message failed to send, will retry after reconnection');
-                setTimeout(() => {
-                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-                        this.sendMessage(message);
-                    }
-                }, 1000);
-            }
+        if (this.socket && this.socket.connected) {
+            this.socket.emit('client_message', message);
         }
     }
 
@@ -1969,7 +1943,7 @@ class MultiplayerGame {
         }
         
         // Check if WebSocket connection is active
-        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+        if (!this.socket || !this.socket.connected) {
             issues.push('WebSocket connection not active');
         }
         
@@ -2169,7 +2143,7 @@ class MultiplayerGame {
     ensureGameStateConsistency() {
         // Ensure game state is consistent across all players
         setInterval(() => {
-            if (this.gameState && this.ws && this.ws.readyState === WebSocket.OPEN) {
+            if (this.gameState && this.socket && this.socket.connected) {
                 // Request game state update to ensure consistency
                 this.sendMessage({
                     type: 'request_game_state',
@@ -2217,6 +2191,7 @@ class MultiplayerGame {
                 }
             }
             
+           
             // If no token found, try to find by common token names
             if (!token) {
                 const tokenNames = ['rolls royce', 'helicopter', 'football', 'burger', 'hat', 'nike', 'woman'];
@@ -2384,7 +2359,6 @@ function leaveGame() {
     }
 }
 
-// Global helper function for token identification
 function getPlayerToken(playerId) {
     if (window.multiplayerGame) {
         return window.multiplayerGame.getPlayerToken(playerId);
@@ -2392,7 +2366,6 @@ function getPlayerToken(playerId) {
     return null;
 }
 
-// Global test function for debugging token movement
 function testTokenMovement(playerId) {
     if (window.multiplayerGame) {
         window.multiplayerGame.testTokenMovement(playerId);
@@ -2402,4 +2375,4 @@ function testTokenMovement(playerId) {
 }
 
 // Make MultiplayerGame available globally
-window.MultiplayerGame = MultiplayerGame; 
+window.MultiplayerGame = MultiplayerGame;
