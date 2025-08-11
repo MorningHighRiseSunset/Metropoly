@@ -403,14 +403,15 @@ class LobbyManager {
         } else {
             this.selectedToken = tokenName;
         }
-        
+
         // Update the visual selection immediately
         this.updateTokenSelection();
-        
+
         console.log('Sending token selection to server:', this.selectedToken);
         this.sendMessage({
             type: 'select_token',
-            tokenName: this.selectedToken
+            tokenName: this.selectedToken,
+            playerId: this.playerId
         });
     }
 
@@ -422,7 +423,8 @@ class LobbyManager {
         console.log('Sending ready status to server:', this.isReady);
         this.sendMessage({
             type: 'set_ready',
-            ready: this.isReady
+            ready: this.isReady,
+            playerId: this.playerId
         });
     }
 
