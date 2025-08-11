@@ -759,6 +759,14 @@ function handleGameAction(ws, data, playerId) {
         return;
     }
     
+        // Defensive check for gameData and players array
+        if (!room.gameState.gameData || !Array.isArray(room.gameState.gameData.players)) {
+            ws.send(JSON.stringify({
+                type: 'error',
+                message: 'Game data not initialized'
+            }));
+            return;
+        }
     // Check if it's the player's turn
     const currentPlayer = room.gameState.gameData.players[room.gameState.currentPlayerIndex];
     if (currentPlayer.id !== playerId) {
