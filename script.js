@@ -82,8 +82,8 @@ let isPopupVisible = false;
 
 // ===== MULTIPLAYER SYSTEM =====
 // Multiplayer state variables
-let isMultiplayerMode = false;
-let multiplayerGame = null;
+// Multiplayer state variables (refactored)
+let isMultiplayerMode = window.location.search.includes('room=') && window.location.search.includes('player=');
 let currentPlayerId = null;
 let currentRoomId = null;
 
@@ -1367,23 +1367,9 @@ function handleRentPayment(player, property) {
         player.money -= rentAmount;
         property.owner.money += rentAmount;
         
-        // Check if we're in multiplayer mode
+        // Multiplayer check now uses session info only
         const isMultiplayer = window.location.search.includes('room=') && window.location.search.includes('player=');
-        const isCurrentPlayer = isMultiplayer ? 
-            (window.multiplayerGame && (window.multiplayerGame.playerId === player.id || window.multiplayerGame.playerId === player.id?.toString())) : 
-            (player === players[currentPlayerIndex]);
-        
-        // Show feedback to the current player
         showFeedback(`${player.name} paid $${rentAmount} rent to ${property.owner.name}`);
-        
-        // In multiplayer, show notification to other players
-        if (isMultiplayer && !isCurrentPlayer && window.multiplayerGame) {
-            window.multiplayerGame.showNotification(
-                `${player.name} paid $${rentAmount} rent to ${property.owner.name}`,
-                'info'
-            );
-        }
-        
         updateMoneyDisplay();
         closePropertyUI();
         setTimeout(() => {
@@ -1756,7 +1742,7 @@ function createTokens(onAllLoaded, requiredTokenNames) {
     }
     
     const loader = new GLTFLoader();
-    window.loadedTokenModels = {};
+    if (!window.loadedTokenModels) window.loadedTokenModels = {};
     window.tokensAlreadyLoaded = true;
 
     const tokenList = [
@@ -3059,15 +3045,6 @@ function closePropertyUI() {
         }
         resumeHelicopterAudio();
         
-        // In multiplayer, show notification when property UI is closed
-        const isMultiplayer = window.location.search.includes('room=') && window.location.search.includes('player=');
-        if (isMultiplayer && window.multiplayerGame && players[currentPlayerIndex]) {
-            const currentPlayer = players[currentPlayerIndex];
-            window.multiplayerGame.showNotification(
-                `${currentPlayer.name} closed property menu`,
-                'info'
-            );
-        }
         
         endTurn(); // End the turn when property UI is closed
     }, 300);
@@ -3182,10 +3159,6 @@ function buyProperty(player, property, callback) {
 
     // Check if we're in multiplayer mode
     const isMultiplayer = window.location.search.includes('room=') && window.location.search.includes('player=');
-    const isCurrentPlayer = isMultiplayer ? 
-        (window.multiplayerGame && window.multiplayerGame.playerId === player.id) : 
-        (player === players[currentPlayerIndex]);
-
     if (player.money >= property.price) {
         player.money -= property.price;
         property.owner = player;
@@ -3193,14 +3166,6 @@ function buyProperty(player, property, callback) {
 
         // Show feedback to the current player
         showFeedback(`${player.name} bought ${property.name} for $${property.price}`);
-        
-        // In multiplayer, show notification to other players
-        if (isMultiplayer && !isCurrentPlayer && window.multiplayerGame) {
-            window.multiplayerGame.showNotification(
-                `${player.name} bought ${property.name} for $${property.price}`,
-                'info'
-            );
-        }
         
         updateMoneyDisplay();
         updateBoards();
@@ -5359,20 +5324,9 @@ function finishMove(player, newPosition, passedGo) {
     const landingSpace = placeNames[newPosition] || "Unknown Space";
     const property = properties.find(p => p.name === landingSpace);
 
-    // Check if we're in multiplayer mode
+    // Check if we're in multiplayer mode (session-based)
     const isMultiplayer = window.location.search.includes('room=') && window.location.search.includes('player=');
-    const isCurrentPlayer = isMultiplayer ? 
-        (window.multiplayerGame && (
-            window.multiplayerGame.playerId === player.id || 
-            window.multiplayerGame.playerId === player.id?.toString() ||
-            window.multiplayerGame.playerId?.toString() === player.id?.toString()
-        )) : 
-        (player === players[currentPlayerIndex]);
-
-    console.log(`finishMove debug - isMultiplayer: ${isMultiplayer}, isCurrentPlayer: ${isCurrentPlayer}, player.id: ${player.id}, window.multiplayerGame?.playerId: ${window.multiplayerGame?.playerId}`);
-    console.log(`window.currentPlayerId:`, window.currentPlayerId);
-    console.log(`player.id type:`, typeof player.id);
-    console.log(`window.multiplayerGame?.playerId type:`, typeof window.multiplayerGame?.playerId);
+    const isCurrentPlayer = player === players[currentPlayerIndex];
 
     if (isCurrentPlayerAI()) {
         // AI action handling
@@ -5893,20 +5847,12 @@ function isCurrentPlayerAI() {
     const isMultiplayer = window.location.search.includes('room=') && window.location.search.includes('player=');
     
     if (isMultiplayer) {
-        // In multiplayer mode, check if the current player is AI
-        if (window.multiplayerGame && window.multiplayerGame.playerId) {
-            const currentPlayer = window.players ? window.players.find(p => 
-                p.id === window.multiplayerGame.playerId || 
-                p.id === window.multiplayerGame.playerId.toString() ||
-                p.id?.toString() === window.multiplayerGame.playerId?.toString()
-            ) : null;
-            if (currentPlayer) {
-                const isAI = currentPlayer.isAI || aiPlayers.has(currentPlayer.tokenName);
-                console.log(`isCurrentPlayerAI multiplayer debug - currentPlayer:`, currentPlayer, `isAI: ${isAI}`);
-                return isAI;
-            }
+        // In multiplayer mode, check if the current player is AI using session info
+        const currentPlayer = players[currentPlayerIndex];
+        if (currentPlayer) {
+            const isAI = currentPlayer.isAI || aiPlayers.has(currentPlayer.tokenName);
+            return isAI;
         }
-        console.log(`isCurrentPlayerAI multiplayer debug - no current player found`);
         return false;
     } else {
         // Single player mode
@@ -6126,9 +6072,7 @@ function selectToken(tokenName) {
 }
 
 function init() {
-    // Check if we're in multiplayer mode first
-    checkMultiplayerMode();
-    
+    // No legacy multiplayer logic; session handoff handled by lobby.js/game.js
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x1a1a1a);
     setupCameraFollowToggle();
@@ -6154,79 +6098,6 @@ function init() {
     // Use OrbitControls for the main camera
     controls = new OrbitControls(camera, renderer.domElement);
 
-    function setupCameraFollowToggle() {
-        if (document.getElementById('camera-follow-toggle')) return;
-        const btn = document.createElement('button');
-        btn.id = 'camera-follow-toggle';
-        btn.innerText = 'Follow Token (F)';
-        btn.style.position = 'fixed';
-        btn.style.zIndex = '10002';
-        btn.style.background = '#222';
-        btn.style.color = '#fff';
-        btn.style.padding = '10px 18px';
-        btn.style.borderRadius = '8px';
-        btn.style.fontSize = '15px';
-        btn.style.opacity = '0.85';
-        btn.style.border = 'none';
-        btn.style.cursor = 'pointer';
-        btn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.18)';
-        btn.onclick = toggleCameraFollowMode;
-        document.body.appendChild(btn);
-
-        const indicator = document.createElement('div');
-        indicator.id = 'camera-follow-indicator';
-        indicator.innerText = 'FOLLOWING TOKEN';
-        indicator.style.position = 'fixed';
-        indicator.style.zIndex = '10002';
-        indicator.style.background = '#4caf50';
-        indicator.style.color = '#fff';
-        indicator.style.padding = '6px 18px';
-        indicator.style.borderRadius = '8px';
-        indicator.style.fontSize = '14px';
-        indicator.style.fontWeight = 'bold';
-        indicator.style.opacity = '0.92';
-        indicator.style.display = 'none';
-        indicator.style.boxShadow = '0 2px 8px rgba(0,0,0,0.18)';
-        document.body.appendChild(indicator);
-
-        function positionFollowUI() {
-            const mpRoot = document.getElementById('multiplayer-ui')
-                || document.getElementById('players-list')
-                || document.getElementById('multiplayer-players');
-            let top = 120;
-            let right = 10;
-            if (mpRoot) {
-                const r = mpRoot.getBoundingClientRect();
-                top = Math.max(10, Math.floor(r.bottom + 10));
-                right = Math.max(10, Math.floor(window.innerWidth - r.right + 10));
-            }
-            // Position the follow button directly under the multiplayer UI (right-aligned)
-            btn.style.top = top + 'px';
-            btn.style.right = right + 'px';
-            btn.style.left = '';
-            btn.style.transform = '';
-
-            // Place the green indicator just below the button, same right offset
-            const btnRect = btn.getBoundingClientRect();
-            const indicatorTop = Math.floor(btnRect.bottom + 6);
-            indicator.style.top = indicatorTop + 'px';
-            indicator.style.right = right + 'px';
-            indicator.style.left = '';
-            indicator.style.transform = '';
-        }
-
-        // Initial position and on resize
-        positionFollowUI();
-        window.addEventListener('resize', positionFollowUI);
-
-        // Reposition when multiplayer UI is added/changes
-        const mo = new MutationObserver(positionFollowUI);
-        mo.observe(document.body, { childList: true, subtree: true });
-
-        // Reflect current follow state immediately (shows green box when active)
-        updateCameraFollowUI();
-    }
-
     // Initialize the advanced pathfinding system
     initializePathfinding();
     
@@ -6243,14 +6114,10 @@ function init() {
 
     createTokens(() => {
         // Only create token selection UI if not in multiplayer mode
-        if (!window.isMultiplayerMode) {
+        if (!isMultiplayerMode) {
             createPlayerTokenSelectionUI(currentPlayerIndex);
         }
-        
-        // Initialize multiplayer if needed
-        if (isMultiplayerMode) {
-            initializeMultiplayerGame();
-        }
+        // Multiplayer session handoff handled by game.js
     });
 
     raycaster = new THREE.Raycaster();
@@ -6261,7 +6128,7 @@ function init() {
     window.addEventListener("click", onTokenClick);
     window.addEventListener("resize", onWindowResize, false);
     window.addEventListener("click", onPropertyClick);
-    
+
     // Install special activities UI helpers
     (function installSpecialActivities() {
         if (window.showSpecialActivityForProperty) return;
@@ -6276,10 +6143,7 @@ function init() {
         };
 
         function computeTopOffset() {
-            const mp = document.getElementById('multiplayer-ui');
-            if (!mp) return 120;
-            const r = mp.getBoundingClientRect();
-            return Math.max(10, r.bottom + 10);
+            return 120;
         }
 
         function ensureRoot(property) {
@@ -6307,22 +6171,6 @@ function init() {
             // Singleplayer immediate update
             current.money += amount;
             updateMoneyDisplay?.();
-
-            // Multiplayer sync to server and others
-            try {
-                const isMulti = window.isMultiplayerMode && window.multiplayerGame && window.multiplayerGame.ws && window.multiplayerGame.ws.readyState === WebSocket.OPEN;
-                if (isMulti) {
-                    window.multiplayerGame.sendMessage({
-                        type: 'game_action',
-                        action: 'special_reward',
-                        data: {
-                            playerId: window.multiplayerGame.playerId,
-                            amount,
-                            note: note || 'Special activity reward'
-                        }
-                    });
-                }
-            } catch(_) {}
         }
 
         function renderSlots(property) {
