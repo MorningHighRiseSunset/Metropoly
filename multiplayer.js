@@ -112,6 +112,13 @@ class MultiplayerGame {
         this.connectionAttempts++;
         console.log(`Connection attempt ${this.connectionAttempts}/${this.maxConnectionAttempts}`);
         try {
+            if (this.socket) {
+                // Prevent duplicate connections
+                if (this.socket.connected) {
+                    console.log('Socket already connected, skipping duplicate connection');
+                    return;
+                }
+            }
             this.socket = io(this.serverUrl);
             this.socket.on('connect', () => {
                 console.log('Connected to multiplayer server');
@@ -123,6 +130,8 @@ class MultiplayerGame {
                     playerId: this.playerId
                 });
                 this.rejoinGame();
+                // Notify lobby for socket handoff
+                window.parent && window.parent.postMessage('game_socket_connected', '*');
             });
             this.socket.on('disconnect', () => {
                 console.log('Disconnected from multiplayer server');
@@ -2169,7 +2178,7 @@ class MultiplayerGame {
     }
 
     createFallbackPlayers() {
-        console.log('Creating fallback players due to connection failure');
+               console.log('Creating fallback players due to connection failure');
         this.players = [{
             id: this.playerId,
             name: this.storedGameState?.playerName || 'Player 1',

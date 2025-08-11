@@ -380,21 +380,37 @@
             const urlParams = new URLSearchParams(window.location.search);
             let roomId = urlParams.get('room');
             let playerId = urlParams.get('player');
-            
-            // For testing: if no parameters, use default test values
-            if (!roomId || !playerId) {
-                console.log('No room/player parameters found, using test values for development');
-                roomId = roomId || 'test-room-123';
-                playerId = playerId || 'test-player-1';
-                // Don't redirect - just use test values
+
+            // Fallback to sessionStorage if missing
+            if (!roomId || !playerId || roomId === 'undefined' || playerId === 'undefined') {
+                try {
+                    const storedState = sessionStorage.getItem('metropoly_game_state');
+                    if (storedState) {
+                        const gameState = JSON.parse(storedState);
+                        if (gameState.roomId && gameState.playerId) {
+                            roomId = gameState.roomId;
+                            playerId = gameState.playerId;
+                            console.log('[GAME INIT] Recovered roomId and playerId from sessionStorage:', roomId, playerId);
+                        }
+                    }
+                } catch (error) {
+                    console.error('[GAME INIT] Failed to recover state from sessionStorage:', error);
+                }
             }
-            
+
+            // If still missing, show error and redirect
+            if (!roomId || !playerId || roomId === 'undefined' || playerId === 'undefined') {
+                alert('Invalid game session. Please return to the lobby.');
+                window.location.href = 'lobby.html';
+                return;
+            }
+
             // Set multiplayer flag immediately to prevent token selection UI
             window.isMultiplayerMode = true;
-            
+
             // Wait for MultiplayerGame class to be available before initializing
             waitForMultiplayerGame();
-            
+
             function waitForMultiplayerGame() {
                 if (window.MultiplayerGame) {
                     console.log('MultiplayerGame class loaded, initializing...');
@@ -402,6 +418,8 @@
                     window.multiplayerGame = multiplayerGame; // Set it on window object
                     console.log('window.multiplayerGame set:', window.multiplayerGame);
                     console.log('window.multiplayerGame.playerId:', window.multiplayerGame?.playerId);
+                    // Notify lobby for socket handoff
+                    window.parent && window.parent.postMessage('game_socket_connected', '*');
                     waitForGameLoad();
                 } else {
                     console.log('Waiting for MultiplayerGame class to load...');

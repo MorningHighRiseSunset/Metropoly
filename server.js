@@ -425,32 +425,57 @@ io.on('connection', (socket) => {
                 const room = rooms.get(playerInfo.roomId);
                 if (room) {
                     if (room.gameState.status === 'playing') {
-                        console.log(`Player ${playerId} disconnected during game, keeping them in room for potential rejoin`);
+                        console.log(`[DISCONNECT] Player ${playerId} disconnected during game, keeping in room for rejoin.`);
                         const roomPlayer = room.players.get(playerId);
                         if (roomPlayer) {
                             roomPlayer.socketId = null;
                         }
+                        console.log(`[DISCONNECT] Room state after disconnect:`, room.getRoomInfo());
                         return;
                     }
                     const shouldDelete = room.removePlayer(playerId);
                     if (shouldDelete) {
                         rooms.delete(playerInfo.roomId);
+                        console.log(`[DISCONNECT] Room ${playerInfo.roomId} deleted after last player left.`);
                     } else {
                         room.broadcast({
                             type: 'player_left',
                             playerId: playerId,
                             roomInfo: room.getRoomInfo()
                         });
+                        console.log(`[DISCONNECT] Player ${playerId} removed from room ${playerInfo.roomId}. Room state:`, room.getRoomInfo());
                     }
                 }
             }
             players.delete(playerId);
+            console.log(`[DISCONNECT] Player ${playerId} removed from global players map.`);
         }
     });
 });
 
+// Periodic cleanup of stale players (every 60 seconds)
+setInterval(() => {
+    for (const [roomId, room] of rooms.entries()) {
+        if (room.gameState.status !== 'playing') {
+            // Remove players with null socketId
+            for (const [playerId, player] of room.players.entries()) {
+                if (!player.socketId) {
+                    console.log(`[CLEANUP] Removing stale player ${playerId} from room ${roomId}`);
+                    room.removePlayer(playerId);
+                    players.delete(playerId);
+                }
+            }
+            // If room is empty, delete it
+            if (room.players.size === 0) {
+                console.log(`[CLEANUP] Deleting empty room ${roomId}`);
+                rooms.delete(roomId);
+            }
+        }
+    }
+}, 60000);
+
 function handleJoinRoom(ws, data) {
-    const { roomId, playerName } = data;
+    const { roomId, playerName, playerId } = data;
     const room = rooms.get(roomId);
 
     if (!room) {
@@ -461,33 +486,52 @@ function handleJoinRoom(ws, data) {
         return;
     }
 
+    // If playerId is provided and exists, update socketId and allow join
+    if (playerId && room.players.has(playerId)) {
+        console.log(`[JOIN] Player ${playerId} already in room ${roomId}, updating socketId.`);
+        room.players.get(playerId).socketId = ws.id;
+        players.set(playerId, { socketId: ws.id, roomId, name: playerName });
+        if (ws && ws.join) ws.join(roomId);
+        io.to(ws.id).emit('lobby_data', {
+            type: 'joined_room',
+            playerId: playerId,
+            roomInfo: room.getRoomInfo()
+        });
+        room.broadcast({
+            type: 'player_joined',
+            playerId: playerId,
+            playerName: playerName,
+            roomInfo: room.getRoomInfo()
+        }, playerId);
+        console.log(`[JOIN] Updated player ${playerId} socketId and broadcasted join.`);
+        return;
+    }
+
     if (room.players.size >= room.maxPlayers) {
+        console.log(`[JOIN] Room ${roomId} is full. Current players:`, Array.from(room.players.keys()));
         io.to(ws.id).emit('lobby_data', {
             type: 'error',
             message: 'Room is full'
         });
         return;
     }
-
-    const newPlayerId = generatePlayerId();
+    const newPlayerId = playerId || generatePlayerId();
     players.set(newPlayerId, { socketId: ws.id, roomId, name: playerName });
-
     const success = room.addPlayer(newPlayerId, playerName, ws.id);
     if (success) {
-        // Joining player socket joins the Socket.IO room
         if (ws && ws.join) ws.join(roomId);
         io.to(ws.id).emit('lobby_data', {
             type: 'joined_room',
             playerId: newPlayerId,
             roomInfo: room.getRoomInfo()
         });
-
         room.broadcast({
             type: 'player_joined',
             playerId: newPlayerId,
             playerName: playerName,
             roomInfo: room.getRoomInfo()
         }, newPlayerId);
+        console.log(`[JOIN] New player ${newPlayerId} joined room ${roomId}.`);
     }
 }
 
@@ -1321,4 +1365,4 @@ process.on('SIGINT', () => {
         console.log('✅ Server closed');
         process.exit(0);
     });
-}); 
+});

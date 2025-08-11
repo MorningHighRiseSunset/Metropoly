@@ -37,6 +37,33 @@ class LobbyManager {
         this.isReady = false;
         this.isHost = false;
 
+        // Recover playerId and room from sessionStorage if available
+        try {
+            const storedState = sessionStorage.getItem('metropoly_game_state');
+            if (storedState) {
+                const stored = JSON.parse(storedState);
+                if (stored.playerId) {
+                    this.playerId = stored.playerId;
+                    console.log('[INIT] Recovered playerId from session:', this.playerId);
+                }
+                if (stored.roomId) {
+                    this.currentRoom = stored.roomId;
+                    console.log('[INIT] Recovered roomId from session:', this.currentRoom);
+                }
+                if (stored.playerName) {
+                    this.playerName = stored.playerName;
+                }
+                if (stored.selectedToken) {
+                    this.selectedToken = stored.selectedToken;
+                }
+                if (stored.isHost !== undefined) {
+                    this.isHost = stored.isHost;
+                }
+            }
+        } catch (error) {
+            console.error('[INIT] Failed to recover state from sessionStorage:', error);
+        }
+
         this.serverUrl = this.getServerUrl();
         this.connectSocketIO();
         this.setupEventListeners();
@@ -71,8 +98,36 @@ class LobbyManager {
             this.socket.on('connect', () => {
                 console.log('✅ Connected to multiplayer server');
                 this.updateConnectionStatus(true);
-                if (this.currentRoom) {
-                    this.rejoinGame();
+                // On reconnect, always try to rejoin if we have playerId and room
+                if (this.currentRoom && this.playerId) {
+                    console.log('[SOCKET] Attempting robust rejoin with playerId:', this.playerId, 'room:', this.currentRoom);
+                    this.sendMessage({
+                        type: 'rejoin_game',
+                        roomId: this.currentRoom,
+                        playerId: this.playerId,
+                        playerName: this.playerName,
+                        selectedToken: this.selectedToken
+                    });
+                } else {
+                    // Try to recover from sessionStorage
+                    try {
+                        const storedState = sessionStorage.getItem('metropoly_game_state');
+                        if (storedState) {
+                            const stored = JSON.parse(storedState);
+                            if (stored.roomId && stored.playerId) {
+                                console.log('[SOCKET] Recovered state for rejoin:', stored);
+                                this.sendMessage({
+                                    type: 'rejoin_game',
+                                    roomId: stored.roomId,
+                                    playerId: stored.playerId,
+                                    playerName: stored.playerName,
+                                    selectedToken: stored.selectedToken
+                                });
+                            }
+                        }
+                    } catch (error) {
+                        console.error('[SOCKET] Failed to recover state for rejoin:', error);
+                    }
                 }
             });
             this.socket.on('disconnect', () => {
@@ -204,6 +259,20 @@ class LobbyManager {
         this.playerId = data.playerId;
         this.currentRoom = data.roomId;
         this.isHost = true;
+        // Persist to sessionStorage
+        try {
+            sessionStorage.setItem('metropoly_game_state', JSON.stringify({
+                roomId: this.currentRoom,
+                playerId: this.playerId,
+                playerName: this.playerName,
+                selectedToken: this.selectedToken,
+                isHost: this.isHost,
+                timestamp: Date.now()
+            }));
+            console.log('[ROOM CREATED] Stored playerId and roomId in session:', this.playerId, this.currentRoom);
+        } catch (error) {
+            console.error('[ROOM CREATED] Failed to store state:', error);
+        }
         this.closeModal('createRoomModal');
         this.showRoomModal(data.roomInfo);
         this.showMessage(`Room created! Room ID: ${data.roomId}`, 'success');
@@ -340,41 +409,39 @@ class LobbyManager {
             isHost: this.isHost,
             timestamp: Date.now()
         };
-        
         try {
             sessionStorage.setItem('metropoly_game_state', JSON.stringify(gameState));
             console.log('Game state stored in session storage:', gameState);
         } catch (error) {
             console.error('Failed to store game state:', error);
         }
-        
         // Send a final message to ensure server has all data
         this.sendMessage({
             type: 'game_transition_ready',
             roomId: roomId,
             playerId: this.playerId
         });
-            // Grace period: keep lobby socket alive for 10 seconds after game page loads
-            window.lobbySocketGraceTimeout = setTimeout(() => {
+        // Grace period: keep lobby socket alive for 10 seconds after game page loads
+        window.lobbySocketGraceTimeout = setTimeout(() => {
+            if (this.socket && this.socket.connected) {
+                console.log('Grace period over, disconnecting lobby socket');
+                this.socket.disconnect();
+            }
+        }, 10000);
+        // Listen for game socket confirmation from game.html
+        window.addEventListener('message', (event) => {
+            if (event.data === 'game_socket_connected') {
                 if (this.socket && this.socket.connected) {
-                    console.log('Grace period over, disconnecting lobby socket');
+                    console.log('Game socket confirmed, disconnecting lobby socket immediately');
+                    clearTimeout(window.lobbySocketGraceTimeout);
                     this.socket.disconnect();
                 }
-            }, 10000);
-            // Listen for game socket confirmation from game.html
-            window.addEventListener('message', (event) => {
-                if (event.data === 'game_socket_connected') {
-                    if (this.socket && this.socket.connected) {
-                        console.log('Game socket confirmed, disconnecting lobby socket immediately');
-                        clearTimeout(window.lobbySocketGraceTimeout);
-                        this.socket.disconnect();
-                    }
-                }
-            });
-        
+            }
+        });
         // Redirect to the game page with room information
         setTimeout(() => {
             console.log('Redirecting to game with room:', roomId, 'player:', this.playerId);
+            // Always include both room and player in URL
             const gameUrl = `game.html?room=${roomId}&player=${this.playerId}`;
             console.log('Game URL:', gameUrl);
             window.location.href = gameUrl;
@@ -476,7 +543,12 @@ class LobbyManager {
     }
 
     sendMessage(message) {
-        console.log('Sending message to server:', message);
+        // Always include correct playerId from memory or sessionStorage
+        if (!message.playerId && this.playerId) {
+            message.playerId = this.playerId;
+        }
+        // Debug log for every outgoing message
+        console.log('[SEND MESSAGE] playerId:', message.playerId, 'type:', message.type);
         if (this.socket && this.socket.connected) {
             this.socket.emit('lobby_data', message);
         } else {
