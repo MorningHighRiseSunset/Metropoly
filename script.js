@@ -87,6 +87,35 @@ let multiplayerGame = null;
 let currentPlayerId = null;
 let currentRoomId = null;
 
+function checkMultiplayerMode() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const room = params.get('room');
+        const player = params.get('player');
+        isMultiplayerMode = !!(room && player);
+        window.isMultiplayerMode = isMultiplayerMode;
+        currentRoomId = room || null;
+        currentPlayerId = player || null;
+    } catch (_) {
+        isMultiplayerMode = false;
+        window.isMultiplayerMode = false;
+    }
+}
+
+function initializeMultiplayerGame() {
+    if (!isMultiplayerMode) return;
+    if (window.multiplayerGame) {
+        multiplayerGame = window.multiplayerGame;
+        return;
+    }
+    if (window.MultiplayerGame && currentRoomId && currentPlayerId) {
+        multiplayerGame = new window.MultiplayerGame(currentRoomId, currentPlayerId);
+        window.multiplayerGame = multiplayerGame;
+    } else {
+        setTimeout(initializeMultiplayerGame, 200);
+    }
+}
+
 // ===== VIDEO CHAT SYSTEM =====
 // Video Chat State Variables - Declare at top level
 let videoChat = null;
@@ -3653,6 +3682,11 @@ function validateTurnOrder() {
 }
 
 function endTurn() {
+    // In multiplayer, notify server instead of advancing locally
+    if (window.isMultiplayerMode && window.multiplayerGame) {
+        window.multiplayerGame.endTurn();
+        return;
+    }
     if (isTurnInProgress) {
         console.log("Turn is still in progress. Cannot end turn yet.");
         return;
@@ -7035,6 +7069,11 @@ function drawDots(context, number) {
 }
 
 function rollDice() {
+    // In multiplayer, delegate roll to server
+    if (window.isMultiplayerMode && window.multiplayerGame) {
+        window.multiplayerGame.rollDice();
+        return;
+    }
     if (!allowedToRoll || isTokenMoving || isTurnInProgress) {
         console.log("Cannot roll dice while token is moving or turn is in progress.");
         return;
@@ -9509,6 +9548,7 @@ window.rollDice = rollDice;
 window.buyProperty = buyProperty;
 window.endTurn = endTurn;
 window.moveToken = moveToken;
+window.moveTokenToNewPositionWithCollisionAvoidance = moveTokenToNewPositionWithCollisionAvoidance;
 window.getBoardSquarePosition = getBoardSquarePosition;
 window.updateMoneyDisplay = updateMoneyDisplay;
 window.createTokens = createTokens;
