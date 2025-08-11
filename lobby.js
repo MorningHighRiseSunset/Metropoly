@@ -28,7 +28,7 @@ class LobbyManager {
         });
     }
     constructor() {
-    this.socket = null;
+        this.socket = null;
         this.playerId = null;
         this.currentRoom = null;
         this.currentRoomInfo = null; // Store full room info
@@ -36,11 +36,19 @@ class LobbyManager {
         this.selectedToken = null;
         this.isReady = false;
         this.isHost = false;
-        
+
         this.serverUrl = this.getServerUrl();
-    this.connectSocketIO();
+        this.connectSocketIO();
         this.setupEventListeners();
         this.loadRooms();
+
+        // Auto-refresh available rooms every 5 seconds
+        this.roomsRefreshInterval = setInterval(() => {
+            // Only refresh if not in a room
+            if (!this.currentRoom) {
+                this.loadRooms();
+            }
+        }, 5000);
     }
 
     getServerUrl() {
