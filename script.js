@@ -1024,6 +1024,8 @@ const placeNames = [
     "Las Vegas Golden Knights" // Position 41
 ];
 
+    // Ensure loadedTokenModels is initialized
+    if (!window.loadedTokenModels) window.loadedTokenModels = {};
     const allTokens = [
         { name: 'rolls royce', path: 'Models/RollsRoyce/rollsRoyceCarAnim.glb', scale: [0.9, 0.9, 0.9] },
         { name: 'helicopter', path: 'Models/Helicopter/helicopter.glb', scale: [0.01, 0.01, 0.01] },
