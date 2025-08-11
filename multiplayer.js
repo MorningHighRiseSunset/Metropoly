@@ -109,27 +109,23 @@ class MultiplayerGame {
             this.createFallbackPlayers();
             return;
         }
-        
         this.connectionAttempts++;
         console.log(`Connection attempt ${this.connectionAttempts}/${this.maxConnectionAttempts}`);
-        
         try {
             this.socket = io(this.serverUrl);
-            
             this.socket.on('connect', () => {
                 console.log('Connected to multiplayer server');
-                this.connectionAttempts = 0; // Reset on successful connection
-                this.socket.emit('join_room', {
+                this.connectionAttempts = 0;
+                // Join the game room using lobby_data event for consistency
+                this.socket.emit('lobby_data', {
+                    type: 'join_room',
                     roomId: this.roomId,
                     playerId: this.playerId
                 });
                 this.rejoinGame();
             });
-            
             this.socket.on('disconnect', () => {
                 console.log('Disconnected from multiplayer server');
-                
-                // Only retry if we haven't exceeded max attempts
                 if (this.connectionAttempts < this.maxConnectionAttempts) {
                     console.log(`Retrying connection in ${this.reconnectDelay}ms...`);
                     setTimeout(() => this.connectSocketIO(), this.reconnectDelay);
@@ -138,7 +134,6 @@ class MultiplayerGame {
                     this.createFallbackPlayers();
                 }
             });
-            
             this.socket.on('connect_error', () => {
                 console.error('Connection error, retrying...');
                 if (this.connectionAttempts < this.maxConnectionAttempts) {
@@ -147,18 +142,18 @@ class MultiplayerGame {
                     this.createFallbackPlayers();
                 }
             });
-            
+            // Listen for both lobby_data and server_message events
+            this.socket.on('lobby_data', (data) => {
+                this.handleServerMessage(data);
+            });
             this.socket.on('server_message', (data) => {
                 this.handleServerMessage(data);
             });
-            
             this.socket.on('error', (message) => {
                 this.handleServerError(message);
             });
         } catch (error) {
             console.error('Failed to connect:', error);
-            
-            // Retry after delay
             if (this.connectionAttempts < this.maxConnectionAttempts) {
                 setTimeout(() => this.connectSocketIO(), this.reconnectDelay);
             } else {
@@ -1369,7 +1364,14 @@ class MultiplayerGame {
 
     sendMessage(message) {
         if (this.socket && this.socket.connected) {
-            this.socket.emit('client_message', message);
+            // Use lobby_data for lobby events, client_message for game events
+            if (message.type && [
+                'create_room', 'join_room', 'select_token', 'set_ready', 'start_game', 'leave_room', 'game_transition_ready', 'rejoin_game', 'request_game_state'
+            ].includes(message.type)) {
+                this.socket.emit('lobby_data', message);
+            } else {
+                this.socket.emit('client_message', message);
+            }
         }
     }
 
