@@ -442,9 +442,9 @@ io.on('connection', (socket) => {
 function handleJoinRoom(ws, data) {
     const { roomId, playerName } = data;
     const room = rooms.get(roomId);
-    
+
     if (!room) {
-        ws.emit('lobby_data', {
+        io.to(ws.id).emit('lobby_data', {
             type: 'error',
             message: 'Room not found'
         });
@@ -452,7 +452,7 @@ function handleJoinRoom(ws, data) {
     }
 
     if (room.players.size >= room.maxPlayers) {
-        ws.emit('lobby_data', {
+        io.to(ws.id).emit('lobby_data', {
             type: 'error',
             message: 'Room is full'
         });
@@ -462,9 +462,11 @@ function handleJoinRoom(ws, data) {
     const newPlayerId = generatePlayerId();
     players.set(newPlayerId, { socketId: ws.id, roomId, name: playerName });
 
-    const success = room.addPlayer(newPlayerId, playerName, ws);
+    const success = room.addPlayer(newPlayerId, playerName, ws.id);
     if (success) {
-        ws.emit('lobby_data', {
+        // Joining player socket joins the Socket.IO room
+        if (ws && ws.join) ws.join(roomId);
+        io.to(ws.id).emit('lobby_data', {
             type: 'joined_room',
             playerId: newPlayerId,
             roomInfo: room.getRoomInfo()
@@ -483,16 +485,19 @@ function handleCreateRoom(ws, data) {
     const { playerName } = data;
     const roomId = generateRoomId();
     const newPlayerId = generatePlayerId();
-    
+
     const room = new GameRoom(roomId, newPlayerId);
     rooms.set(roomId, room);
-    
+
     // Update the player tracking with name
     players.set(newPlayerId, { socketId: ws.id, roomId, name: playerName });
 
-    room.addPlayer(newPlayerId, playerName, ws);
+    room.addPlayer(newPlayerId, playerName, ws.id);
 
-    ws.emit('lobby_data', {
+    // Host socket joins the Socket.IO room
+    if (ws && ws.join) ws.join(roomId);
+
+    io.to(ws.id).emit('lobby_data', {
         type: 'room_created',
         roomId: roomId,
         playerId: newPlayerId,
