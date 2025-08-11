@@ -123,6 +123,7 @@ class MultiplayerGame {
             this.socket.on('connect', () => {
                 console.log('Connected to multiplayer server');
                 this.connectionAttempts = 0;
+                this.updateConnectionStatus(true);
                 // Join the game room using lobby_data event for consistency
                 this.socket.emit('lobby_data', {
                     type: 'join_room',
@@ -133,8 +134,10 @@ class MultiplayerGame {
                 // Notify lobby for socket handoff
                 window.parent && window.parent.postMessage('game_socket_connected', '*');
             });
-            this.socket.on('disconnect', () => {
+            this.socket.on('disconnect', (reason) => {
                 console.log('Disconnected from multiplayer server');
+                this.updateConnectionStatus(false);
+                this.showNotification(`Disconnected from server: ${reason || 'unknown reason'}`, 'error');
                 if (this.connectionAttempts < this.maxConnectionAttempts) {
                     console.log(`Retrying connection in ${this.reconnectDelay}ms...`);
                     setTimeout(() => this.connectSocketIO(), this.reconnectDelay);
@@ -143,8 +146,11 @@ class MultiplayerGame {
                     this.createFallbackPlayers();
                 }
             });
-            this.socket.on('connect_error', () => {
-                console.error('Connection error, retrying...');
+            this.socket.on('connect_error', (error) => {
+                console.error('Connection error, retrying...', error);
+                this.updateConnectionStatus(false);
+                let errorMsg = error && error.message ? error.message : error;
+                this.showNotification(`Connection error: ${errorMsg || 'Unknown error'}`, 'error');
                 if (this.connectionAttempts < this.maxConnectionAttempts) {
                     setTimeout(() => this.connectSocketIO(), this.reconnectDelay);
                 } else {
