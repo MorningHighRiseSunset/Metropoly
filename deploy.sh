@@ -40,7 +40,7 @@ required_files=(
     "lobby.html"
     "lobby.js"
     "game.html"
-    "multiplayer.js"
+    echo "   - Edit lobby.js"
     "package.json"
 )
 

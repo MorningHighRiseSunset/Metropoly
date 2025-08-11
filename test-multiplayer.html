@@ -122,21 +122,6 @@
             const status = document.getElementById('connection-status');
             
             // Check if multiplayer game instance exists
-            if (window.multiplayerGame) {
-                const game = window.multiplayerGame;
-                const connectionStatus = game.ws && game.ws.readyState === WebSocket.OPEN;
-                
-                if (connectionStatus) {
-                    status.textContent = `✅ Multiplayer connected (${game.players.length} players)`;
-                    status.className = 'status success';
-                } else {
-                    status.textContent = '❌ Multiplayer not connected';
-                    status.className = 'status error';
-                }
-            } else {
-                status.textContent = '❌ Multiplayer game not initialized';
-                status.className = 'status error';
-            }
         }
         
         function updateDebugInfo() {
@@ -144,15 +129,6 @@
             let debugText = '<h3>Current State:</h3>';
             
             // Check multiplayer game
-            if (window.multiplayerGame) {
-                const game = window.multiplayerGame;
-                debugText += `<p><strong>Multiplayer Game:</strong> Active</p>`;
-                debugText += `<p><strong>Players:</strong> ${game.players.length}</p>`;
-                debugText += `<p><strong>Connection:</strong> ${game.ws ? game.ws.readyState : 'No WebSocket'}</p>`;
-                debugText += `<p><strong>My Turn:</strong> ${game.isMyTurn}</p>`;
-            } else {
-                debugText += `<p><strong>Multiplayer Game:</strong> Not initialized</p>`;
-            }
             
             // Check game state
             if (window.players) {

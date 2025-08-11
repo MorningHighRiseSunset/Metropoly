@@ -31,20 +31,24 @@ class LobbyManager {
     connectWebSocket() {
         const serverUrl = this.getServerUrl();
         console.log('🔌 Connecting to server:', serverUrl);
-        
         try {
             this.ws = new WebSocket(serverUrl);
-            
             this.ws.onopen = () => {
                 console.log('✅ Connected to multiplayer server');
                 this.updateConnectionStatus(true);
-                
-                // Try to rejoin if we have room info
-                if (this.currentRoom) {
-                    this.rejoinGame();
+                // Always send join_room with session info
+                const playerId = sessionStorage.getItem('playerId');
+                const playerName = sessionStorage.getItem('playerName') || 'Player';
+                const roomId = sessionStorage.getItem('roomId');
+                if (roomId && playerId) {
+                    this.ws.send(JSON.stringify({
+                        type: 'join_room',
+                        roomId,
+                        playerId,
+                        playerName
+                    }));
                 }
             };
-            
             this.ws.onmessage = (event) => {
                 try {
                     const data = JSON.parse(event.data);
@@ -53,12 +57,9 @@ class LobbyManager {
                     console.error('Error parsing server message:', error);
                 }
             };
-            
             this.ws.onclose = () => {
                 console.log('❌ Disconnected from server');
                 this.updateConnectionStatus(false);
-                
-                // Try to reconnect after a delay
                 setTimeout(() => {
                     if (!this.ws || this.ws.readyState === WebSocket.CLOSED) {
                         console.log('🔄 Attempting to reconnect...');
@@ -66,15 +67,11 @@ class LobbyManager {
                     }
                 }, 3000);
             };
-            
             this.ws.onerror = (error) => {
                 console.error('❌ WebSocket error:', error);
                 this.updateConnectionStatus(false);
-                
-                // Show user-friendly error message
                 this.showMessage('Connection failed. Please check your internet connection and try again.', 'error');
             };
-            
         } catch (error) {
             console.error('❌ Failed to create WebSocket connection:', error);
             this.showMessage('Unable to connect to server. Please try again later.', 'error');
