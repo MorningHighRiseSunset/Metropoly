@@ -1,3 +1,6 @@
+// Initialize Socket.IO connection for lobby
+const socket = io('https://metropoly.onrender.com');
+
 // Lobby management for Metropoly multiplayer game
 class LobbyManager {
     updatePlayerStatusUI(players) {
@@ -812,4 +815,4 @@ function startGame() {
 let lobbyManager;
 document.addEventListener('DOMContentLoaded', () => {
     lobbyManager = new LobbyManager();
-}); 
+});
