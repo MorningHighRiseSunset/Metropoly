@@ -16,19 +16,17 @@ const allowedOrigins = [
     'http://127.0.0.1:3000'
 ];
 app.use(cors({
-    origin: function(origin, callback) {
-        // Allow requests with no origin (like mobile apps, curl, etc.)
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) return callback(null, true);
-        return callback(new Error('Not allowed by CORS'));
-    },
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-// Preflight requests
-app.options('*', cors());
+// Preflight requests for all routes
+app.options('*', cors({
+    origin: allowedOrigins,
+    credentials: true
+}));
 
 // Socket.IO CORS config
 
@@ -320,13 +318,7 @@ class GameRoom {
 // WebSocket server with error handling
 const io = new Server(server, {
     cors: {
-        origin: [
-            'https://metropoly-lv.netlify.app',
-            'http://localhost:3000',
-            'http://localhost:8080',
-            'http://127.0.0.1:5500',
-            'http://127.0.0.1:3000'
-        ],
+        origin: allowedOrigins,
         methods: ['GET', 'POST'],
         credentials: true
     }
