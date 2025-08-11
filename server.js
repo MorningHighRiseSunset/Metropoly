@@ -1,3 +1,25 @@
+// Handle request_game_state event from client
+function handleRequestGameState(socket, data, playerId) {
+    // Find the room and player
+    const room = rooms.get(data.roomId);
+    if (!room) {
+        socket.emit('lobby_data', { type: 'error', message: 'Room not found', roomId: data.roomId });
+        return;
+    }
+    // Optionally validate playerId
+    if (!room.players.has(playerId)) {
+        socket.emit('lobby_data', { type: 'error', message: 'Player not found in room', roomId: data.roomId, playerId });
+        return;
+    }
+    // Send current game state to requesting player
+    socket.emit('lobby_data', {
+        type: 'game_state',
+        roomId: data.roomId,
+        playerId,
+        gameState: room.gameState,
+        players: Array.from(room.players.values())
+    });
+}
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
