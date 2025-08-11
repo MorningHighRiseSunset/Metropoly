@@ -1,12 +1,4 @@
-// Global dice roll function for multiplayer override
-window.rollDice = function() {
-    // Example dice roll logic
-    const diceResult = Math.floor(Math.random() * 6) + 1;
-    console.log('Dice rolled:', diceResult);
-    // Trigger token movement here (replace with your actual movement logic)
-    // moveToken(currentPlayerIndex, diceResult);
-    // Optionally, broadcast dice result to other clients via multiplayer system
-};
+
 const DEBUG = false;
 import * as THREE from './libs/three.module.js';
 import { GLTFLoader } from './libs/GLTFLoader.js';
@@ -86,6 +78,62 @@ let isPopupVisible = false;
 let isMultiplayerMode = window.location.search.includes('room=') && window.location.search.includes('player=');
 let currentPlayerId = null;
 let currentRoomId = null;
+
+function checkMultiplayerMode() {
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('room');
+        const playerId = urlParams.get('player') || sessionStorage.getItem('playerId');
+        isMultiplayerMode = !!(roomId && playerId);
+        window.isMultiplayerMode = isMultiplayerMode;
+        currentRoomId = roomId;
+        currentPlayerId = playerId;
+    } catch (_) { /* no-op */ }
+}
+
+function initializeMultiplayerGame() {
+    if (!isMultiplayerMode) return;
+    // Prefer instance created by game.html
+    if (window.multiplayerGame) {
+        multiplayerGame = window.multiplayerGame;
+        return;
+    }
+    // Minimal fallback bridge until game.html creates the instance
+    multiplayerGame = {
+        ws: null,
+        playerId: currentPlayerId,
+        sendMessage(msg) {
+            try {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify(msg));
+                }
+            } catch (_) {}
+        },
+        showNotification(text, level = 'info') {
+            try { window.showNotification?.(text, level); } catch (_) {}
+        }
+    };
+    try {
+        const serverUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'ws://localhost:3000' : 'wss://metropoly.onrender.com';
+        multiplayerGame.ws = new WebSocket(serverUrl);
+        multiplayerGame.ws.onopen = () => {
+            multiplayerGame.sendMessage({ type: 'rejoin_game', roomId: currentRoomId, playerId: currentPlayerId, selectedToken: sessionStorage.getItem('selectedToken') });
+        };
+        multiplayerGame.ws.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.type === 'dice_rolled') {
+                    const spaces = Number(data.total) || 0;
+                    showDiceResult(spaces, data.dice1, data.dice2);
+                    setTimeout(() => {
+                        moveTokenToNewPositionWithCollisionAvoidance(spaces, () => { isTurnInProgress = false; });
+                    }, 800);
+                }
+            } catch (_) {}
+        };
+    } catch (_) {}
+    window.multiplayerGame = multiplayerGame;
+}
 
 // ===== VIDEO CHAT SYSTEM =====
 // Video Chat State Variables - Declare at top level
@@ -6890,6 +6938,21 @@ function rollDice() {
         return;
     }
 
+    // In multiplayer, delegate roll to server and await dice_rolled
+    if (isMultiplayerMode && window.multiplayerGame) {
+        allowedToRoll = false;
+        isTurnInProgress = true;
+        hasTakenAction = true;
+        try {
+            window.multiplayerGame.sendMessage({
+                type: 'game_action',
+                action: 'roll_dice',
+                data: { playerId: window.multiplayerGame.playerId }
+            });
+        } catch (_) {}
+        return;
+    }
+
     allowedToRoll = false; // Prevent further rolls until this one is done
     isTurnInProgress = true; // Mark the turn as in progress
     hasTakenAction = true; // Mark that the player has taken an action
@@ -8236,7 +8299,9 @@ function createTestingModeUI() {
 createTestingModeUI();
 */
 
-init();
+if (!window.location.search.includes('room=') || !window.location.search.includes('player=')) {
+    init();
+}
 setupPropertiesToggleButton();
 
 // --- Helicopter Hover Animation State ---
