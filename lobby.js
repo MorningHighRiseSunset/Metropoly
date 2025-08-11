@@ -439,9 +439,9 @@ class LobbyManager {
 
     startGame() {
         if (!this.isHost) return;
-        
         this.sendMessage({
-            type: 'start_game'
+            type: 'start_game',
+            playerId: this.playerId
         });
     }
 
