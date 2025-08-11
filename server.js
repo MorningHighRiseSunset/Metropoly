@@ -285,9 +285,10 @@ class GameRoom {
     }
 
     broadcast(message, excludePlayerId = null) {
+        // Use Socket.IO to emit to each player's socketId
         this.players.forEach((player, playerId) => {
-            if (playerId !== excludePlayerId && player.ws.readyState === WebSocket.OPEN) {
-                player.ws.send(JSON.stringify(message));
+            if (playerId !== excludePlayerId && player.socketId) {
+                io.to(player.socketId).emit('lobby_data', message);
             }
         });
     }
