@@ -291,6 +291,8 @@ class GameRoom {
                 io.to(player.socketId).emit('lobby_data', message);
             }
         });
+    // Also broadcast to all sockets in the room (including host)
+    io.to(this.roomId).emit('lobby_data', message);
     }
 
     getRoomInfo() {
@@ -501,6 +503,14 @@ function handleCreateRoom(ws, data) {
         type: 'room_created',
         roomId: roomId,
         playerId: newPlayerId,
+        roomInfo: room.getRoomInfo()
+    });
+
+    // Immediately broadcast initial room state to all sockets in the room
+    room.broadcast({
+        type: 'player_joined',
+        playerId: newPlayerId,
+        playerName: playerName,
         roomInfo: room.getRoomInfo()
     });
 }
