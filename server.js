@@ -48,30 +48,30 @@ class GameRoom {
         this.minPlayers = 2;
     }
 
-    addPlayer(playerId, playerName, ws) {
+    addPlayer(playerId, playerName, socketId) {
         // Check if player already exists in the room
         const existingPlayer = this.players.get(playerId);
         if (existingPlayer) {
-            // Player exists, just update their WebSocket connection
-            existingPlayer.ws = ws;
+            // Player exists, just update their Socket.IO connection
+            existingPlayer.socketId = socketId;
             return true;
         }
-        
+
         // Check if room is full
         if (this.players.size >= this.maxPlayers) {
             return false;
         }
-        
+
         // Add new player
         this.players.set(playerId, {
             id: playerId,
             name: playerName,
-            ws: ws,
+            socketId: socketId,
             token: null,
             ready: false,
             isHost: playerId === this.hostId
         });
-        
+
         return true;
     }
 
