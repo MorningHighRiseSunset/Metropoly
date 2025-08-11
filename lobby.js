@@ -354,6 +354,23 @@ class LobbyManager {
             roomId: roomId,
             playerId: this.playerId
         });
+            // Grace period: keep lobby socket alive for 10 seconds after game page loads
+            window.lobbySocketGraceTimeout = setTimeout(() => {
+                if (this.socket && this.socket.connected) {
+                    console.log('Grace period over, disconnecting lobby socket');
+                    this.socket.disconnect();
+                }
+            }, 10000);
+            // Listen for game socket confirmation from game.html
+            window.addEventListener('message', (event) => {
+                if (event.data === 'game_socket_connected') {
+                    if (this.socket && this.socket.connected) {
+                        console.log('Game socket confirmed, disconnecting lobby socket immediately');
+                        clearTimeout(window.lobbySocketGraceTimeout);
+                        this.socket.disconnect();
+                    }
+                }
+            });
         
         // Redirect to the game page with room information
         setTimeout(() => {
