@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Checkers Game</title>
+  <link rel="stylesheet" href="css/game.css">
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+  <h1>PvP Checkers</h1>
+  <div id="controls" style="margin-bottom: 18px;">
+    <button id="print-btn">Print Moves</button>
+    <!-- Leave Game button will be added by JS if not present -->
+  </div>
+  <div id="game-status" style="margin-bottom: 18px; font-size: 1.2em; color: #ffd700;"></div>
+  
+  <!-- Floating Video Chat Toggle Button -->
+  <button id="video-chat-toggle-btn" class="video-chat-toggle-btn" title="Start Video Chat">
+    📹
+  </button>
+  
+  <!-- Video Chat Container -->
+  <div id="video-container" class="video-container" style="display: none;">
+    <div class="video-header">
+      <span class="video-title">Video Chat</span>
+      <div class="video-controls">
+        <button id="minimize-btn" class="video-control-btn" title="Minimize">−</button>
+        <button id="leave-video-btn" class="video-control-btn danger" title="Leave Video Chat">❌</button>
+      </div>
+    </div>
+    
+    <div class="video-content">
+      <div class="video-grid">
+        <div class="video-item">
+          <div class="video-wrapper">
+            <video id="local-video" autoplay muted playsinline></video>
+            <div id="local-placeholder" class="video-placeholder" style="display: none;">
+              <div class="placeholder-icon">👤</div>
+              <div class="placeholder-text">Your Camera</div>
+            </div>
+          </div>
+          <div class="video-label">You</div>
+        </div>
+        
+        <div class="video-item">
+          <div class="video-wrapper">
+            <video id="remote-video" autoplay playsinline></video>
+            <div id="remote-placeholder" class="video-placeholder">
+              <div class="placeholder-icon">👤</div>
+              <div class="placeholder-text">Waiting for opponent...</div>
+            </div>
+          </div>
+          <div class="video-label">Opponent</div>
+        </div>
+      </div>
+      
+      <div class="video-controls-bottom">
+        <button id="toggle-video-btn" class="video-control-btn" title="Toggle Video">🔴</button>
+        <button id="toggle-audio-btn" class="video-control-btn" title="Toggle Audio">🔊</button>
+      </div>
+      
+      <div id="video-status" class="video-status">Video chat connecting...</div>
+    </div>
+  </div>
+  
+  <div id="game-board" style="margin: 0 auto 24px auto; max-width: 400px;"></div>
+  <div id="move-history-container" style="max-width: 400px; margin: 0 auto 24px auto;">
+    <h3 style="color:#ffd700;">Move History</h3>
+    <ol id="move-history"></ol>
+  </div>
+  <div id="chat-container" style="max-width: 400px; margin: 0 auto;">
+    <div id="chat-messages" style="min-height: 48px; max-height: 120px; overflow-y: auto; font-size: 1em; margin-bottom: 8px; color: #fffbe6;"></div>
+    <form id="chat-form" style="display: flex; gap: 8px;">
+      <input id="chat-input" type="text" placeholder="Type a message..." autocomplete="off" maxlength="200" style="flex:1; padding:7px 10px; border-radius:6px; border:1px solid #ffd700; font-size:1em; background:#222; color:#ffd700;">
+      <button type="submit" style="padding:7px 18px; border-radius:6px; border:none; background:#a67c38; color:#fff; font-weight:bold; cursor:pointer;">Send</button>
+    </form>
+  </div>
+  <script src="js/game.js"></script>
+</body>
+</html>
