@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Craps Table Layout - SVG/HTML</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        
+        .table-container {
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .craps-svg {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .download-info {
+            text-align: center;
+            margin-top: 15px;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="table-container">
+        <svg class="craps-svg" xmlns="http://www.w3.org/2000/svg" width="1200" height="480" viewBox="0 0 1200 480">
+            <defs>
+                <style>
+                    .felt { fill: #0b6d2e; }
+                    .rail { fill: #0a5a27; }
+                    .line { stroke: #ffffff; stroke-width: 3; fill: none; }
+                    .thin-line { stroke: #ffffff; stroke-width: 2; fill: none; }
+                    .thick-line { stroke: #ffffff; stroke-width: 5; fill: none; }
+                    .white-text { fill: #ffffff; font-family: Arial, sans-serif; font-weight: bold; }
+                    .yellow-text { fill: #ffe84a; font-family: Arial, sans-serif; font-weight: bold; }
+                    .red-text { fill: #ff1111; font-family: Arial, sans-serif; font-weight: bold; }
+                    .small-text { font-size: 12px; }
+                    .medium-text { font-size: 16px; }
+                    .large-text { font-size: 24px; }
+                    .huge-text { font-size: 48px; }
+                    .giant-text { font-size: 64px; }
+                </style>
+            </defs>
+
+            <!-- Table background (rail) -->
+            <rect x="0" y="0" width="1200" height="480" rx="100" ry="100" class="rail"/>
+            
+            <!-- Felt area -->
+            <rect x="40" y="40" width="1120" height="400" rx="80" ry="80" class="felt"/>
+
+            <!-- Main playfield border -->
+            <rect x="85" y="95" width="1030" height="290" rx="120" ry="120" class="thick-line"/>
+            <rect x="105" y="115" width="990" height="250" rx="110" ry="110" class="line"/>
+
+            <!-- LEFT SIDE AREA -->
+            <g id="left-side">
+                <!-- Don't Come Bar top row -->
+                <rect x="110" y="120" width="420" height="50" class="line"/>
+                <!-- Vertical dividers for number boxes -->
+                <line x1="180" y1="120" x2="180" y2="170" class="thin-line"/>
+                <line x1="250" y1="120" x2="250" y2="170" class="thin-line"/>
+                <line x1="320" y1="120" x2="320" y2="170" class="thin-line"/>
+                <line x1="390" y1="120" x2="390" y2="170" class="thin-line"/>
+                <line x1="460" y1="120" x2="460" y2="170" class="thin-line"/>
+
+                <!-- Don't Come Bar label -->
+                <text x="145" y="135" class="white-text small-text" text-anchor="middle">Don't</text>
+                <text x="145" y="150" class="white-text small-text" text-anchor="middle">Come</text>
+                <text x="145" y="165" class="white-text small-text" text-anchor="middle">Bar</text>
+
+                <!-- Number boxes -->
+                <text x="215" y="150" class="white-text large-text" text-anchor="middle">4</text>
+                <text x="285" y="150" class="white-text large-text" text-anchor="middle">5</text>
+                <text x="355" y="150" class="white-text large-text" text-anchor="middle">SIX</text>
+                <text x="425" y="150" class="white-text large-text" text-anchor="middle">8</text>
+                <text x="495" y="150" class="white-text large-text" text-anchor="middle">NINE</text>
+
+                <!-- COME area -->
+                <rect x="110" y="170" width="420" height="80" class="line"/>
+                <text x="320" y="225" class="red-text giant-text" text-anchor="middle">COME</text>
+
+                <!-- FIELD area -->
+                <rect x="110" y="250" width="420" height="60" class="line"/>
+                <text x="320" y="270" class="yellow-text medium-text" text-anchor="middle">3 · 4 · 9 · 10 · 11</text>
+                <text x="320" y="295" class="yellow-text large-text" text-anchor="middle">FIELD</text>
+                
+                <!-- Field circles for 2 and 12 -->
+                <circle cx="150" cy="280" r="20" class="line"/>
+                <text x="150" y="287" class="yellow-text large-text" text-anchor="middle">2</text>
+                <text x="180" y="270" class="yellow-text small-text">PAYS</text>
+                <text x="180" y="285" class="yellow-text small-text">DOUBLE</text>
+
+                <circle cx="490" cy="280" r="20" class="line"/>
+                <text x="490" y="287" class="yellow-text large-text" text-anchor="middle">12</text>
+                <text x="460" y="270" class="yellow-text small-text">PAYS</text>
+                <text x="460" y="285" class="yellow-text small-text">DOUBLE</text>
+
+                <!-- Don't Pass Bar bottom -->
+                <rect x="110" y="310" width="420" height="25" class="line"/>
+                <text x="320" y="327" class="white-text medium-text" text-anchor="middle">Don't Pass Bar</text>
+            </g>
+
+            <!-- RIGHT SIDE AREA (mirrored) -->
+            <g id="right-side">
+                <!-- Don't Come Bar top row -->
+                <rect x="670" y="120" width="420" height="50" class="line"/>
+                <!-- Vertical dividers -->
+                <line x1="740" y1="120" x2="740" y2="170" class="thin-line"/>
+                <line x1="810" y1="120" x2="810" y2="170" class="thin-line"/>
+                <line x1="880" y1="120" x2="880" y2="170" class="thin-line"/>
+                <line x1="950" y1="120" x2="950" y2="170" class="thin-line"/>
+                <line x1="1020" y1="120" x2="1020" y2="170" class="thin-line"/>
+
+                <!-- Number boxes (mirrored order) -->
+                <text x="705" y="150" class="white-text large-text" text-anchor="middle">NINE</text>
+                <text x="775" y="150" class="white-text large-text" text-anchor="middle">8</text>
+                <text x="845" y="150" class="white-text large-text" text-anchor="middle">SIX</text>
+                <text x="915" y="150" class="white-text large-text" text-anchor="middle">5</text>
+                <text x="985" y="150" class="white-text large-text" text-anchor="middle">4</text>
+
+                <!-- Don't Come Bar label -->
+                <text x="1055" y="135" class="white-text small-text" text-anchor="middle">Don't</text>
+                <text x="1055" y="150" class="white-text small-text" text-anchor="middle">Come</text>
+                <text x="1055" y="165" class="white-text small-text" text-anchor="middle">Bar</text>
+
+                <!-- COME area -->
+                <rect x="670" y="170" width="420" height="80" class="line"/>
+                <text x="880" y="225" class="red-text giant-text" text-anchor="middle">COME</text>
+
+                <!-- FIELD area -->
+                <rect x="670" y="250" width="420" height="60" class="line"/>
+                <text x="880" y="270" class="yellow-text medium-text" text-anchor="middle">3 · 4 · 9 · 10 · 11</text>
+                <text x="880" y="295" class="yellow-text large-text" text-anchor="middle">FIELD</text>
+                
+                <!-- Field circles -->
+                <circle cx="710" cy="280" r="20" class="line"/>
+                <text x="710" y="287" class="yellow-text large-text" text-anchor="middle">2</text>
+                <text x="740" y="270" class="yellow-text small-text">PAYS</text>
+                <text x="740" y="285" class="yellow-text small-text">DOUBLE</text>
+
+                <circle cx="1050" cy="280" r="20" class="line"/>
+                <text x="1050" y="287" class="yellow-text large-text" text-anchor="middle">12</text>
+                <text x="1020" y="270" class="yellow-text small-text">PAYS</text>
+                <text x="1020" y="285" class="yellow-text small-text">DOUBLE</text>
+
+                <!-- Don't Pass Bar bottom -->
+                <rect x="670" y="310" width="420" height="25" class="line"/>
+                <text x="880" y="327" class="white-text medium-text" text-anchor="middle">Don't Pass Bar</text>
+            </g>
+
+            <!-- CENTER PROPOSITION AREA -->
+            <g id="center-props">
+                <rect x="480" y="140" width="240" height="200" rx="15" ry="15" class="line"/>
+                
+                <!-- Seven area -->
+                <text x="600" y="165" class="red-text large-text" text-anchor="middle">Seven</text>
+                <text x="600" y="180" class="white-text small-text" text-anchor="middle">5 FOR 1</text>
+                <text x="600" y="195" class="white-text small-text" text-anchor="middle">5 FOR 1</text>
+
+                <!-- Dice representations -->
+                <g id="dice-area">
+                    <!-- Left die (showing 1) -->
+                    <rect x="500" y="200" width="30" height="30" rx="4" class="thin-line"/>
+                    <circle cx="515" cy="215" r="3" fill="white"/>
+                    <text x="515" y="240" class="white-text small-text" text-anchor="middle">10 FOR 1</text>
+
+                    <!-- Right die (showing 6) -->
+                    <rect x="670" y="200" width="30" height="30" rx="4" class="thin-line"/>
+                    <circle cx="675" cy="205" r="2" fill="white"/>
+                    <circle cx="685" cy="205" r="2" fill="white"/>
+                    <circle cx="695" cy="205" r="2" fill="white"/>
+                    <circle cx="675" cy="215" r="2" fill="white"/>
+                    <circle cx="685" cy="215" r="2" fill="white"/>
+                    <circle cx="695" cy="215" r="2" fill="white"/>
+                    <text x="685" y="245" class="white-text small-text" text-anchor="middle">8 FOR 1</text>
+
+                    <!-- Center dice -->
+                    <rect x="585" y="200" width="30" height="30" rx="4" class="thin-line"/>
+                    <circle cx="590" cy="205" r="2" fill="white"/>
+                    <circle cx="610" cy="225" r="2" fill="white"/>
+                    <text x="600" y="245" class="white-text small-text" text-anchor="middle">30 FOR 1</text>
+
+                    <!-- Additional dice -->
+                    <rect x="540" y="200" width="30" height="30" rx="4" class="thin-line"/>
+                    <circle cx="545" cy="210" r="2" fill="white"/>
+                    <circle cx="555" cy="210" r="2" fill="white"/>
+                    <circle cx="565" cy="210" r="2" fill="white"/>
+                    <circle cx="550" cy="220" r="2" fill="white"/>
+                    <text x="555" y="245" class="white-text small-text" text-anchor="middle">30 FOR 1</text>
+
+                    <rect x="630" y="200" width="30" height="30" rx="4" class="thin-line"/>
+                    <circle cx="635" cy="205" r="2" fill="white"/>
+                    <circle cx="645" cy="215" r="2" fill="white"/>
+                    <circle cx="655" cy="225" r="2" fill="white"/>
+                    <text x="645" y="245" class="white-text small-text" text-anchor="middle">15 FOR 1</text>
+                </g>
+
+                <!-- Any Craps area -->
+                <rect x="500" y="260" width="200" height="30" class="thin-line"/>
+                <text x="600" y="280" class="red-text large-text" text-anchor="middle">Any Craps</text>
+                <text x="600" y="305" class="white-text small-text" text-anchor="middle">8 FOR 1</text>
+
+                <!-- Bottom prop bets -->
+                <rect x="500" y="310" width="95" height="20" class="thin-line"/>
+                <text x="547" y="323" class="white-text small-text" text-anchor="middle">15 FOR 1</text>
+
+                <rect x="605" y="310" width="95" height="20" class="thin-line"/>
+                <text x="652" y="323" class="white-text small-text" text-anchor="middle">15 FOR 1</text>
+            </g>
+
+            <!-- PASS LINE labels -->
+            <text x="320" y="370" class="white-text huge-text" text-anchor="middle">PASS LINE</text>
+            <text x="880" y="370" class="white-text huge-text" text-anchor="middle">PASS LINE</text>
+
+            <!-- Corner 6/8 markers -->
+            <text x="160" y="320" class="red-text huge-text" text-anchor="middle">6</text>
+            <text x="200" y="320" class="red-text huge-text" text-anchor="middle">8</text>
+            <text x="1000" y="320" class="red-text huge-text" text-anchor="middle">6</text>
+            <text x="1040" y="320" class="red-text huge-text" text-anchor="middle">8</text>
+
+            <!-- Side rail Don't Pass Bar text -->
+            <text x="70" y="240" class="white-text medium-text" text-anchor="middle" transform="rotate(-90 70,240)">Don't Pass Bar</text>
+            <text x="1130" y="240" class="white-text medium-text" text-anchor="middle" transform="rotate(90 1130,240)">Don't Pass Bar</text>
+        </svg>
+        
+        <div class="download-info">
+            Right-click and "Save As" to download this HTML file with embedded SVG
+        </div>
+    </div>
+</body>
+</html>
