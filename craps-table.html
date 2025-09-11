@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Craps Table Layout</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Verdana, Arial, sans-serif;
+        }
+
+        .craps-table {
+            width: 1200px;
+            height: 480px;
+            background: #0a5a27;
+            border-radius: 100px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .felt {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            width: 1120px;
+            height: 400px;
+            background: #0b6d2e;
+            border-radius: 80px;
+        }
+
+        .playfield {
+            position: absolute;
+            top: 95px;
+            left: 85px;
+            width: 1030px;
+            height: 290px;
+            border: 6px solid white;
+            border-radius: 120px;
+        }
+
+        .inner-field {
+            position: absolute;
+            top: 115px;
+            left: 105px;
+            width: 990px;
+            height: 250px;
+            border: 4px solid white;
+            border-radius: 110px;
+        }
+
+        .pass-line {
+            color: white;
+            font-size: 28px;
+            font-weight: 700;
+            position: absolute;
+            top: 320px;
+            letter-spacing: 1px;
+        }
+
+        .pass-line.left {
+            left: 180px;
+        }
+
+        .pass-line.right {
+            right: 180px;
+        }
+
+        .end-numbers {
+            color: #e11;
+            font-size: 48px;
+            font-weight: 700;
+            position: absolute;
+            top: 260px;
+        }
+
+        .end-numbers.left {
+            left: 150px;
+        }
+
+        .end-numbers.right {
+            right: 150px;
+        }
+
+        .side-area {
+            position: absolute;
+            top: 120px;
+            width: 420px;
+            height: 214px;
+        }
+
+        .side-area.left {
+            left: 110px;
+        }
+
+        .side-area.right {
+            right: 110px;
+        }
+
+        .dont-come-row {
+            height: 70px;
+            border: 4px solid white;
+            background: transparent;
+            display: flex;
+            position: relative;
+        }
+
+        .dont-come-box {
+            width: 70px;
+            border-right: 2px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            flex-direction: column;
+        }
+
+        .number-box {
+            flex: 1;
+            border-right: 2px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .number-box:last-child {
+            border-right: none;
+        }
+
+        .come-area {
+            height: 120px;
+            border: 4px solid white;
+            border-top: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+        }
+
+        .come-text {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 72px;
+            font-weight: 700;
+            color: #e11;
+            letter-spacing: 4px;
+        }
+
+        .field-area {
+            height: 80px;
+            border: 4px solid white;
+            border-top: none;
+            background: transparent;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .field-numbers {
+            color: #ffe84a;
+            font-size: 18px;
+            position: absolute;
+            top: 8px;
+            letter-spacing: 1px;
+        }
+
+        .field-text {
+            color: #ffe84a;
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .field-circle {
+            position: absolute;
+            width: 52px;
+            height: 52px;
+            border: 4px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffe84a;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .field-circle.left {
+            left: 14px;
+        }
+
+        .field-circle.right {
+            right: 14px;
+        }
+
+        .field-pay {
+            position: absolute;
+            color: #ffe84a;
+            font-size: 14px;
+            top: -20px;
+            text-align: center;
+        }
+
+        .field-pay.left {
+            left: 56px;
+        }
+
+        .field-pay.right {
+            right: 56px;
+        }
+
+        .dont-pass-bar {
+            height: 34px;
+            border: 4px solid white;
+            border-top: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            background: transparent;
+        }
+
+        .center-props {
+            position: absolute;
+            top: 120px;
+            left: 460px;
+            width: 280px;
+            height: 240px;
+            border: 4px solid white;
+            border-radius: 18px;
+            background: transparent;
+        }
+
+        .seven-area {
+            text-align: center;
+            padding: 10px 0;
+            color: #ffe84a;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .seven-pays {
+            color: white;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .dice-area {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px 30px;
+        }
+
+        .die {
+            width: 44px;
+            height: 44px;
+            border: 2px solid white;
+            border-radius: 6px;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .pip {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+        }
+
+        .pip.center {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .pip.top-left {
+            top: 6px;
+            left: 6px;
+        }
+
+        .pip.bottom-right {
+            bottom: 6px;
+            right: 6px;
+        }
+
+        .any-craps {
+            margin: 20px;
+            height: 40px;
+            border: 2px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+        }
+
+        .any-craps-text {
+            color: #e11;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .craps-pays {
+            color: white;
+            font-size: 14px;
+            position: absolute;
+            bottom: -18px;
+        }
+
+        .bottom-props {
+            display: flex;
+            padding: 0 20px;
+            gap: 10px;
+        }
+
+        .prop-box {
+            flex: 1;
+            height: 34px;
+            border: 2px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffe84a;
+            font-size: 18px;
+            background: transparent;
+        }
+
+        .side-rail {
+            position: absolute;
+            color: white;
+            font-size: 22px;
+            font-weight: 600;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .side-rail.left {
+            left: 78px;
+        }
+
+        .side-rail.right {
+            right: 78px;
+        }
+
+        .signature {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 14px;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="craps-table">
+        <div class="felt"></div>
+        <div class="playfield"></div>
+        <div class="inner-field"></div>
+        
+        <!-- Pass Line Labels -->
+        <div class="pass-line left">PASS LINE</div>
+        <div class="pass-line right">PASS LINE</div>
+        
+        <!-- End Numbers -->
+        <div class="end-numbers left">6 8</div>
+        <div class="end-numbers right">6 8</div>
+        
+        <!-- Left Side Area -->
+        <div class="side-area left">
+            <div class="dont-come-row">
+                <div class="dont-come-box">
+                    <div>Don't</div>
+                    <div>Come</div>
+                    <div>Bar</div>
+                </div>
+                <div class="number-box">4</div>
+                <div class="number-box">5</div>
+                <div class="number-box">SIX</div>
+                <div class="number-box">8</div>
+                <div class="number-box">NINE</div>
+            </div>
+            
+            <div class="come-area">
+                <div class="come-text">COME</div>
+            </div>
+            
+            <div class="field-area">
+                <div class="field-numbers">3 · 4 · 9 · 10 · 11</div>
+                <div class="field-text">FIELD</div>
+                <div class="field-circle left">2</div>
+                <div class="field-circle right">12</div>
+                <div class="field-pay left">PAYS<br>DOUBLE</div>
+                <div class="field-pay right">PAYS<br>DOUBLE</div>
+            </div>
+            
+            <div class="dont-pass-bar">Don't Pass Bar</div>
+        </div>
+        
+        <!-- Right Side Area (mirrored) -->
+        <div class="side-area right">
+            <div class="dont-come-row">
+                <div class="number-box">NINE</div>
+                <div class="number-box">8</div>
+                <div class="number-box">SIX</div>
+                <div class="number-box">5</div>
+                <div class="number-box">4</div>
+                <div class="dont-come-box">
+                    <div>Don't</div>
+                    <div>Come</div>
+                    <div>Bar</div>
+                </div>
+            </div>
+            
+            <div class="come-area">
+                <div class="come-text">COME</div>
+            </div>
+            
+            <div class="field-area">
+                <div class="field-numbers">3 · 4 · 9 · 10 · 11</div>
+                <div class="field-text">FIELD</div>
+                <div class="field-circle left">2</div>
+                <div class="field-circle right">12</div>
+                <div class="field-pay left">PAYS<br>DOUBLE</div>
+                <div class="field-pay right">PAYS<br>DOUBLE</div>
+            </div>
+            
+            <div class="dont-pass-bar">Don't Pass Bar</div>
+        </div>
+        
+        <!-- Center Proposition Area -->
+        <div class="center-props">
+            <div class="seven-area">
+                Seven
+                <div class="seven-pays">PAYS 5 FOR 1</div>
+            </div>
+            
+            <div class="dice-area">
+                <div class="die">
+                    <div class="pip center"></div>
+                </div>
+                <div class="die">
+                    <div class="pip top-left"></div>
+                    <div class="pip bottom-right"></div>
+                </div>
+            </div>
+            
+            <div class="any-craps">
+                <div class="any-craps-text">Any Craps</div>
+                <div class="craps-pays">8 FOR 1</div>
+            </div>
+            
+            <div class="bottom-props">
+                <div class="prop-box">YO (11)</div>
+                <div class="prop-box">ACE-DEUCE</div>
+            </div>
+        </div>
+        
+        <!-- Side Rails -->
+        <div class="side-rail left">Don't Pass Bar</div>
+        <div class="side-rail right">Don't Pass Bar</div>
+        
+        <div class="signature">HTML/CSS Craps Table Layout</div>
+    </div>
+</body>
+</html>
