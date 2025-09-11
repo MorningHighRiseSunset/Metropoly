@@ -1,0 +1,167 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="480" viewBox="0 0 1200 480" role="img" aria-label="Craps table layout">
+  <title>Craps Table Layout (Vector)</title>
+  <defs>
+    <style>
+      .felt { fill: #0b6d2e; }
+      .rail { fill: #0a5a27; }
+      .line { stroke: #ffffff; stroke-width: 4; fill: none; }
+      .thin { stroke-width: 2; }
+      .thick { stroke-width: 6; }
+      .label { fill: #ffffff; font-family: Verdana, Arial, Helvetica, sans-serif; letter-spacing: 1px; }
+      .label-small { font-size: 14px; }
+      .label-med { font-size: 18px; }
+      .label-large { font-size: 28px; font-weight: 600; }
+      .label-huge { font-family: Georgia, "Times New Roman", serif; font-size: 72px; font-weight: 700; letter-spacing: 4px; }
+      .yellow { fill: #ffe84a; }
+      .red { fill: #e11; }
+      .center-chip { fill: #ffe84a; stroke: #0a5a27; stroke-width: 2; }
+    </style>
+    <clipPath id="felt-clip">
+      <rect x="40" y="40" width="1120" height="400" rx="80" ry="80" />
+    </clipPath>
+  </defs>
+
+  <!-- Background / rail -->
+  <rect x="0" y="0" width="1200" height="480" rx="100" ry="100" class="rail"/>
+  <!-- Inner felt area -->
+  <rect x="40" y="40" width="1120" height="400" rx="80" ry="80" class="felt"/>
+
+  <!-- Outer playfield border (PASS LINE band outside of this) -->
+  <rect x="85" y="95" width="1030" height="290" rx="120" ry="120" class="line thick"/>
+  <!-- Inner playfield border -->
+  <rect x="105" y="115" width="990" height="250" rx="110" ry="110" class="line"/>
+
+  <!-- PASS LINE labels -->
+  <g font-size="28" font-weight="700" class="label">
+    <text x="260" y="356" text-anchor="middle">PASS LINE</text>
+    <text x="940" y="356" text-anchor="middle">PASS LINE</text>
+  </g>
+
+  <!-- Curved end 6 / 8 markers -->
+  <g class="label red" font-size="48" font-weight="700">
+    <text x="150" y="300" text-anchor="middle">6</text>
+    <text x="190" y="300" text-anchor="middle">8</text>
+    <text x="1010" y="300" text-anchor="middle">6</text>
+    <text x="1050" y="300" text-anchor="middle">8</text>
+  </g>
+
+  <!-- Shared styles for mirrored side areas -->
+  <g id="end-side">
+    <!-- Top number boxes row -->
+    <g>
+      <rect x="0" y="0" width="420" height="70" class="line"/>
+      <!-- Vertical separators -->
+      <path d="M70,0 V70 M140,0 V70 M210,0 V70 M280,0 V70 M350,0 V70" class="line thin"/>
+      <g class="label label-large">
+        <text x="35" y="45" text-anchor="middle">Don't</text>
+      </g>
+      <g class="label label-med">
+        <text x="35" y="22" text-anchor="middle">Don't</text>
+        <text x="35" y="45" text-anchor="middle">Come</text>
+        <text x="35" y="64" text-anchor="middle">Bar</text>
+      </g>
+      <g class="label label-large">
+        <text x="105" y="45" text-anchor="middle">4</text>
+        <text x="175" y="45" text-anchor="middle">5</text>
+        <text x="245" y="45" text-anchor="middle">SIX</text>
+        <text x="315" y="45" text-anchor="middle">8</text>
+        <text x="385" y="45" text-anchor="middle">NINE</text>
+      </g>
+    </g>
+
+    <!-- COME area rectangle -->
+    <g transform="translate(0,80)">
+      <rect x="0" y="0" width="420" height="120" class="line"/>
+      <text x="210" y="85" class="label-huge red" text-anchor="middle">COME</text>
+    </g>
+
+    <!-- FIELD area -->
+    <g transform="translate(0,210)">
+      <rect x="0" y="0" width="420" height="80" class="line"/>
+      <text x="210" y="24" class="label yellow label-med" text-anchor="middle">3 · 4 · 9 · 10 · 11</text>
+      <text x="210" y="58" class="label yellow label-large" text-anchor="middle">FIELD</text>
+      <!-- 2 and 12 circles -->
+      <g>
+        <circle cx="40" cy="40" r="26" class="line" fill="none"/>
+        <text x="40" y="46" class="label yellow label-large" text-anchor="middle">2</text>
+        <text x="380" y="46" class="label yellow label-large" text-anchor="middle">12</text>
+        <circle cx="380" cy="40" r="26" class="line" fill="none"/>
+        <text x="82" y="24" class="label yellow label-small" text-anchor="middle">PAYS</text>
+        <text x="82" y="46" class="label yellow label-small" text-anchor="middle">DOUBLE</text>
+        <text x="338" y="24" class="label yellow label-small" text-anchor="middle">PAYS</text>
+        <text x="338" y="46" class="label yellow label-small" text-anchor="middle">DOUBLE</text>
+      </g>
+    </g>
+
+    <!-- Don't Pass Bar and bar below field -->
+    <g transform="translate(0,300)">
+      <rect x="0" y="0" width="420" height="34" class="line"/>
+      <text x="210" y="24" class="label label-med" text-anchor="middle">Don't Pass Bar</text>
+    </g>
+  </g>
+
+  <!-- LEFT side -->
+  <g transform="translate(110,120)">
+    <use href="#end-side"/>
+    <!-- PASS LINE left arc text -->
+  </g>
+
+  <!-- RIGHT side (mirrored) -->
+  <g transform="translate(1090,120) scale(-1,1)">
+    <use href="#end-side"/>
+  </g>
+
+  <!-- Center proposition area -->
+  <g clip-path="url(#felt-clip)">
+    <g transform="translate(460,120)">
+      <rect x="0" y="0" width="280" height="240" rx="18" ry="18" class="line"/>
+      <g class="label">
+        <text x="140" y="24" class="label-large yellow" text-anchor="middle">Seven</text>
+        <text x="140" y="48" class="label-small" text-anchor="middle">PAYS 5 FOR 1</text>
+      </g>
+
+      <!-- Dice pips for 7 combos (stylized) -->
+      <g transform="translate(30,70)">
+        <rect x="0" y="0" width="44" height="44" rx="6" class="line thin"/>
+        <circle cx="22" cy="22" r="4" fill="#fff"/>
+      </g>
+      <g transform="translate(206,70)">
+        <rect x="0" y="0" width="44" height="44" rx="6" class="line thin"/>
+        <g fill="#fff">
+          <circle cx="11" cy="11" r="4"/>
+          <circle cx="33" cy="33" r="4"/>
+        </g>
+      </g>
+
+      <!-- Any Craps -->
+      <g transform="translate(20,130)">
+        <rect x="0" y="0" width="240" height="40" class="line thin"/>
+        <text x="120" y="27" class="label red label-large" text-anchor="middle">Any Craps</text>
+        <text x="120" y="52" class="label label-small" text-anchor="middle">8 FOR 1</text>
+      </g>
+
+      <!-- Yo / Horn style quick props -->
+      <g transform="translate(20,190)">
+        <rect x="0" y="0" width="110" height="34" class="line thin"/>
+        <text x="55" y="22" class="label yellow label-med" text-anchor="middle">YO (11)</text>
+        <rect x="130" y="0" width="110" height="34" class="line thin"/>
+        <text x="185" y="22" class="label yellow label-med" text-anchor="middle">ACE-DEUCE</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- DON'T PASS side bars on extreme left/right -->
+  <g class="label" font-size="22" font-weight="600">
+    <text x="78" y="212" transform="rotate(-90 78,212)" text-anchor="middle">Don't Pass Bar</text>
+    <text x="1122" y="212" transform="rotate(90 1122,212)" text-anchor="middle">Don't Pass Bar</text>
+  </g>
+
+  <!-- COME labels already placed in side templates. Add big center COME words mirrored red as in reference -->
+
+  <!-- Pass line rails outline again for emphasis -->
+  <rect x="85" y="95" width="1030" height="290" rx="120" ry="120" class="line thick"/>
+
+  <!-- Footer signature (can be removed) -->
+  <text x="600" y="460" class="label label-small" text-anchor="middle" opacity="0.6">SVG craps layout (vector approximation)</text>
+</svg>
+
